@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Editar Demanda</h2>
+
+
+<form method="POST" action="/editar/{{ demanda[0] }}">
+    <div>
+        <label>Título:</label><br>
+        <input type="text" name="titulo" value="{{ demanda[1] }}" size="50">
+    </div>
+    <br>
+    
+    <div>
+        <label>Descrição:</label><br>
+        <textarea name="descricao" rows="5" cols="50">{{ demanda[2] }}</textarea>
+    </div>
+    <br>
+    
+    <div>
+        <label>Solicitante:</label><br>
+        <input type="text" name="solicitante" value="{{ demanda[3] }}">
+    </div>
+    <br>
+    
+    <div>
+        <label>Data de Criação:</label><br>
+        <input type="text" value="{{ demanda[4] }}" disabled>
+    </div>
+    <br>
+    
+    <button type="submit">Atualizar</button>
+    <a href="/"><button type="button">Cancelar</button></a>
+</form>
+
+{% endblock %}

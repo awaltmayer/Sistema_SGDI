@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Detalhes da Demanda #{{ demanda[0] }}</h2>
+
+<div style="border:1px solid #ccc; padding:15px; margin-bottom:20px;">
+    <h3>{{ demanda[1] }}</h3>
+    <p><strong>Descrição:</strong></p>
+    <p>{{ demanda[2] }}</p>
+    
+    <p><strong>Solicitante:</strong> {{ demanda[3] }}</p>
+    <p><strong>Data de Criação:</strong> {{ demanda[4] }}</p>
+    
+    <br>
+    <a href="/editar/{{ demanda[0] }}"><button>Editar</button></a>
+    <a href="/"><button>Voltar</button></a>
+</div>
+
+<h3>Comentários</h3>
+
+{% for comentario in comentarios %}
+<div style="background:#f0f0f0; padding:10px; margin:10px 0;">
+    <p><strong>{{ comentario[3] }}</strong> em {{ comentario[4] }}</p>
+    <p>{{ comentario[2] }}</p>
+</div>
+{% endfor %}
+
+<h4>Adicionar Comentário</h4>
+<form method="POST" action="/adicionar_comentario/{{ demanda[0] }}">
+    <div>
+        <label>Seu nome:</label><br>
+        <input type="text" name="autor" size="30">
+    </div>
+    <br>
+    <div>
+        <label>Comentário:</label><br>
+        <textarea name="comentario" rows="4" cols="50"></textarea>
+    </div>
+    <br>
+    <button type="submit">Enviar Comentário</button>
+</form>
+
+{% endblock %}

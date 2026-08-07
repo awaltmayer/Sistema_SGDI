@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Lista de Demandas</h2>
+
+
+<table border="1" cellpadding="10" cellspacing="0" width="100%">
+    <thead>
+        <tr bgcolor="#cccccc">
+            <th>ID</th>
+            <th>Título</th>
+            <th>Solicitante</th>
+            <th>Data</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for demanda in demandas %}
+        <tr>
+            <td>{{ demanda[0] }}</td>
+            <td>{{ demanda[1] }}</td>
+            <td>{{ demanda[3] }}</td>
+            <td>{{ demanda[4] }}</td>
+            <td>
+                <a href="/detalhes/{{ demanda[0] }}">Ver</a>
+                |
+                <a href="/editar/{{ demanda[0] }}">Editar</a>
+                |
+                <a href="/deletar/{{ demanda[0] }}" style="color:red;">Deletar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<br><br>
+<a href="/nova_demanda"><button>+ Nova Demanda</button></a>
+
+{% endblock %}

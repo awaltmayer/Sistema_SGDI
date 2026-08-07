@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Nova Demanda</h2>
+
+<form method="POST" action="/nova_demanda">
+    <div>
+        <label>Título:</label><br>
+        <input type="text" name="titulo" size="50">
+    </div>
+    <br>
+    
+    <div>
+        <label>Descrição:</label><br>
+        <textarea name="descricao" rows="5" cols="50"></textarea>
+    </div>
+    <br>
+    
+    <div>
+        <label>Solicitante:</label><br>
+        <input type="text" name="solicitante">
+    </div>
+    <br>
+    
+    <button type="submit">Salvar</button>
+    <a href="/"><button type="button">Cancelar</button></a>
+</form>
+
+{% endblock %}

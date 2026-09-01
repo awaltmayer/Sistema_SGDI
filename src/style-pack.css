@@ -1,0 +1,47 @@
+:root {
+  --font-heading: "Figtree", sans-serif;
+  --font-body: "Figtree", sans-serif;
+
+  --font-heading-weight: 600;
+  --font-body-weight: 400;
+
+  --color-primary: oklch(0.68 0.16 235);
+  --color-primary-foreground: oklch(0.99 0 0);
+  --color-ring: oklch(0.68 0.16 235);
+  --color-sidebar-primary: oklch(0.68 0.16 235);
+  --color-sidebar-primary-foreground: oklch(0.99 0 0);
+}
+
+.dark {
+  --color-primary: oklch(0.76 0.14 235);
+  --color-primary-foreground: oklch(0.15 0.04 235);
+  --color-ring: oklch(0.76 0.14 235);
+  --color-sidebar-primary: oklch(0.76 0.14 235);
+  --color-sidebar-primary-foreground: oklch(0.15 0.04 235);
+}
+
+body {
+  font-feature-settings: "ss01", "cv11";
+  text-rendering: optimizeLegibility;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  font-weight: var(--font-body-weight);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--font-heading-weight);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,59 @@
+.sgdi-distintivo-gray {
+  background-color: rgb(243 244 246);
+  color: rgb(55 65 81);
+  border-color: transparent;
+}
+.dark .sgdi-distintivo-gray {
+  background-color: rgb(31 41 55);
+  color: rgb(209 213 219);
+}
+
+.sgdi-distintivo-blue {
+  background-color: rgb(239 246 255);
+  color: rgb(29 78 216);
+  border-color: transparent;
+}
+.dark .sgdi-distintivo-blue {
+  background-color: rgb(23 37 84);
+  color: rgb(147 197 253);
+}
+
+.sgdi-distintivo-amber {
+  background-color: rgb(254 243 199);
+  color: rgb(180 83 9);
+  border-color: transparent;
+}
+.dark .sgdi-distintivo-amber {
+  background-color: rgb(69 26 3);
+  color: rgb(252 211 77);
+}
+
+.sgdi-distintivo-red {
+  background-color: rgb(254 242 242);
+  color: rgb(185 28 28);
+  border-color: transparent;
+}
+.dark .sgdi-distintivo-red {
+  background-color: rgb(69 10 10);
+  color: rgb(252 165 165);
+}
+
+.sgdi-distintivo-green {
+  background-color: rgb(240 253 244);
+  color: rgb(21 128 61);
+  border-color: transparent;
+}
+.dark .sgdi-distintivo-green {
+  background-color: rgb(5 46 22);
+  color: rgb(134 239 172);
+}
+
+.sgdi-distintivo-purple {
+  background-color: rgb(250 245 255);
+  color: rgb(126 34 206);
+  border-color: transparent;
+}
+.dark .sgdi-distintivo-purple {
+  background-color: rgb(59 7 100);
+  color: rgb(216 180 254);
+}

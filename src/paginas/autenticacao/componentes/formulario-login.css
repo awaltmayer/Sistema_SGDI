@@ -1,0 +1,38 @@
+.sgdi-formulario-login {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sgdi-campo-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sgdi-erro-form {
+  font-size: 0.875rem;
+  color: var(--color-destructive);
+}
+
+.sgdi-texto-troca-aba {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-muted-foreground);
+}
+
+.sgdi-botao-link {
+  color: var(--color-foreground);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  transition: color 0.15s ease;
+}
+
+.sgdi-botao-link:hover {
+  color: var(--color-primary);
+}

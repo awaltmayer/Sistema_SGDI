@@ -1,0 +1,32 @@
+.sgdi-log-tempo-resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: color-mix(in srgb, var(--color-muted) 50%, transparent);
+  padding: 0.75rem;
+  border-width: 1px;
+}
+
+.sgdi-log-timeline {
+  position: relative;
+  border-left-width: 2px;
+  border-color: var(--color-border);
+  padding-left: 1rem;
+  margin-left: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sgdi-log-timeline-dot {
+  position: absolute;
+  left: -21px;
+  top: 0.25rem;
+  height: 0.75rem;
+  width: 0.75rem;
+  border-radius: 9999px;
+  background-color: rgb(245 158 11);
+  border: 2px solid var(--color-background);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}

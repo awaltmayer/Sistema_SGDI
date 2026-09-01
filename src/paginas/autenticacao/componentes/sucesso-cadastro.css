@@ -1,0 +1,35 @@
+.sgdi-sucesso-cadastro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+  text-align: center;
+}
+
+.sgdi-sucesso-icone {
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-primary);
+}
+
+.sgdi-sucesso-titulo {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.sgdi-sucesso-texto {
+  font-size: 0.875rem;
+  color: var(--color-foreground);
+}
+
+.sgdi-sucesso-email-destaque {
+  font-weight: 500;
+}
+
+.sgdi-sucesso-aviso-spam {
+  font-size: 0.875rem;
+  color: var(--color-muted-foreground);
+}

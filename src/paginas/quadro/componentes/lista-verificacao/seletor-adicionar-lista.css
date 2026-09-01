@@ -1,0 +1,13 @@
+.sgdi-popover-checklist-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sgdi-popover-checklist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom-width: 1px;
+  padding-bottom: 0.5rem;
+}

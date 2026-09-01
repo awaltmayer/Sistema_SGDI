@@ -1,0 +1,42 @@
+.sgdi-btn-dots-trigger {
+  border-radius: 0.25rem;
+  padding: 0.25rem;
+  transition: all 0.15s ease;
+  opacity: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.sgdi-btn-dots-trigger:focus,
+.sgdi-btn-dots-trigger[data-state="open"] {
+  opacity: 1;
+}
+
+.group:hover .sgdi-btn-dots-trigger {
+  opacity: 1;
+}
+
+.sgdi-paleta-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.sgdi-cor-circulo-btn {
+  position: relative;
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  transition: transform 0.15s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.sgdi-cor-circulo-btn:hover {
+  transform: scale(1.1);
+}

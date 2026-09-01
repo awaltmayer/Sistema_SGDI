@@ -1,0 +1,121 @@
+.sgdi-barra-ferramentas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  border-bottom-width: 1px;
+  background-color: color-mix(in srgb, var(--color-card) 30%, transparent);
+  padding: 0.625rem 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .sgdi-barra-ferramentas-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.sgdi-ferramentas-linha-superior {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sgdi-ferramentas-filtros-grupo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 0%;
+  min-width: 280px;
+}
+
+@media (min-width: 640px) {
+  .sgdi-ferramentas-filtros-grupo {
+    gap: 0.75rem;
+  }
+}
+
+.sgdi-busca-wrapper {
+  position: relative;
+  flex: 1 1 0%;
+  max-width: 20rem;
+}
+
+.sgdi-busca-icone {
+  position: absolute;
+  left: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--color-muted-foreground);
+  pointer-events: none;
+}
+
+.sgdi-busca-input {
+  height: 2rem;
+  padding-left: 2rem;
+  padding-right: 1.75rem;
+  font-size: 0.75rem;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  border-color: var(--color-input);
+}
+
+.sgdi-busca-limpar-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-muted-foreground);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sgdi-busca-limpar-btn:hover {
+  color: var(--color-foreground);
+}
+
+.sgdi-ordenar-grupo {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.sgdi-minhas-tarefas-label {
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-foreground);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: color 0.15s ease;
+}
+
+.sgdi-minhas-tarefas-label:hover {
+  color: var(--color-primary);
+}
+
+.sgdi-btn-limpar-filtros {
+  height: 2rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sgdi-btn-limpar-filtros:hover {
+  color: var(--color-destructive);
+}

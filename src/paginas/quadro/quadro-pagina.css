@@ -1,0 +1,13 @@
+.sgdi-quadro-pagina-container {
+  display: flex;
+  height: 100dvh;
+  flex-direction: column;
+  background-color: var(--color-background);
+}
+
+.sgdi-quadro-conteudo-area {
+  position: relative;
+  display: flex;
+  flex: 1 1 0%;
+  overflow: hidden;
+}

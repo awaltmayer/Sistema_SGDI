@@ -1,0 +1,85 @@
+.sgdi-lista-quadro-container {
+  display: flex;
+  flex: 1 1 0%;
+  overflow: auto;
+  background-color: var(--color-background);
+}
+
+.sgdi-lista-quadro-vazio {
+  height: 8rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-muted-foreground);
+}
+
+.sgdi-lista-linha-atrasada {
+  background-color: color-mix(in srgb, var(--color-destructive) 5%, transparent);
+}
+
+.sgdi-lista-linha-atrasada:hover {
+  background-color: color-mix(in srgb, var(--color-destructive) 10%, transparent);
+}
+
+.sgdi-lista-titulo-col {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sgdi-lista-btn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-foreground);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.sgdi-lista-btn-status:hover {
+  background-color: var(--color-accent);
+}
+
+.sgdi-lista-responsavel-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.sgdi-lista-responsavel-tag:hover {
+  background-color: var(--color-accent);
+}
+
+.sgdi-lista-vencimento-tag {
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.sgdi-lista-vencimento-tag:hover {
+  background-color: var(--color-accent);
+}
+
+.sgdi-lista-vencimento-atrasado {
+  color: var(--color-destructive);
+  font-weight: 600;
+}
+
+.sgdi-lista-vencimento-hoje {
+  color: rgb(217 119 6);
+  font-weight: 600;
+}
+
+.dark .sgdi-lista-vencimento-hoje {
+  color: rgb(251 191 36);
+}

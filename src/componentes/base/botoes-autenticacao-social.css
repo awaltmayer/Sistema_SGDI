@@ -1,0 +1,71 @@
+.sgdi-container-botoes-sociais {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sgdi-botao-sso {
+  display: flex;
+  height: 2.75rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  border-width: 1px;
+  padding: 0 1rem;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.sgdi-botao-sso:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sgdi-botao-google {
+  border-color: #747775;
+  background-color: #ffffff;
+  color: #1f1f1f;
+}
+
+.sgdi-botao-google:hover:not(:disabled) {
+  background-color: #f7f8f8;
+}
+
+.dark .sgdi-botao-google {
+  border-color: #8e918f;
+  background-color: #131314;
+  color: #e3e3e3;
+}
+
+.dark .sgdi-botao-google:hover:not(:disabled) {
+  background-color: #1e1f20;
+}
+
+.sgdi-botao-apple {
+  border-color: #000000;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.sgdi-botao-apple:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+.dark .sgdi-botao-apple {
+  border-color: #ffffff;
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.dark .sgdi-botao-apple:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.sgdi-erro-sso {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-destructive);
+}

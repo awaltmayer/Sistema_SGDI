@@ -1,0 +1,9 @@
+﻿export const ROTA_PADRAO_AUTENTICADA = "/board";
+export const ROTA_DESCONECTADO = "/auth";
+
+export const DEFAULT_AUTHED_ROUTE = ROTA_PADRAO_AUTENTICADA;
+export const SIGNED_OUT_ROUTE = ROTA_DESCONECTADO;
+
+
+
+

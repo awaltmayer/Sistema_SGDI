@@ -1,0 +1,16 @@
+.sgdi-entrada-novo-cartao-wrapper {
+  padding: 0 0.5rem 0.5rem 0.5rem;
+}
+
+.sgdi-entrada-novo-cartao-dica {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+}
+
+.sgdi-entrada-btn-adicionar {
+  width: 100%;
+  justify-content: flex-start;
+  font-weight: 500;
+  color: var(--color-foreground);
+}

@@ -1,0 +1,10 @@
+.sgdi-autenticacao-pagina {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-muted);
+  opacity: 0.98;
+  padding: 2rem 1rem;
+}

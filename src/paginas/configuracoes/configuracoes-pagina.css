@@ -1,0 +1,30 @@
+.sgdi-configuracoes-pagina-container {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  background-color: var(--color-background);
+}
+
+.sgdi-configuracoes-main {
+  flex: 1 1 0%;
+  padding: 1.5rem;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.sgdi-configuracoes-cabecalho {
+  margin-bottom: 1.5rem;
+}
+
+.sgdi-configuracoes-titulo {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.sgdi-configuracoes-subtitulo {
+  font-size: 0.875rem;
+  color: var(--color-muted-foreground);
+}

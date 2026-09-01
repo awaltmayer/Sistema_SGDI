@@ -1,0 +1,38 @@
+.sgdi-dialogo-demanda-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sgdi-dialogo-demanda-icone {
+  border-radius: 0.5rem;
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  padding: 0.5rem;
+  color: var(--color-primary);
+}
+
+.sgdi-dialogo-demanda-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.sgdi-dialogo-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.sgdi-dialogo-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.sgdi-dialogo-responsavel-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

@@ -1,6 +1,4 @@
 import {
-  IconLayoutKanban,
-  IconList,
   IconArrowsSort,
   IconUser,
   IconSearch,
@@ -13,10 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/componentes/ui/menu-selecao';
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@/componentes/ui/grupo-alternadores';
 import { Checkbox } from '@/componentes/ui/caixa-selecao';
 import { Label } from '@/componentes/ui/rotulo';
 import { Input } from '@/componentes/ui/campo-texto';
@@ -24,36 +18,26 @@ import { Button } from '@/componentes/base/botao';
 import './barra-ferramentas-quadro.css';
 
 export type SortBy = 'manual' | 'priority' | 'due_date' | 'assignee' | 'title' | 'created_at';
-export type ViewMode = 'board' | 'list';
 export type TipoOrdenacao = SortBy;
-export type ModoVisualizacao = ViewMode;
 
 export interface PropsBarraFerramentasQuadro {
   sortBy?: SortBy;
   onSortByChange?: (s: SortBy) => void;
-  view?: ViewMode;
-  onViewChange?: (v: ViewMode) => void;
   onlyMyTasks?: boolean;
   onOnlyMyTasksChange?: (val: boolean) => void;
   searchQuery?: string;
   onSearchQueryChange?: (query: string) => void;
   priorityFilter?: string;
   onPriorityFilterChange?: (p: string) => void;
-  complexityFilter?: string;
-  onComplexityFilterChange?: (c: string) => void;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   aoMudarOrdenacao?: (s: SortBy) => void;
-  visualizacao?: ViewMode;
-  aoMudarVisualizacao?: (v: ViewMode) => void;
   apenasMinhasTarefas?: boolean;
   aoMudarApenasMinhasTarefas?: (val: boolean) => void;
   busca?: string;
   aoMudarBusca?: (query: string) => void;
   filtroPrioridade?: string;
   aoMudarFiltroPrioridade?: (p: string) => void;
-  filtroComplexidade?: string;
-  aoMudarFiltroComplexidade?: (c: string) => void;
 }
 export type BoardToolbarProps = PropsBarraFerramentasQuadro;
 
@@ -70,52 +54,38 @@ export const sortLabels = rotulosOrdenacao;
 export function BarraFerramentasQuadro({
   sortBy,
   onSortByChange,
-  view,
-  onViewChange,
   onlyMyTasks,
   onOnlyMyTasksChange,
   searchQuery = '',
   onSearchQueryChange,
   priorityFilter = 'all',
   onPriorityFilterChange,
-  complexityFilter = 'all',
-  onComplexityFilterChange,
   ordenarPor,
   aoMudarOrdenacao,
-  visualizacao,
-  aoMudarVisualizacao,
   apenasMinhasTarefas,
   aoMudarApenasMinhasTarefas,
   busca,
   aoMudarBusca,
   filtroPrioridade,
   aoMudarFiltroPrioridade,
-  filtroComplexidade,
-  aoMudarFiltroComplexidade,
 }: PropsBarraFerramentasQuadro) {
   const ordenacaoAtual = ordenarPor ?? sortBy ?? 'manual';
-  const mudarOrdenacao = aoMudarOrdenacao ?? onSortByChange ?? (() => {});
-  const modoVisao = visualizacao ?? view ?? 'board';
-  const mudarVisao = aoMudarVisualizacao ?? onViewChange ?? (() => {});
+  const mudarOrdenacao = aoMudarOrdenacao ?? onSortByChange ?? (() => { });
   const minhasTarefas = apenasMinhasTarefas !== undefined ? apenasMinhasTarefas : onlyMyTasks ?? false;
-  const mudarMinhasTarefas = aoMudarApenasMinhasTarefas ?? onOnlyMyTasksChange ?? (() => {});
+  const mudarMinhasTarefas = aoMudarApenasMinhasTarefas ?? onOnlyMyTasksChange ?? (() => { });
   const termoBusca = busca !== undefined ? busca : searchQuery;
   const mudarBusca = aoMudarBusca ?? onSearchQueryChange;
   const prioFiltro = filtroPrioridade !== undefined ? filtroPrioridade : priorityFilter;
   const mudarPrioFiltro = aoMudarFiltroPrioridade ?? onPriorityFilterChange;
-  const compFiltro = filtroComplexidade !== undefined ? filtroComplexidade : complexityFilter;
-  const mudarCompFiltro = aoMudarFiltroComplexidade ?? onComplexityFilterChange;
 
   const temFiltrosAtivos =
     termoBusca.trim().length > 0 ||
     prioFiltro !== 'all' ||
-    compFiltro !== 'all' ||
     minhasTarefas;
 
   const limparFiltros = () => {
     mudarBusca?.('');
     mudarPrioFiltro?.('all');
-    mudarCompFiltro?.('all');
     mudarMinhasTarefas(false);
   };
 
@@ -132,7 +102,7 @@ export function BarraFerramentasQuadro({
               placeholder="Buscar tarefa por título..."
               value={termoBusca}
               onChange={(e) => mudarBusca?.(e.target.value)}
-              className="sgdi-busca-input"
+              className="sgdi-busca-input pl-[35px]"
             />
             {termoBusca && (
               <button
@@ -175,10 +145,10 @@ export function BarraFerramentasQuadro({
                   {prioFiltro === 'all'
                     ? 'Prioridade'
                     : prioFiltro === 'high'
-                    ? '🔴 Alta'
-                    : prioFiltro === 'medium'
-                    ? '🟡 Média'
-                    : '🟢 Baixa'}
+                      ? '🔴 Alta'
+                      : prioFiltro === 'medium'
+                        ? '🟡 Média'
+                        : '🟢 Baixa'}
                 </span>
               </SelectTrigger>
               <SelectContent>
@@ -186,35 +156,6 @@ export function BarraFerramentasQuadro({
                 <SelectItem value="high" className="text-xs text-rose-600 font-medium">🔴 Alta</SelectItem>
                 <SelectItem value="medium" className="text-xs text-amber-600 font-medium">🟡 Média</SelectItem>
                 <SelectItem value="low" className="text-xs text-emerald-600 font-medium">🟢 Baixa</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Filtro por Complexidade */}
-          <div className="sgdi-ordenar-grupo hidden lg:flex">
-            <Select
-              value={compFiltro}
-              onValueChange={(val) => mudarCompFiltro?.(val)}
-            >
-              <SelectTrigger className="h-8 w-[135px] text-xs">
-                <span className="truncate">
-                  {compFiltro === 'all'
-                    ? 'Complexidade'
-                    : compFiltro === 'low'
-                    ? 'Baixa (~2h)'
-                    : compFiltro === 'medium'
-                    ? 'Média (~4h)'
-                    : compFiltro === 'high'
-                    ? 'Alta (~8h)'
-                    : 'Muito Alta (~16h)'}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">Todas as Complexidades</SelectItem>
-                <SelectItem value="low" className="text-xs">Baixa (~2h)</SelectItem>
-                <SelectItem value="medium" className="text-xs">Média (~4h)</SelectItem>
-                <SelectItem value="high" className="text-xs">Alta (~8h)</SelectItem>
-                <SelectItem value="very-high" className="text-xs">Muito Alta (~16h)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -248,23 +189,6 @@ export function BarraFerramentasQuadro({
             </Button>
           )}
         </div>
-
-        {/* Alternador de Visualização (Quadro / Lista) */}
-        <ToggleGroup
-          type="single"
-          value={modoVisao}
-          onValueChange={(v) => v && mudarVisao(v as ViewMode)}
-          size="sm"
-        >
-          <ToggleGroupItem value="board" className="gap-1.5 px-2.5 sm:px-3 font-medium text-xs">
-            <IconLayoutKanban className="size-4 text-primary" />
-            <span className="hidden sm:inline">Quadro</span>
-          </ToggleGroupItem>
-          <ToggleGroupItem value="list" className="gap-1.5 px-2.5 sm:px-3 font-medium text-xs">
-            <IconList className="size-4 text-primary" />
-            <span className="hidden sm:inline">Lista</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
       </div>
     </div>
   );

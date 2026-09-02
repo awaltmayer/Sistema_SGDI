@@ -1,0 +1,17 @@
+.sgdi-coluna-menu-btn {
+  border-radius: 0.25rem;
+  padding: 0.25rem;
+  color: var(--color-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sgdi-coluna-menu-btn:hover,
+.sgdi-coluna-menu-btn[data-state="open"] {
+  background-color: var(--color-accent);
+}

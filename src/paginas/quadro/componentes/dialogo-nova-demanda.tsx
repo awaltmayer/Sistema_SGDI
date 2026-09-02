@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/componentes/ui/menu-selecao';
 import { useDataProvider } from '@/lib/provedor-dados';
-import { columns, complexityConfig, type ColumnId, type Priority, type Complexity } from '@/dados/dados-iniciais';
+import { columns, type ColumnId, type Priority } from '@/dados/dados-iniciais';
 import { toast } from 'sonner';
 import { IconPlus, IconLoader2, IconSparkles } from '@tabler/icons-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/componentes/ui/avatar';
@@ -52,7 +52,6 @@ export function DialogoNovaDemanda({
   const [descricao, setDescricao] = useState('');
   const [coluna, setColuna] = useState<ColumnId>('todo');
   const [prioridade, setPrioridade] = useState<Priority>('medium');
-  const [complexidade, setComplexidade] = useState<Complexity>('medium');
   const [idResponsavel, setIdResponsavel] = useState<string>('none');
   const [dataVencimento, setDataVencimento] = useState('');
 
@@ -61,7 +60,6 @@ export function DialogoNovaDemanda({
     setDescricao('');
     setColuna('todo');
     setPrioridade('medium');
-    setComplexidade('medium');
     setIdResponsavel('none');
     setDataVencimento('');
   };
@@ -81,18 +79,11 @@ export function DialogoNovaDemanda({
       title: tituloLimpo,
       column: coluna,
       nextPosition: proximaPosicao,
+      description: descricao.trim() || '',
+      priority: prioridade,
+      assignee_id: idResponsavel !== 'none' ? idResponsavel : null,
+      due_date: dataVencimento ? new Date(dataVencimento).toISOString() : null,
     });
-
-    // TODO: salvar campos adicionais (descricao, responsavel, vencimento)
-    setTimeout(() => {
-      const correspondente = cartoes.find((c) => c.title === tituloLimpo && c.column === coluna);
-      if (correspondente) {
-        updateCard(correspondente.id, {
-          priority: prioridade,
-          complexity: complexidade,
-        });
-      }
-    }, 400);
 
     toast.success('Demanda criada com sucesso!');
     redefinirFormulario();
@@ -187,24 +178,8 @@ export function DialogoNovaDemanda({
               </div>
             </div>
 
-            {/* Linha 2: Complexidade e Responsável */}
+            {/* Linha 2: Responsável e Prazo Final */}
             <div className="sgdi-dialogo-grid-2">
-              <div className="sgdi-dialogo-campo">
-                <Label className="text-xs font-semibold">Complexidade</Label>
-                <Select value={complexidade} onValueChange={(v) => setComplexidade(v as Complexity)}>
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(complexityConfig) as Complexity[]).map((cKey) => (
-                      <SelectItem key={cKey} value={cKey} className="text-xs">
-                        {complexityConfig[cKey].label} (~{complexityConfig[cKey].estimatedHours}h)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="sgdi-dialogo-campo">
                 <Label className="text-xs font-semibold">Responsável</Label>
                 <Select value={idResponsavel} onValueChange={setIdResponsavel}>
@@ -229,20 +204,19 @@ export function DialogoNovaDemanda({
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            {/* Linha 3: Data de Vencimento */}
-            <div className="sgdi-dialogo-campo">
-              <Label htmlFor="demand-due" className="text-xs font-semibold">
-                Prazo Final / Data de Entrega
-              </Label>
-              <Input
-                id="demand-due"
-                type="date"
-                value={dataVencimento}
-                onChange={(e) => setDataVencimento(e.target.value)}
-                className="h-9 text-xs"
-              />
+              <div className="sgdi-dialogo-campo">
+                <Label htmlFor="demand-due" className="text-xs font-semibold">
+                  Prazo Final / Data de Entrega
+                </Label>
+                <Input
+                  id="demand-due"
+                  type="date"
+                  value={dataVencimento}
+                  onChange={(e) => setDataVencimento(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
             </div>
           </div>
 

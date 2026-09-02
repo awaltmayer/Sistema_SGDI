@@ -32,7 +32,7 @@ export function SeletorComplexidade({
 }: PropsSeletorComplexidade) {
   const [aberto, setAberto] = useState(false);
   const complexidadeAtual = complexidade ?? complexity ?? "medium";
-  const selecionar = aoSelecionar ?? onSelect ?? (() => {});
+  const selecionar = aoSelecionar ?? onSelect ?? (() => { });
   const alinhar = alinhamento ?? align ?? "start";
 
   const atual = configuracaoComplexidade[complexidadeAtual] ?? configuracaoComplexidade.medium;
@@ -58,9 +58,7 @@ export function SeletorComplexidade({
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-          Nível de Complexidade
-        </div>
+
         <div className="space-y-1">
           {complexidades.map((chaveComp) => {
             const conf = configuracaoComplexidade[chaveComp];
@@ -73,9 +71,8 @@ export function SeletorComplexidade({
                   selecionar(chaveComp);
                   setAberto(false);
                 }}
-                className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-accent ${
-                  estaSelecionado ? "bg-accent font-medium text-foreground" : "text-foreground"
-                }`}
+                className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-accent ${estaSelecionado ? "bg-accent font-medium text-foreground" : "text-foreground"
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <span className={`size-2.5 rounded-full ${conf.dot}`} />

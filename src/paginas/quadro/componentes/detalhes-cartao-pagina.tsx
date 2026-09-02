@@ -8,9 +8,6 @@ import {
   IconCalendar,
   IconFileX,
   IconSquareCheck,
-  IconPalette,
-  IconCheck,
-  IconGauge,
   IconTrash,
 } from '@tabler/icons-react';
 import {
@@ -54,15 +51,14 @@ import {
   PopoverTrigger,
 } from '@/componentes/ui/painel-flutuante';
 import { useDataProvider } from '@/lib/provedor-dados';
-import { columns, complexityConfig } from '@/dados/dados-iniciais';
-import type { Priority, ColumnId, TeamMember, Complexity } from '@/dados/dados-iniciais';
+import { columns } from '@/dados/dados-iniciais';
+import type { Priority, ColumnId, TeamMember } from '@/dados/dados-iniciais';
 import { priorityConfig } from './seletor-prioridade';
 import { ColumnIcon } from './icone-coluna';
 import { BoardTopBar } from './barra-superior-quadro';
 import { CardChecklistsContainer } from './lista-verificacao/container-listas-verificacao';
 import { AddChecklistPopover } from './lista-verificacao/seletor-adicionar-lista';
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
-import { CARD_COLORS, getCardColorStyle } from './configuracao-cores-cartao';
 import './detalhes-cartao-pagina.css';
 
 export interface PropsPaginaDetalhesCartao {
@@ -377,32 +373,6 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                 </Select>
               </LinhaCampo>
 
-              <LinhaCampo icon={IconGauge} label="Complexidade">
-                <Select
-                  value={cartao.complexity ?? 'medium'}
-                  onValueChange={(v) =>
-                    updateCard(cartao.id, { complexity: v as Complexity })
-                  }
-                >
-                  <SelectTrigger className="h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(['low', 'medium', 'high', 'very-high'] as Complexity[]).map((c) => (
-                      <SelectItem key={c} value={c}>
-                        <span className="flex items-center gap-2">
-                          <span className={`size-2 rounded-full ${complexityConfig[c]?.dot ?? 'bg-blue-500'}`} />
-                          <span>{complexityConfig[c]?.label ?? c}</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            (~{complexityConfig[c]?.estimatedHours ?? 0}h)
-                          </span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </LinhaCampo>
-
               <LinhaCampo icon={IconUser} label="Responsável">
                 <Select
                   value={cartao.assignee_id ?? 'unassigned'}
@@ -516,72 +486,6 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                     </Button>
                   }
                 />
-              </LinhaCampo>
-
-              <LinhaCampo icon={IconPalette} label="Cor do cartão">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 w-full justify-between font-normal"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="size-3.5 rounded-full border border-border"
-                          style={{
-                            background: getCardColorStyle(cartao.color).swatchBg,
-                          }}
-                        />
-                        <span>{getCardColorStyle(cartao.color).name}</span>
-                      </span>
-                      <span className="text-xs text-muted-foreground">Alterar</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64 p-3" align="start">
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between border-b pb-1.5">
-                        <span className="text-xs font-semibold text-foreground">
-                          Paleta de Cores
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          Contraste automático
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-5 gap-2 pt-1">
-                        {CARD_COLORS.map((col) => {
-                          const estaSelecionado =
-                            (cartao.color ?? "default") === col.id ||
-                            (!cartao.color && col.id === "default");
-                          return (
-                            <button
-                              key={col.id}
-                              type="button"
-                              title={col.name}
-                              aria-label={`Cor ${col.name}`}
-                              onClick={() => {
-                              }}
-                              className={`relative flex size-9 items-center justify-center rounded-full transition-transform hover:scale-110 focus:outline-none ${
-                                estaSelecionado
-                                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                  : "border border-border/80 shadow-xs"
-                              }`}
-                              style={{ background: col.swatchBg }}
-                            >
-                              {estaSelecionado && (
-                                <IconCheck
-                                  className={`size-4 stroke-[3] ${
-                                    col.isDark ? "text-white" : "text-slate-900"
-                                  }`}
-                                />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
               </LinhaCampo>
 
               <Separator />

@@ -29,6 +29,10 @@ export interface EntradaCriarCartao {
   title: string;
   column: ColumnId;
   nextPosition: number;
+  description?: string;
+  priority?: Priority;
+  assignee_id?: string | null;
+  due_date?: string | null;
 }
 export type CreateCardInput = EntradaCriarCartao;
 
@@ -368,13 +372,53 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       });
   }, [user]);
 
+  // Inscrição em Tempo Real (Supabase Realtime) para sincronização instantânea entre múltiplos usuários
+  useEffect(() => {
+    if (!user) return;
+
+    const canalRealtime = supabase
+      .channel("sgdi-mudancas-tempo-real")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "cards" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card"] });
+          queryClient.invalidateQueries({ queryKey: ["dashboard-kpis"] });
+          queryClient.invalidateQueries({ queryKey: ["completion-by-week"] });
+          queryClient.invalidateQueries({ queryKey: ["priority-donut"] });
+          queryClient.invalidateQueries({ queryKey: ["velocity-by-day"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "comments" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["comments"] });
+          queryClient.invalidateQueries({ queryKey: ["comment-counts"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "team_members" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["team_members"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(canalRealtime);
+    };
+  }, [user, queryClient]);
+
   const provider: AppDataProvider = {
 
     // ── Quadro ─────────────────────────────────────────────────────
 
     useCards: () => {
       const { data, isLoading } = useQuery({
-        queryKey: ["cards", user?.id],
+        queryKey: ["cards"],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("cards")
@@ -385,7 +429,6 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
               team_members!cards_assignee_id_fkey (id, full_name, initials, avatar_url)
             `
             )
-            .eq("user_id", user!.id)
             .order("column", { ascending: true })
             .order("position", { ascending: true });
           if (error) throw error;
@@ -419,13 +462,15 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           });
         },
         enabled: !!user,
+        refetchInterval: 3000,
+        refetchOnWindowFocus: true,
       });
       return { data: data ?? [], isLoading };
     },
 
     useCard: (id) => {
       const { data, isLoading } = useQuery({
-        queryKey: ["card", id, user?.id],
+        queryKey: ["card", id],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("cards")
@@ -437,7 +482,6 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             `,
             )
             .eq("id", id)
-            .eq("user_id", user!.id)
             .single();
           if (error) throw error;
           const chkMap = loadSupabaseChecklists();
@@ -468,6 +512,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           };
         },
         enabled: !!user && !!id,
+        refetchInterval: 3000,
+        refetchOnWindowFocus: true,
       });
       return { data: data ?? null, isLoading };
     },
@@ -478,14 +524,14 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           const { data, error } = await supabase
             .from("cards")
             .insert({
-              user_id: user!.id,
+              user_id: user?.id ?? null,
               title: input.title,
               column: input.column,
-              priority: "low",
-              assignee_id: null,
-              due_date: null,
+              priority: input.priority ?? "low",
+              assignee_id: input.assignee_id ?? null,
+              due_date: input.due_date ?? null,
               position: input.nextPosition,
-              description: "",
+              description: input.description ?? "",
             })
             .select()
             .single();
@@ -493,7 +539,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           return data;
         },
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
         },
         onError: () => {
           toast.error("Failed to create card");
@@ -518,21 +564,19 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             .from("cards")
             .update(fields)
             .eq("id", id)
-            .eq("user_id", user!.id)
             .select()
             .single();
           if (error) throw error;
           return data;
         },
         onMutate: async ({ id, fields }) => {
-          await queryClient.cancelQueries({ queryKey: ["cards", user?.id] });
+          await queryClient.cancelQueries({ queryKey: ["cards"] });
           const previous = queryClient.getQueryData<CardWithAssignee[]>([
             "cards",
-            user?.id,
           ]);
           if (previous) {
             queryClient.setQueryData<CardWithAssignee[]>(
-              ["cards", user?.id],
+              ["cards"],
               previous.map((c) => (c.id === id ? { ...c, ...fields } : c)),
             );
           }
@@ -540,13 +584,13 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         },
         onError: (_err, _vars, context) => {
           if (context?.previous) {
-            queryClient.setQueryData(["cards", user?.id], context.previous);
+            queryClient.setQueryData(["cards"], context.previous);
           }
           toast.error("Failed to update card");
         },
         onSettled: (_data, _err, { id }) => {
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", id, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", id] });
         },
       });
       return {
@@ -562,19 +606,17 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           const { error } = await supabase
             .from("cards")
             .delete()
-            .eq("id", id)
-            .eq("user_id", user!.id);
+            .eq("id", id);
           if (error) throw error;
         },
         onMutate: async (id) => {
-          await queryClient.cancelQueries({ queryKey: ["cards", user?.id] });
+          await queryClient.cancelQueries({ queryKey: ["cards"] });
           const previous = queryClient.getQueryData<CardWithAssignee[]>([
             "cards",
-            user?.id,
           ]);
           if (previous) {
             queryClient.setQueryData<CardWithAssignee[]>(
-              ["cards", user?.id],
+              ["cards"],
               previous.filter((c) => c.id !== id),
             );
           }
@@ -582,12 +624,12 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         },
         onError: (_err, _id, context) => {
           if (context?.previous) {
-            queryClient.setQueryData(["cards", user?.id], context.previous);
+            queryClient.setQueryData(["cards"], context.previous);
           }
           toast.error("Failed to delete card");
         },
         onSettled: () => {
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
         },
       });
       return {
@@ -603,22 +645,20 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             const { error } = await supabase
               .from("cards")
               .update({ column: c.column, position: c.position })
-              .eq("id", c.id)
-              .eq("user_id", user!.id);
+              .eq("id", c.id);
             if (error) throw error;
           }
         },
 
         onMutate: async (reordered) => {
-          await queryClient.cancelQueries({ queryKey: ["cards", user?.id] });
+          await queryClient.cancelQueries({ queryKey: ["cards"] });
           const previous = queryClient.getQueryData<CardWithAssignee[]>([
             "cards",
-            user?.id,
           ]);
           if (previous) {
             const reorderMap = new Map(reordered.map((r) => [r.id, r]));
             queryClient.setQueryData<CardWithAssignee[]>(
-              ["cards", user?.id],
+              ["cards"],
               previous.map((c) => {
                 const update = reorderMap.get(c.id);
                 return update
@@ -631,12 +671,12 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         },
         onError: (_err, _vars, context) => {
           if (context?.previous) {
-            queryClient.setQueryData(["cards", user?.id], context.previous);
+            queryClient.setQueryData(["cards"], context.previous);
           }
           toast.error("Failed to reorder cards");
         },
         onSettled: () => {
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
         },
       });
       return {
@@ -665,8 +705,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           chkMap[cardId] = [...current, newChecklist];
           saveSupabaseChecklists(chkMap);
 
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
         },
         isPending: false,
       };
@@ -692,8 +732,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           );
           saveSupabaseChecklists(chkMap);
 
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
         },
         isPending: false,
       };
@@ -713,8 +753,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           chkMap[cardId] = current.filter((chk) => chk.id !== checklistId);
           saveSupabaseChecklists(chkMap);
 
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
         },
         isPending: false,
       };
@@ -750,8 +790,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           });
           saveSupabaseChecklists(chkMap);
 
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
         },
         isPending: false,
       };
@@ -785,8 +825,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           });
           saveSupabaseChecklists(chkMap);
 
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
         },
         isPending: false,
       };
@@ -814,8 +854,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           });
           saveSupabaseChecklists(chkMap);
 
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
         },
         isPending: false,
       };
@@ -847,8 +887,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           });
           saveSupabaseChecklists(chkMap);
 
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
         },
         isPending: false,
       };
@@ -876,8 +916,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             },
           };
           saveSupabaseMetadata(metaMap);
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
           toast.success("Cronômetro iniciado");
         },
         isPending: false,
@@ -919,8 +959,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             },
           };
           saveSupabaseMetadata(metaMap);
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
           toast.info("Cronômetro pausado");
         },
         isPending: false,
@@ -968,8 +1008,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             },
           };
           saveSupabaseMetadata(metaMap);
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
           toast.success("Cronômetro retomado");
         },
         isPending: false,
@@ -1008,8 +1048,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             },
           };
           saveSupabaseMetadata(metaMap);
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
           toast.success("Cronômetro finalizado e tempo registrado");
         },
         isPending: false,
@@ -1032,8 +1072,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             complexity,
           };
           saveSupabaseMetadata(metaMap);
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId, user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
           toast.success(
             `Complexidade alterada para ${seed.complexityConfig[complexity].label}`
           );
@@ -1046,7 +1086,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
 
     useComments: (cardId) => {
       const { data, isLoading } = useQuery({
-        queryKey: ["comments", cardId, user?.id],
+        queryKey: ["comments", cardId],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("comments")
@@ -1058,7 +1098,6 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             `,
             )
             .eq("card_id", cardId)
-            .eq("user_id", user!.id)
             .order("created_at", { ascending: true });
           if (error) throw error;
           return (data ?? []).map((row) => ({
@@ -1070,6 +1109,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           }));
         },
         enabled: !!user && !!cardId,
+        refetchInterval: 3000,
+        refetchOnWindowFocus: true,
       });
       return { data: data ?? [], isLoading };
     },
@@ -1080,7 +1121,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           const { data, error } = await supabase
             .from("comments")
             .insert({
-              user_id: user!.id,
+              user_id: user?.id ?? null,
               card_id: input.cardId,
               author_id: input.authorId,
               body: input.body,
@@ -1095,7 +1136,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             queryKey: ["comments", variables.cardId],
           });
           queryClient.invalidateQueries({
-            queryKey: ["comment-counts", user?.id],
+            queryKey: ["comment-counts"],
           });
         },
         onError: () => {
@@ -1110,12 +1151,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
 
     useCommentCounts: () => {
       const { data, isLoading } = useQuery({
-        queryKey: ["comment-counts", user?.id],
+        queryKey: ["comment-counts"],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("comments")
-            .select("card_id")
-            .eq("user_id", user!.id);
+            .select("card_id");
           if (error) throw error;
           const counts: Record<string, number> = {};
           for (const row of data ?? []) {
@@ -1124,6 +1164,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           return counts;
         },
         enabled: !!user,
+        refetchInterval: 3000,
+        refetchOnWindowFocus: true,
       });
       return { data: data ?? {}, isLoading };
     },
@@ -1132,12 +1174,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
 
     useTeamMembers: () => {
       const { data, isLoading } = useQuery({
-        queryKey: ["team_members", user?.id],
+        queryKey: ["team_members"],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("team_members")
             .select("id, full_name, initials, email, role, status, avatar_url")
-            .eq("user_id", user!.id)
             .neq("status", "removed")
             .order("role", { ascending: false })
             .order("full_name", { ascending: true });
@@ -1145,6 +1186,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           return (data ?? []) as TeamMember[];
         },
         enabled: !!user,
+        refetchInterval: 4000,
+        refetchOnWindowFocus: true,
       });
       return { data: data ?? [], isLoading };
     },
@@ -1155,7 +1198,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           const { data, error } = await supabase
             .from("team_members")
             .insert({
-              user_id: user!.id,
+              user_id: user?.id ?? null,
               email,
               full_name: "",
               initials: "",
@@ -1170,7 +1213,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         },
         onSuccess: (_data, email) => {
           queryClient.invalidateQueries({
-            queryKey: ["team_members", user?.id],
+            queryKey: ["team_members"],
           });
           toast.success(`Invite sent to ${email}`);
         },
@@ -1190,21 +1233,19 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           const { error } = await supabase
             .from("team_members")
             .update({ status: "removed" })
-            .eq("id", memberId)
-            .eq("user_id", user!.id);
+            .eq("id", memberId);
           if (error) throw error;
         },
         onMutate: async (memberId) => {
           await queryClient.cancelQueries({
-            queryKey: ["team_members", user?.id],
+            queryKey: ["team_members"],
           });
           const previous = queryClient.getQueryData<TeamMember[]>([
             "team_members",
-            user?.id,
           ]);
           if (previous) {
             queryClient.setQueryData<TeamMember[]>(
-              ["team_members", user?.id],
+              ["team_members"],
               previous.filter((m) => m.id !== memberId),
             );
           }
@@ -1213,7 +1254,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         onError: (_err, _id, context) => {
           if (context?.previous) {
             queryClient.setQueryData(
-              ["team_members", user?.id],
+              ["team_members"],
               context.previous,
             );
           }
@@ -1221,7 +1262,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         },
         onSettled: () => {
           queryClient.invalidateQueries({
-            queryKey: ["team_members", user?.id],
+            queryKey: ["team_members"],
           });
         },
       });
@@ -1243,13 +1284,12 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           const { error } = await supabase
             .from("team_members")
             .update({ role })
-            .eq("id", memberId)
-            .eq("user_id", user!.id);
+            .eq("id", memberId);
           if (error) throw error;
         },
         onSuccess: () => {
           queryClient.invalidateQueries({
-            queryKey: ["team_members", user?.id],
+            queryKey: ["team_members"],
           });
           toast.success("Role updated");
         },
@@ -1420,11 +1460,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           const { error } = await supabase
             .from("cards")
             .delete()
-            .eq("user_id", user!.id);
+            .neq("id", "");
           if (error) throw error;
         },
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["cards", user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
           queryClient.invalidateQueries({ queryKey: ["comments"] });
           toast.success("Board data deleted");
         },
@@ -1442,12 +1482,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
 
     useDashboardKpis: () => {
       const { data, isLoading } = useQuery({
-        queryKey: ["dashboard-kpis", user?.id],
+        queryKey: ["dashboard-kpis"],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("cards")
-            .select("id, column")
-            .eq("user_id", user!.id);
+            .select("id, column");
           if (error) throw error;
           const rows = data ?? [];
           return {
@@ -1467,12 +1506,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
 
     useCompletionByWeek: () => {
       const { data, isLoading } = useQuery({
-        queryKey: ["completion-by-week", user?.id],
+        queryKey: ["completion-by-week"],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("cards")
             .select("id, column, created_at")
-            .eq("user_id", user!.id)
             .eq("column", "done");
           if (error) throw error;
           const weekMap = new Map<string, number>();
@@ -1491,12 +1529,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
 
     usePriorityDonut: () => {
       const { data, isLoading } = useQuery({
-        queryKey: ["priority-donut", user?.id],
+        queryKey: ["priority-donut"],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("cards")
-            .select("id, priority")
-            .eq("user_id", user!.id);
+            .select("id, priority");
           if (error) throw error;
           const priorityMap = new Map<string, number>();
           for (const card of data ?? []) {
@@ -1517,12 +1554,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
 
     useVelocityByDay: () => {
       const { data, isLoading } = useQuery({
-        queryKey: ["velocity-by-day", user?.id],
+        queryKey: ["velocity-by-day"],
         queryFn: async () => {
           const { data, error } = await supabase
             .from("cards")
             .select("id, created_at")
-            .eq("user_id", user!.id)
             .order("created_at", { ascending: true });
           if (error) throw error;
           const dayMap = new Map<string, number>();

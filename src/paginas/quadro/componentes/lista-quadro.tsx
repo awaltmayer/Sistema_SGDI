@@ -20,9 +20,8 @@ import {
 } from '@/componentes/ui/menu-suspenso';
 import { useDataProvider } from '@/lib/provedor-dados';
 import { columns as columnDefs } from '@/dados/dados-iniciais';
-import type { ColumnId, Priority, Complexity } from '@/dados/dados-iniciais';
+import type { ColumnId, Priority } from '@/dados/dados-iniciais';
 import { PriorityPopover } from './seletor-prioridade';
-import { ComplexityPopover } from './seletor-complexidade';
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
 import { AssigneePopover } from './seletor-responsavel';
 import { DueDatePopover } from './seletor-data-vencimento';
@@ -39,14 +38,12 @@ export interface PropsListaQuadro {
   onlyMyTasks?: boolean;
   searchQuery?: string;
   priorityFilter?: string;
-  complexityFilter?: string;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   caminhoBase?: string;
   apenasMinhasTarefas?: boolean;
   busca?: string;
   filtroPrioridade?: string;
-  filtroComplexidade?: string;
 }
 export type BoardListProps = PropsListaQuadro;
 
@@ -56,21 +53,36 @@ export function ListaQuadro({
   onlyMyTasks: _onlyMyTasks,
   searchQuery: _searchQuery = '',
   priorityFilter: _priorityFilter = 'all',
-  complexityFilter: _complexityFilter = 'all',
   ordenarPor,
   caminhoBase,
+  apenasMinhasTarefas,
+  busca,
+  filtroPrioridade,
 }: PropsListaQuadro) {
   const ordenar = ordenarPor ?? sortBy ?? 'manual';
   const rotaBase = caminhoBase ?? basePath ?? '';
 
-  const { useCards, useCurrentUser: _useCurrentUser, useUpdateCard, useDeleteCard: _useDeleteCard } = useDataProvider();
-  const { data: cartoes = [] } = useCards();
-  const { mutate: updateCard } = useUpdateCard();
+  const { data: usuarioAtual } = _useCurrentUser();
+  const termoBusca = (busca ?? _searchQuery ?? '').trim().toLowerCase();
+  const prioridadeFiltro = filtroPrioridade ?? _priorityFilter ?? 'all';
+  const filtrarMinhas = apenasMinhasTarefas !== undefined ? apenasMinhasTarefas : _onlyMyTasks ?? false;
 
-  // TODO: filtros
   const cartoesFiltrados = useMemo(() => {
-    return cartoes ?? [];
-  }, [cartoes]);
+    return (cartoes ?? []).filter((c) => {
+      if (termoBusca && !c.title.toLowerCase().includes(termoBusca)) {
+        return false;
+      }
+      if (prioridadeFiltro !== 'all' && c.priority !== prioridadeFiltro) {
+        return false;
+      }
+      if (filtrarMinhas && usuarioAtual) {
+        if (c.assignee?.id !== usuarioAtual.id && c.assignee_id !== usuarioAtual.id) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [cartoes, termoBusca, prioridadeFiltro, filtrarMinhas, usuarioAtual]);
 
   const ordenados = useMemo(() => sortCards(cartoesFiltrados ?? [], ordenar), [cartoesFiltrados, ordenar]);
 
@@ -88,7 +100,6 @@ export function ListaQuadro({
             <TableHead className="w-[30%]">Título</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Prioridade</TableHead>
-            <TableHead>Complexidade</TableHead>
             <TableHead>Tempo</TableHead>
             <TableHead>Responsável</TableHead>
             <TableHead>Vencimento</TableHead>
@@ -98,7 +109,7 @@ export function ListaQuadro({
         <TableBody>
           {ordenados.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="sgdi-lista-quadro-vazio">
+              <TableCell colSpan={7} className="sgdi-lista-quadro-vazio">
                 Nenhuma tarefa encontrada com os filtros selecionados.
               </TableCell>
             </TableRow>
@@ -173,12 +184,6 @@ export function ListaQuadro({
                     />
                   </TableCell>
                   <TableCell>
-                    <ComplexityPopover
-                      complexity={card.complexity ?? 'medium'}
-                      onSelect={(c: Complexity) => updateCard(card.id, { complexity: c })}
-                    />
-                  </TableCell>
-                  <TableCell>
                     <CardTimerWidget
                       cardId={card.id}
                       cardTitle={card.title}
@@ -190,7 +195,7 @@ export function ListaQuadro({
                     {/* TODO: atribuir responsavel */}
                     <AssigneePopover
                       assignee={card.assignee ?? null}
-                      onSelect={(_id) => {}}
+                      onSelect={(_id) => { }}
                     >
                       <span className="sgdi-lista-responsavel-tag">
                         {card.assignee ? (
@@ -215,7 +220,7 @@ export function ListaQuadro({
                     {/* TODO: data de vencimento */}
                     <DueDatePopover
                       dueDate={card.due_date}
-                      onSelect={(_d) => {}}
+                      onSelect={(_d) => { }}
                     >
                       <span
                         className={cn(
@@ -245,7 +250,7 @@ export function ListaQuadro({
                         {/* TODO: deletar card */}
                         <DropdownMenuItem
                           className="font-medium text-destructive focus:text-destructive"
-                          onSelect={() => {}}
+                          onSelect={() => { }}
                         >
                           Excluir cartão
                         </DropdownMenuItem>

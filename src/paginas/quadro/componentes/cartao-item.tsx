@@ -16,11 +16,10 @@ import { useDataProvider, type CardWithAssignee } from '@/lib/provedor-dados';
 import { PriorityPopover, priorityConfig } from './seletor-prioridade';
 import { AssigneePopover } from './seletor-responsavel';
 import { DueDatePopover } from './seletor-data-vencimento';
-import { ComplexityPopover } from './seletor-complexidade';
+
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
 import { CardQuickMenu } from './menu-rapido-cartao';
-import { getCardColorStyle } from './configuracao-cores-cartao';
-import type { Priority, Complexity } from '@/dados/dados-iniciais';
+import type { Priority } from '@/dados/dados-iniciais';
 import { cn } from '@/lib/utilitarios';
 import './cartao-item.css';
 
@@ -60,8 +59,8 @@ export function CartaoItem({
 
   const contagem = contagemComentarios ?? commentCount ?? 0;
   const estaColapsado = colapsado ?? collapsed ?? false;
-  const alternarColapso = aoAlternarColapso ?? onToggleCollapse ?? (() => {});
-  const abrirDetalhes = aoAbrirDetalhes ?? onOpenDetail ?? (() => {});
+  const alternarColapso = aoAlternarColapso ?? onToggleCollapse ?? (() => { });
+  const abrirDetalhes = aoAbrirDetalhes ?? onOpenDetail ?? (() => { });
   const desabilitarArrasto = arrastoDesabilitado ?? dragDisabled ?? false;
 
   const { useUpdateCard } = useDataProvider();
@@ -83,16 +82,13 @@ export function CartaoItem({
 
   const selecionarPrioridade = (prioridade: Priority) =>
     updateCard(itemCartao.id, { priority: prioridade });
-  const selecionarComplexidade = (complexidade: Complexity) =>
-    updateCard(itemCartao.id, { complexity: complexidade });
+
 
   // TODO: atribuicao de usuario
-  const selecionarResponsavel = (_idResponsavel: string | null) => {};
+  const selecionarResponsavel = (_idResponsavel: string | null) => { };
 
   // TODO: data de vencimento
-  const selecionarDataVencimento = (_data: string | null) => {};
-
-  const estiloCor = getCardColorStyle(itemCartao.color);
+  const selecionarDataVencimento = (_data: string | null) => { };
 
   // Checagem de prazo de vencimento
   const diferencaDias = itemCartao.due_date ? differenceInDays(parseISO(itemCartao.due_date), new Date()) : null;
@@ -114,10 +110,7 @@ export function CartaoItem({
       {...attributes}
       {...(desabilitarArrasto ? {} : listeners)}
       className={cn(
-        'group sgdi-cartao-tile',
-        estiloCor.bgClass,
-        estiloCor.borderClass,
-        estiloCor.hoverClass,
+        'group sgdi-cartao-tile bg-card border-border hover:border-primary/40',
         estaAtrasado && 'sgdi-cartao-atrasado',
         !desabilitarArrasto && 'cursor-grab active:cursor-grabbing',
         isDragging && 'opacity-40'
@@ -140,14 +133,14 @@ export function CartaoItem({
       )}
 
       <div className="sgdi-cartao-cabecalho">
-        <p className={cn('flex-1 text-sm font-semibold line-clamp-2', estiloCor.titleClass)}>
+        <p className="flex-1 text-sm font-semibold line-clamp-2 text-foreground">
           {itemCartao.title}
         </p>
         <div className="sgdi-cartao-acoes-cabecalho">
           <CardQuickMenu
             card={itemCartao}
             onOpenDetail={() => abrirDetalhes(itemCartao)}
-            triggerClassName={estiloCor.actionButtonClass}
+            triggerClassName="text-muted-foreground hover:text-foreground hover:bg-accent"
           />
           <button
             type="button"
@@ -156,7 +149,7 @@ export function CartaoItem({
               e.stopPropagation();
               alternarColapso();
             }}
-            className={cn('sgdi-cartao-btn-collapse', estiloCor.actionButtonClass)}
+            className="sgdi-cartao-btn-collapse text-muted-foreground hover:text-foreground hover:bg-accent"
           >
             {estaColapsado ? (
               <IconChevronRight className="size-4" />
@@ -170,17 +163,13 @@ export function CartaoItem({
       {estaColapsado && (
         <div className="sgdi-cartao-linha-colapsada">
           <div className="flex items-center gap-2">
-            <ComplexityPopover
-              complexity={itemCartao.complexity}
-              onSelect={selecionarComplexidade}
-            />
             {temListas && (
               <span
                 className={cn(
                   'flex items-center gap-1 tabular-nums rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors',
                   listaCompleta
                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                    : estiloCor.badgeClass
+                    : 'bg-muted text-muted-foreground'
                 )}
               >
                 <IconSquareCheck className="size-3.5" />
@@ -201,26 +190,19 @@ export function CartaoItem({
         <>
           <div className="sgdi-cartao-grid-campos">
             <div>
-              <span className={cn('sgdi-cartao-campo-rotulo', estiloCor.subtextClass)}>Prioridade</span>
+              <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Prioridade</span>
               <PriorityPopover
                 priority={itemCartao.priority}
                 onSelect={selecionarPrioridade}
               />
             </div>
             <div>
-              <span className={cn('sgdi-cartao-campo-rotulo', estiloCor.subtextClass)}>Complexidade</span>
-              <ComplexityPopover
-                complexity={itemCartao.complexity}
-                onSelect={selecionarComplexidade}
-              />
-            </div>
-            <div>
-              <span className={cn('sgdi-cartao-campo-rotulo', estiloCor.subtextClass)}>Responsável</span>
+              <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Responsável</span>
               <AssigneePopover
                 assignee={itemCartao.assignee ?? null}
                 onSelect={selecionarResponsavel}
               >
-                <span className={cn('flex items-center gap-1.5 rounded px-1 py-0.5', estiloCor.actionButtonClass)}>
+                <span className="flex items-center gap-1.5 rounded px-1 py-0.5 text-muted-foreground hover:text-foreground hover:bg-accent">
                   {itemCartao.assignee ? (
                     <>
                       <Avatar className="size-4">
@@ -231,16 +213,16 @@ export function CartaoItem({
                           {itemCartao.assignee.initials}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="truncate">{itemCartao.assignee.full_name}</span>
+                      <span className="truncate text-foreground">{itemCartao.assignee.full_name}</span>
                     </>
                   ) : (
-                    <span className={estiloCor.subtextClass}>Não atribuído</span>
+                    <span className="text-muted-foreground">Não atribuído</span>
                   )}
                 </span>
               </AssigneePopover>
             </div>
             <div>
-              <span className={cn('sgdi-cartao-campo-rotulo', estiloCor.subtextClass)}>Vencimento</span>
+              <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Vencimento</span>
               <DueDatePopover
                 dueDate={itemCartao.due_date}
                 onSelect={selecionarDataVencimento}
@@ -250,22 +232,19 @@ export function CartaoItem({
                   estaAtrasado
                     ? 'text-rose-600 font-semibold dark:text-rose-400'
                     : venceHoje
-                    ? 'text-amber-600 font-semibold dark:text-amber-400'
-                    : estiloCor.actionButtonClass
+                      ? 'text-amber-600 font-semibold dark:text-amber-400'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}>
                   <IconCalendar className="size-3.5" />
                   {itemCartao.due_date
                     ? format(parseISO(itemCartao.due_date), 'dd/MM/yyyy')
-                    : <span className={estiloCor.subtextClass}>Sem data</span>}
+                    : <span className="text-muted-foreground">Sem data</span>}
                 </span>
               </DueDatePopover>
             </div>
           </div>
 
-          <div className={cn(
-            'sgdi-cartao-rodape',
-            estiloCor.isDark ? 'border-white/20 text-white/80' : 'border-border text-muted-foreground'
-          )}>
+          <div className="sgdi-cartao-rodape border-border text-muted-foreground">
             <div className="sgdi-cartao-rodape-esquerda">
               <span className="flex items-center gap-1.5 tabular-nums">
                 <IconMessage className="size-4" />
@@ -277,7 +256,7 @@ export function CartaoItem({
                     'flex items-center gap-1 tabular-nums rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors',
                     listaCompleta
                       ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                      : estiloCor.badgeClass
+                      : 'bg-muted text-muted-foreground'
                   )}
                   title={`${itensListaConcluidos} de ${totalItensLista} itens concluídos`}
                 >

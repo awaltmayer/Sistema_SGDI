@@ -18,9 +18,10 @@
   flex: 1 1 0%;
   flex-direction: column;
   gap: 0;
-  background-color: var(--color-muted);
   padding: 0;
   box-shadow: none;
+  border: none;
+  opacity: 1;
 }
 
 .sgdi-coluna-header {
@@ -42,25 +43,25 @@
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.25rem;
-  color: var(--color-foreground);
   margin: 0;
 }
 
 .sgdi-coluna-collapse-btn {
   border-radius: 0.25rem;
   padding: 0.25rem;
-  color: var(--color-primary);
+  color: var(--color-muted-foreground);
   background: transparent;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .sgdi-coluna-collapse-btn:hover {
   background-color: var(--color-accent);
+  color: var(--color-foreground);
 }
 
 .sgdi-coluna-cards-area {

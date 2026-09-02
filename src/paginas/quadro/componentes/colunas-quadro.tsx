@@ -35,8 +35,11 @@ import type { ColumnId } from '@/dados/dados-iniciais';
 import { CardTile } from './cartao-item';
 import { AddCardInput } from './entrada-novo-cartao';
 import { ColumnIcon } from './icone-coluna';
+import { MenuRapidoColuna } from './menu-rapido-coluna';
+import { getColumnColorStyle } from './configuracao-cores-coluna';
 import type { SortBy } from './barra-ferramentas-quadro';
 import { sortCards } from './ordenar-cartoes';
+import { cn } from '@/lib/utilitarios';
 import './colunas-quadro.css';
 
 export interface PropsColunasQuadro {
@@ -45,16 +48,30 @@ export interface PropsColunasQuadro {
   onlyMyTasks?: boolean;
   searchQuery?: string;
   priorityFilter?: string;
-  complexityFilter?: string;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   caminhoBase?: string;
   apenasMinhasTarefas?: boolean;
   busca?: string;
   filtroPrioridade?: string;
-  filtroComplexidade?: string;
 }
 export type BoardColumnsProps = PropsColunasQuadro;
+
+const LOCAL_STORAGE_CHAVE_CORES_COLUNAS = 'sgdi-cores-colunas-v1';
+
+function carregarCoresColunasSalvas(): Record<string, string> {
+  try {
+    const salvo = localStorage.getItem(LOCAL_STORAGE_CHAVE_CORES_COLUNAS);
+    if (salvo) return JSON.parse(salvo);
+  } catch {}
+  return {};
+}
+
+function salvarCoresColunas(cores: Record<string, string>) {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_CHAVE_CORES_COLUNAS, JSON.stringify(cores));
+  } catch {}
+}
 
 export function ColunasQuadro({
   sortBy,
@@ -62,9 +79,11 @@ export function ColunasQuadro({
   onlyMyTasks: _onlyMyTasks,
   searchQuery: _searchQuery = '',
   priorityFilter: _priorityFilter = 'all',
-  complexityFilter: _complexityFilter = 'all',
   ordenarPor,
   caminhoBase,
+  apenasMinhasTarefas,
+  busca,
+  filtroPrioridade,
 }: PropsColunasQuadro) {
   const ordenar = ordenarPor ?? sortBy ?? 'manual';
   const rotaBase = caminhoBase ?? basePath ?? '';
@@ -79,14 +98,40 @@ export function ColunasQuadro({
   const [cartoesLocais, setCartoesLocais] = useState<CardWithAssignee[] | null>(null);
   const [idsColapsados, setIdsColapsados] = useState<Set<string>>(new Set());
   const [adicionandoEmAFazer, setAdicionandoEmAFazer] = useState(false);
+  const [coresColunas, setCoresColunas] = useState<Record<string, string>>(() => carregarCoresColunasSalvas());
+
+  const lidarComMudancaCorColuna = (colunaId: string, corId: string) => {
+    setCoresColunas((prev) => {
+      const atualizado = { ...prev, [colunaId]: corId };
+      salvarCoresColunas(atualizado);
+      return atualizado;
+    });
+  };
 
   const cartoes = cartoesLocais ?? todosCartoes ?? [];
   const arrastoDesabilitado = ordenar !== 'manual';
 
-  // TODO: filtros
+  const { data: usuarioAtual } = _useCurrentUser();
+  const termoBusca = (busca ?? _searchQuery ?? '').trim().toLowerCase();
+  const prioridadeFiltro = filtroPrioridade ?? _priorityFilter ?? 'all';
+  const filtrarMinhas = apenasMinhasTarefas !== undefined ? apenasMinhasTarefas : _onlyMyTasks ?? false;
+
   const cartoesFiltrados = useMemo(() => {
-    return cartoes ?? [];
-  }, [cartoes]);
+    return (cartoes ?? []).filter((c) => {
+      if (termoBusca && !c.title.toLowerCase().includes(termoBusca)) {
+        return false;
+      }
+      if (prioridadeFiltro !== 'all' && c.priority !== prioridadeFiltro) {
+        return false;
+      }
+      if (filtrarMinhas && usuarioAtual) {
+        if (c.assignee?.id !== usuarioAtual.id && c.assignee_id !== usuarioAtual.id) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [cartoes, termoBusca, prioridadeFiltro, filtrarMinhas, usuarioAtual]);
 
   const cartoesPorColuna = useMemo(() => {
     const agrupados: Record<ColumnId, CardWithAssignee[]> = {
@@ -241,6 +286,8 @@ export function ColunasQuadro({
                 dragDisabled={arrastoDesabilitado}
                 forceAdd={col.id === 'todo' ? adicionandoEmAFazer : false}
                 onForceAddDone={() => setAdicionandoEmAFazer(false)}
+                colorId={coresColunas[col.id]}
+                onSelectColor={(cor) => lidarComMudancaCorColuna(col.id, cor)}
               />
             );
           })}
@@ -276,6 +323,8 @@ interface PropsColunaQuadro {
   dragDisabled: boolean;
   forceAdd?: boolean;
   onForceAddDone?: () => void;
+  colorId?: string;
+  onSelectColor?: (colorId: string) => void;
 }
 
 function ColunaQuadro({
@@ -292,41 +341,54 @@ function ColunaQuadro({
   dragDisabled,
   forceAdd,
   onForceAddDone,
+  colorId,
+  onSelectColor,
 }: PropsColunaQuadro) {
   const { setNodeRef } = useDroppable({ id: columnId });
   const idsCartoes = (cards ?? []).map((c) => c.id);
+  const estiloCor = getColumnColorStyle(colorId);
 
   return (
     <div className="sgdi-coluna-container">
-      <Card className="sgdi-coluna-card">
+      <Card className={cn("sgdi-coluna-card transition-all duration-200", estiloCor.bgClass, estiloCor.borderClass)}>
         <div className="sgdi-coluna-header">
           <div className="sgdi-coluna-header-esquerda">
-            <ColumnIcon name={iconName} className="size-4 text-foreground" />
-            <h3 className="sgdi-coluna-titulo">
+            <ColumnIcon name={iconName} className={cn("size-4", estiloCor.iconClass)} />
+            <h3 className={cn("sgdi-coluna-titulo", estiloCor.headerClass)}>
               {label}
             </h3>
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className={cn("text-xs font-medium", estiloCor.badgeClass)}>
               {(cards ?? []).length}
             </Badge>
           </div>
-          <button
-            type="button"
-            aria-label={allCollapsed ? 'Expand all cards' : 'Collapse all cards'}
-            onClick={onToggleCollapseAll}
-            className="sgdi-coluna-collapse-btn"
-          >
-            {allCollapsed ? (
-              <IconChevronRight className="size-4" />
-            ) : (
-              <IconChevronDown className="size-4" />
-            )}
-          </button>
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              aria-label={allCollapsed ? 'Expand all cards' : 'Collapse all cards'}
+              onClick={onToggleCollapseAll}
+              className={cn("sgdi-coluna-collapse-btn", estiloCor.btnClass)}
+            >
+              {allCollapsed ? (
+                <IconChevronRight className="size-4" />
+              ) : (
+                <IconChevronDown className="size-4" />
+              )}
+            </button>
+            <MenuRapidoColuna
+              columnId={columnId}
+              columnLabel={label}
+              currentColor={colorId}
+              onSelectColor={(cor) => onSelectColor?.(cor)}
+              triggerClassName={estiloCor.btnClass}
+            />
+          </div>
         </div>
         <AddCardInput
           column={columnId}
           cardCount={(cards ?? []).length}
           forceAdd={forceAdd}
           onForceAddDone={onForceAddDone}
+          buttonClassName={estiloCor.addBtnClass}
         />
         <SortableContext
           id={columnId}

@@ -4,6 +4,7 @@ import { Input } from '@/componentes/ui/campo-texto';
 import { Button } from '@/componentes/base/botao';
 import { useDataProvider } from '@/lib/provedor-dados';
 import type { ColumnId } from '@/dados/dados-iniciais';
+import { cn } from '@/lib/utilitarios';
 import './entrada-novo-cartao.css';
 
 export interface PropsEntradaNovoCartao {
@@ -11,6 +12,7 @@ export interface PropsEntradaNovoCartao {
   cardCount?: number;
   forceAdd?: boolean;
   onForceAddDone?: () => void;
+  buttonClassName?: string;
   // Aliases compatibilidade
   coluna?: ColumnId;
   contagemCartoes?: number;
@@ -24,6 +26,7 @@ export function EntradaNovoCartao({
   cardCount,
   forceAdd,
   onForceAddDone,
+  buttonClassName,
   coluna,
   contagemCartoes,
   forcarAdicao,
@@ -99,10 +102,10 @@ export function EntradaNovoCartao({
       <Button
         variant="ghost"
         size="sm"
-        className="sgdi-entrada-btn-adicionar"
+        className={cn("sgdi-entrada-btn-adicionar", buttonClassName)}
         onClick={() => setEstaEditando(true)}
       >
-        <IconPlus className="size-4 text-primary" />
+        <IconPlus className="size-4" />
         Adicionar cartão
       </Button>
     </div>

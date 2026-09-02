@@ -56,7 +56,7 @@
 
 .sgdi-busca-input {
   height: 2rem;
-  padding-left: 2rem;
+  padding-left: 42px;
   padding-right: 1.75rem;
   font-size: 0.75rem;
   background-color: var(--color-background);

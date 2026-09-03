@@ -13,21 +13,21 @@ import {
 } from '@/componentes/ui/comando';
 import { Badge } from '@/componentes/base/distintivo';
 import type { BadgeColor } from '@/componentes/base/distintivo';
-import type { Priority } from '@/dados/dados-iniciais';
+import type { Prioridade } from '@/dados/dados-iniciais';
 
-export const priorityConfig: Record<Priority, { label: string; color: BadgeColor; dot: string }> = {
+export const configuracaoPrioridades: Record<Prioridade, { label: string; color: BadgeColor; dot: string }> = {
   high: { label: 'Alta', color: 'red', dot: 'bg-red-500' },
   medium: { label: 'Média', color: 'amber', dot: 'bg-amber-500' },
   low: { label: 'Baixa', color: 'gray', dot: 'bg-gray-400' },
 };
-export const configuracaoPrioridades = priorityConfig;
+export const priorityConfig = configuracaoPrioridades;
 
 export interface PropsSeletorPrioridade {
-  prioridade?: Priority;
-  aoSelecionar?: (prioridade: Priority) => void;
+  prioridade?: Prioridade;
+  aoSelecionar?: (prioridade: Prioridade) => void;
   // Aliases compatibilidade
-  priority?: Priority;
-  onSelect?: (priority: Priority) => void;
+  priority?: Prioridade;
+  onSelect?: (priority: Prioridade) => void;
 }
 export type PriorityPopoverProps = PropsSeletorPrioridade;
 

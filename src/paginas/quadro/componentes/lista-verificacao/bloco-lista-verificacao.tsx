@@ -24,15 +24,15 @@ import {
 } from "@/componentes/ui/dialogo-alerta";
 import { ChecklistItemRow } from "./item-lista-verificacao-linha";
 import { useDataProvider } from "@/lib/provedor-dados";
-import type { Checklist } from "@/dados/dados-iniciais";
+import type { ListaVerificacao } from "@/dados/dados-iniciais";
 import { toast } from "sonner";
 import "./bloco-lista-verificacao.css";
 
 export interface PropsBlocoListaVerificacao {
   cardId: string;
-  listaVerificacao?: Checklist;
+  listaVerificacao?: ListaVerificacao;
   // alias compatibilidade
-  checklist?: Checklist;
+  checklist?: ListaVerificacao;
 }
 export type ChecklistBlockProps = PropsBlocoListaVerificacao;
 

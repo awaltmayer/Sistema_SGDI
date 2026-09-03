@@ -3,18 +3,18 @@ import { IconPlus } from '@tabler/icons-react';
 import { Input } from '@/componentes/ui/campo-texto';
 import { Button } from '@/componentes/base/botao';
 import { useDataProvider } from '@/lib/provedor-dados';
-import type { ColumnId } from '@/dados/dados-iniciais';
+import type { IdColuna } from '@/dados/dados-iniciais';
 import { cn } from '@/lib/utilitarios';
 import './entrada-novo-cartao.css';
 
 export interface PropsEntradaNovoCartao {
-  column?: ColumnId;
+  column?: IdColuna;
   cardCount?: number;
   forceAdd?: boolean;
   onForceAddDone?: () => void;
   buttonClassName?: string;
   // Aliases compatibilidade
-  coluna?: ColumnId;
+  coluna?: IdColuna;
   contagemCartoes?: number;
   forcarAdicao?: boolean;
   aoConcluirForcarAdicao?: () => void;

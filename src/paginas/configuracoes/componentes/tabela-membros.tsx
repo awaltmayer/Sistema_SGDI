@@ -20,9 +20,9 @@ import {
 } from '@/componentes/ui/menu-selecao';
 import { useDataProvider } from '@/lib/provedor-dados';
 import { RemoveMemberDialog } from './dialogo-remover-membro';
-import type { TeamMember } from '@/dados/dados-iniciais';
+import type { MembroEquipe } from '@/dados/dados-iniciais';
 
-function EstadoVazioMembros({ proprietario }: { proprietario: TeamMember }) {
+function EstadoVazioMembros({ proprietario }: { proprietario: MembroEquipe }) {
   const focarConvite = () => {
     const input = document.getElementById('invite-email');
     if (input) {
@@ -119,7 +119,7 @@ export function TabelaMembros() {
   const { data: membros } = useTeamMembers();
   const { mutate: atualizarFuncao } = useUpdateMemberRole();
   const { mutate: revogarConvite } = useRemoveTeamMember();
-  const [membroParaRemover, setMembroParaRemover] = useState<TeamMember | null>(null);
+  const [membroParaRemover, setMembroParaRemover] = useState<MembroEquipe | null>(null);
 
   const ativos = membros.filter((m) => m.status === 'active');
   const pendentes = membros.filter((m) => m.status === 'pending');

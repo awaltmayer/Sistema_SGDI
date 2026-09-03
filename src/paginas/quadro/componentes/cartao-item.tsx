@@ -13,55 +13,55 @@ import {
 import { Card } from '@/componentes/ui/cartao';
 import { Avatar, AvatarFallback, AvatarImage } from '@/componentes/ui/avatar';
 import { useDataProvider, type CardWithAssignee } from '@/lib/provedor-dados';
-import { PriorityPopover, priorityConfig } from './seletor-prioridade';
-import { AssigneePopover } from './seletor-responsavel';
-import { DueDatePopover } from './seletor-data-vencimento';
+import { SeletorPrioridade } from './seletor-prioridade';
+import { SeletorResponsavel } from './seletor-responsavel';
+import { SeletorDataVencimento } from './seletor-data-vencimento';
 
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
 import { CardQuickMenu } from './menu-rapido-cartao';
-import type { Priority } from '@/dados/dados-iniciais';
+import type { Prioridade } from '@/dados/dados-iniciais';
 import { cn } from '@/lib/utilitarios';
 import './cartao-item.css';
 
 export interface PropsCartaoItem {
+  cartao: CardWithAssignee;
+  contagemComentarios?: number;
+  colapsado?: boolean;
+  aoAlternarColapso?: () => void;
+  aoAbrirDetalhes?: (cartao: CardWithAssignee) => void;
+  arrastoDesabilitado?: boolean;
+  // Aliases compatibilidade
   card?: CardWithAssignee;
   commentCount?: number;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   onOpenDetail?: (card: CardWithAssignee) => void;
   dragDisabled?: boolean;
-  // Aliases compatibilidade
-  cartao?: CardWithAssignee;
-  contagemComentarios?: number;
-  colapsado?: boolean;
-  aoAlternarColapso?: () => void;
-  aoAbrirDetalhes?: (cartao: CardWithAssignee) => void;
-  arrastoDesabilitado?: boolean;
 }
 export type CardTileProps = PropsCartaoItem;
 
 export function CartaoItem({
+  cartao,
+  contagemComentarios = 0,
+  colapsado = false,
+  aoAlternarColapso,
+  aoAbrirDetalhes,
+  arrastoDesabilitado = false,
   card,
   commentCount,
   collapsed,
   onToggleCollapse,
   onOpenDetail,
   dragDisabled,
-  cartao,
-  contagemComentarios,
-  colapsado,
-  aoAlternarColapso,
-  aoAbrirDetalhes,
-  arrastoDesabilitado,
 }: PropsCartaoItem) {
-  const itemCartao = cartao ?? card;
+  const itemCartao = cartao ?? card!;
   if (!itemCartao) return null;
 
   const contagem = contagemComentarios ?? commentCount ?? 0;
   const estaColapsado = colapsado ?? collapsed ?? false;
-  const alternarColapso = aoAlternarColapso ?? onToggleCollapse ?? (() => { });
-  const abrirDetalhes = aoAbrirDetalhes ?? onOpenDetail ?? (() => { });
-  const desabilitarArrasto = arrastoDesabilitado ?? dragDisabled ?? false;
+  const alternarColapso = aoAlternarColapso ?? onToggleCollapse ?? (() => {});
+  const abrirDetalhes = aoAbrirDetalhes ?? onOpenDetail ?? (() => {});
+  const arrastoBloqueado = arrastoDesabilitado ?? dragDisabled ?? false;
 
   const { useUpdateCard } = useDataProvider();
   const { mutate: updateCard } = useUpdateCard();
@@ -73,22 +73,21 @@ export function CartaoItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: itemCartao.id, disabled: desabilitarArrasto });
+  } = useSortable({ id: itemCartao.id, disabled: arrastoBloqueado });
 
-  const style = {
+  const estilo = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
-  const selecionarPrioridade = (prioridade: Priority) =>
+  const selecionarPrioridade = (prioridade: Prioridade) =>
     updateCard(itemCartao.id, { priority: prioridade });
 
+  const selecionarResponsavel = (idResponsavel: string | null) =>
+    updateCard(itemCartao.id, { assignee_id: idResponsavel });
 
-  // TODO: atribuicao de usuario
-  const selecionarResponsavel = (_idResponsavel: string | null) => { };
-
-  // TODO: data de vencimento
-  const selecionarDataVencimento = (_data: string | null) => { };
+  const selecionarDataVencimento = (data: string | null) =>
+    updateCard(itemCartao.id, { due_date: data });
 
   // Checagem de prazo de vencimento
   const diferencaDias = itemCartao.due_date ? differenceInDays(parseISO(itemCartao.due_date), new Date()) : null;
@@ -106,13 +105,13 @@ export function CartaoItem({
   return (
     <Card
       ref={setNodeRef}
-      style={style}
+      style={estilo}
       {...attributes}
-      {...(desabilitarArrasto ? {} : listeners)}
+      {...(arrastoBloqueado ? {} : listeners)}
       className={cn(
         'group sgdi-cartao-tile bg-card border-border hover:border-primary/40',
         estaAtrasado && 'sgdi-cartao-atrasado',
-        !desabilitarArrasto && 'cursor-grab active:cursor-grabbing',
+        !arrastoBloqueado && 'cursor-grab active:cursor-grabbing',
         isDragging && 'opacity-40'
       )}
       onClick={() => abrirDetalhes(itemCartao)}
@@ -191,16 +190,16 @@ export function CartaoItem({
           <div className="sgdi-cartao-grid-campos">
             <div>
               <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Prioridade</span>
-              <PriorityPopover
-                priority={itemCartao.priority}
-                onSelect={selecionarPrioridade}
+              <SeletorPrioridade
+                prioridade={itemCartao.priority}
+                aoSelecionar={selecionarPrioridade}
               />
             </div>
             <div>
               <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Responsável</span>
-              <AssigneePopover
-                assignee={itemCartao.assignee ?? null}
-                onSelect={selecionarResponsavel}
+              <SeletorResponsavel
+                responsavel={itemCartao.assignee ?? null}
+                aoSelecionar={selecionarResponsavel}
               >
                 <span className="flex items-center gap-1.5 rounded px-1 py-0.5 text-muted-foreground hover:text-foreground hover:bg-accent">
                   {itemCartao.assignee ? (
@@ -219,13 +218,13 @@ export function CartaoItem({
                     <span className="text-muted-foreground">Não atribuído</span>
                   )}
                 </span>
-              </AssigneePopover>
+              </SeletorResponsavel>
             </div>
             <div>
               <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Vencimento</span>
-              <DueDatePopover
-                dueDate={itemCartao.due_date}
-                onSelect={selecionarDataVencimento}
+              <SeletorDataVencimento
+                dataVencimento={itemCartao.due_date}
+                aoSelecionar={selecionarDataVencimento}
               >
                 <span className={cn(
                   'flex items-center gap-1.5 rounded px-1 py-0.5',
@@ -240,7 +239,7 @@ export function CartaoItem({
                     ? format(parseISO(itemCartao.due_date), 'dd/MM/yyyy')
                     : <span className="text-muted-foreground">Sem data</span>}
                 </span>
-              </DueDatePopover>
+              </SeletorDataVencimento>
             </div>
           </div>
 

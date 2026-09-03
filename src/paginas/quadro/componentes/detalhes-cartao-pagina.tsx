@@ -51,8 +51,8 @@ import {
   PopoverTrigger,
 } from '@/componentes/ui/painel-flutuante';
 import { useDataProvider } from '@/lib/provedor-dados';
-import { columns } from '@/dados/dados-iniciais';
-import type { Priority, ColumnId, TeamMember } from '@/dados/dados-iniciais';
+import { colunas } from '@/dados/dados-iniciais';
+import type { Prioridade, IdColuna, MembroEquipe } from '@/dados/dados-iniciais';
 import { priorityConfig } from './seletor-prioridade';
 import { ColumnIcon } from './icone-coluna';
 import { BoardTopBar } from './barra-superior-quadro';
@@ -90,8 +90,8 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
   const [textoComentario, setTextoComentario] = useState('');
   const refInicial = useRef<string | null>(null);
 
-  const lidarComMudancaStatus = (novaCol: ColumnId) => {
-    if (!cartao || novaCol === cartao.column) return;
+  const lidarComMudancaStatus = (novaCol: IdColuna) => {
+    if (!cartao) return;
     updateCard(cartao.id, { column: novaCol });
   };
 
@@ -183,7 +183,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
   };
 
   const responsavel = cartao.assignee ?? encontrarMembro(membros, cartao.assignee_id);
-  const colunaAtual = columns.find((c) => c.id === cartao.column);
+  const colunaAtual = colunas.find((c) => c.id === cartao.column);
   const eu =
     (usuarioAtual && membros.find((m) => m.email === usuarioAtual.email)) ||
     membros.find((m) => m.role === 'owner') ||
@@ -326,26 +326,22 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
               <LinhaCampo icon={IconColumns} label="Status">
                 <Select
-                  value={cartao.column ?? 'todo'}
-                  onValueChange={(v) => lidarComMudancaStatus(v as ColumnId)}
+                  value={cartao.column}
+                  onValueChange={(v) => lidarComMudancaStatus(v as IdColuna)}
                 >
-                  <SelectTrigger className="h-8">
-                    <SelectValue>
-                      {colunaAtual && (
-                        <span className="flex items-center gap-2">
-                          <ColumnIcon name={colunaAtual.icon} className="size-4 text-foreground" />
-                          {colunaAtual.label}
-                        </span>
-                      )}
-                    </SelectValue>
+                  <SelectTrigger className="w-full text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <ColumnIcon name={colunaAtual?.icon ?? 'circle-dashed'} className="size-3.5" />
+                      <SelectValue />
+                    </div>
                   </SelectTrigger>
                   <SelectContent>
-                    {columns.map((col) => (
-                      <SelectItem key={col.id} value={col.id}>
-                        <span className="flex items-center gap-2">
-                          <ColumnIcon name={col.icon} className="size-4 text-foreground" />
+                    {colunas.map((col) => (
+                      <SelectItem key={col.id} value={col.id} className="text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <ColumnIcon name={col.icon} className="size-3.5" />
                           {col.label}
-                        </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -354,14 +350,14 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
               <LinhaCampo icon={IconFlag} label="Prioridade">
                 <Select
-                  value={cartao.priority ?? 'medium'}
-                  onValueChange={(v) => updateCard(cartao.id, { priority: v as Priority })}
+                  value={cartao.priority}
+                  onValueChange={(v) => updateCard(cartao.id, { priority: v as Prioridade })}
                 >
-                  <SelectTrigger className="h-8">
+                  <SelectTrigger className="w-full text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(['high', 'medium', 'low'] as Priority[]).map((p) => (
+                    {(['high', 'medium', 'low'] as Prioridade[]).map((p) => (
                       <SelectItem key={p} value={p}>
                         <span className="flex items-center gap-2">
                           <span className={`size-2 rounded-full ${priorityConfig[p]?.dot ?? 'bg-amber-500'}`} />
@@ -542,9 +538,8 @@ function LinhaCampo({ icon: Icon, label, children }: PropsLinhaCampo) {
   );
 }
 
-function encontrarMembro(members: TeamMember[], id: string | null) {
-  if (!id) return undefined;
-  return members.find((m) => m.id === id);
+function encontrarMembro(members: MembroEquipe[], id: string | null) {
+  return members.find((m) => m.id === id) ?? null;
 }
 
 export const CardDetailPage = PaginaDetalhesCartao;

@@ -4,16 +4,16 @@ import {
   IconCircleCheck,
   type Icon as TablerIcon,
 } from '@tabler/icons-react';
-import type { ColumnIcon as ColumnIconKey } from '@/dados/dados-iniciais';
+import type { IconeColuna as ChaveIconeColuna } from '@/dados/dados-iniciais';
 
-const map: Record<ColumnIconKey, TablerIcon> = {
+const map: Record<ChaveIconeColuna, TablerIcon> = {
   'circle-dashed': IconCircleDashed,
   'progress': IconProgress,
   'circle-check': IconCircleCheck,
 };
 
 interface ColumnIconProps {
-  name: ColumnIconKey;
+  name: ChaveIconeColuna;
   className?: string;
 }
 

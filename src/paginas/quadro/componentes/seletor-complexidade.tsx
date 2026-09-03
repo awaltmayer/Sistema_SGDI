@@ -5,21 +5,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/componentes/ui/painel-flutuante";
-import { configuracaoComplexidade, complexityConfig, type Complexity } from "@/dados/dados-iniciais";
+import { configuracaoComplexidade, type Complexidade } from "@/dados/dados-iniciais";
 
 export interface PropsSeletorComplexidade {
-  complexidade?: Complexity;
-  aoSelecionar?: (complexidade: Complexity) => void;
+  complexidade?: Complexidade;
+  aoSelecionar?: (complexidade: Complexidade) => void;
   children?: React.ReactNode;
   alinhamento?: "start" | "center" | "end";
   // Aliases compatibilidade
-  complexity?: Complexity;
-  onSelect?: (complexity: Complexity) => void;
+  complexity?: Complexidade;
+  onSelect?: (complexity: Complexidade) => void;
   align?: "start" | "center" | "end";
 }
 export type ComplexityPopoverProps = PropsSeletorComplexidade;
 
-const complexidades: Complexity[] = ["low", "medium", "high", "very-high"];
+const complexidades: Complexidade[] = ["low", "medium", "high", "very-high"];
 
 export function SeletorComplexidade({
   complexidade,

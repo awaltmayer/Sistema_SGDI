@@ -9,17 +9,17 @@ import { Input } from "@/componentes/ui/campo-texto";
 import { Label } from "@/componentes/ui/rotulo";
 import { IconSquareCheck, IconPlus, IconAlertCircle } from "@tabler/icons-react";
 import { useDataProvider } from "@/lib/provedor-dados";
-import type { Checklist } from "@/dados/dados-iniciais";
+import type { ListaVerificacao } from "@/dados/dados-iniciais";
 import { toast } from "sonner";
 import "./seletor-adicionar-lista.css";
 
 export interface PropsSeletorAdicionarLista {
   cardId: string;
-  listasVerificacao?: Checklist[];
+  listasVerificacao?: ListaVerificacao[];
   gatilho?: React.ReactNode;
   alinhamento?: "start" | "center" | "end";
   // Aliases compatibilidade
-  checklists?: Checklist[];
+  checklists?: ListaVerificacao[];
   trigger?: React.ReactNode;
   align?: "start" | "center" | "end";
 }

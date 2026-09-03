@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/componentes/ui/menu-selecao';
 import { useDataProvider } from '@/lib/provedor-dados';
-import { columns, type ColumnId, type Priority } from '@/dados/dados-iniciais';
+import { colunas, type IdColuna, type Prioridade } from '@/dados/dados-iniciais';
 import { toast } from 'sonner';
 import { IconPlus, IconLoader2, IconSparkles } from '@tabler/icons-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/componentes/ui/avatar';
@@ -50,8 +50,8 @@ export function DialogoNovaDemanda({
 
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [coluna, setColuna] = useState<ColumnId>('todo');
-  const [prioridade, setPrioridade] = useState<Priority>('medium');
+  const [coluna, setColuna] = useState<IdColuna>('todo');
+  const [prioridade, setPrioridade] = useState<Prioridade>('medium');
   const [idResponsavel, setIdResponsavel] = useState<string>('none');
   const [dataVencimento, setDataVencimento] = useState('');
 
@@ -143,12 +143,12 @@ export function DialogoNovaDemanda({
             <div className="sgdi-dialogo-grid-2">
               <div className="sgdi-dialogo-campo">
                 <Label className="text-xs font-semibold">Coluna Inicial</Label>
-                <Select value={coluna} onValueChange={(v) => setColuna(v as ColumnId)}>
+                <Select value={coluna} onValueChange={(v) => setColuna(v as IdColuna)}>
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {columns.map((col) => (
+                    {colunas.map((col) => (
                       <SelectItem key={col.id} value={col.id} className="text-xs">
                         {col.label}
                       </SelectItem>
@@ -159,7 +159,7 @@ export function DialogoNovaDemanda({
 
               <div className="sgdi-dialogo-campo">
                 <Label className="text-xs font-semibold">Prioridade</Label>
-                <Select value={prioridade} onValueChange={(v) => setPrioridade(v as Priority)}>
+                <Select value={prioridade} onValueChange={(v) => setPrioridade(v as Prioridade)}>
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>

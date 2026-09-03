@@ -12,16 +12,30 @@ import { useAuth } from "@/lib/autenticacao/provedor-autenticacao";
 import { toast } from "sonner";
 import * as seed from "@/dados/dados-iniciais";
 import type {
-  Card,
-  Comment,
-  TeamMember,
-  Profile,
-  Priority,
-  ColumnId,
-  Theme,
-  Complexity,
-  TaskTimeTracker,
+  CartaoTarefa,
+  Comentario,
+  MembroEquipe,
+  PerfilUsuario,
+  Prioridade,
+  IdColuna,
+  Tema,
+  Complexidade,
+  RastreadorTempoTarefa,
+  ListaVerificacao,
+  ItemListaVerificacao,
 } from "@/dados/dados-iniciais";
+
+export type Card = CartaoTarefa;
+export type Comment = Comentario;
+export type TeamMember = MembroEquipe;
+export type Profile = PerfilUsuario;
+export type Priority = Prioridade;
+export type ColumnId = IdColuna;
+export type Theme = Tema;
+export type Complexity = Complexidade;
+export type TaskTimeTracker = RastreadorTempoTarefa;
+export type Checklist = ListaVerificacao;
+export type ChecklistItem = ItemListaVerificacao;
 
 // ── Tipos de entrada ──────────────────────────────────────────────────
 
@@ -405,6 +419,14 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           queryClient.invalidateQueries({ queryKey: ["team_members"] });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["profile"] });
+          queryClient.invalidateQueries({ queryKey: ["team_members"] });
+        }
+      )
       .subscribe();
 
     return () => {
@@ -462,7 +484,6 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           });
         },
         enabled: !!user,
-        refetchInterval: 3000,
         refetchOnWindowFocus: true,
       });
       return { data: data ?? [], isLoading };
@@ -512,7 +533,6 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           };
         },
         enabled: !!user && !!id,
-        refetchInterval: 3000,
         refetchOnWindowFocus: true,
       });
       return { data: data ?? null, isLoading };
@@ -1109,7 +1129,6 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           }));
         },
         enabled: !!user && !!cardId,
-        refetchInterval: 3000,
         refetchOnWindowFocus: true,
       });
       return { data: data ?? [], isLoading };
@@ -1164,7 +1183,6 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           return counts;
         },
         enabled: !!user,
-        refetchInterval: 3000,
         refetchOnWindowFocus: true,
       });
       return { data: data ?? {}, isLoading };
@@ -1186,7 +1204,6 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           return (data ?? []) as TeamMember[];
         },
         enabled: !!user,
-        refetchInterval: 4000,
         refetchOnWindowFocus: true,
       });
       return { data: data ?? [], isLoading };

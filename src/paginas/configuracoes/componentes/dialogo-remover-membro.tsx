@@ -9,13 +9,13 @@ import {
   AlertDialogTitle,
 } from '@/componentes/ui/dialogo-alerta';
 import { useDataProvider } from '@/lib/provedor-dados';
-import type { TeamMember } from '@/dados/dados-iniciais';
+import type { MembroEquipe } from '@/dados/dados-iniciais';
 
 interface PropsDialogoRemoverMembro {
-  membro: TeamMember | null;
+  membro: MembroEquipe | null;
   aoFechar: () => void;
   // alias compatibilidade
-  member?: TeamMember | null;
+  member?: MembroEquipe | null;
   onClose?: () => void;
 }
 

@@ -12,19 +12,19 @@ import {
   IconHistory,
   IconCalendar,
 } from "@tabler/icons-react";
-import type { TaskTimeTracker } from "@/dados/dados-iniciais";
+import type { RastreadorTempoTarefa } from "@/dados/dados-iniciais";
 import "./dialogo-registro-tempo.css";
 
 export interface PropsDialogoRegistroTempo {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   cardTitle: string;
-  timeTracker?: TaskTimeTracker;
+  timeTracker?: RastreadorTempoTarefa;
   // Aliases compatibilidade
   aberto?: boolean;
   aoMudarAberto?: (aberto: boolean) => void;
   tituloCartao?: string;
-  rastreadorTempo?: TaskTimeTracker;
+  rastreadorTempo?: RastreadorTempoTarefa;
 }
 export type TimeLogDialogProps = PropsDialogoRegistroTempo;
 

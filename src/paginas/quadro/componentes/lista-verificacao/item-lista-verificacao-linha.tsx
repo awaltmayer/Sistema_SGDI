@@ -3,13 +3,13 @@ import { IconTrash, IconPencil, IconCheck, IconX } from "@tabler/icons-react";
 import { Checkbox } from "@/componentes/ui/caixa-selecao";
 import { Button } from "@/componentes/base/botao";
 import { Input } from "@/componentes/ui/campo-texto";
-import type { ChecklistItem } from "@/dados/dados-iniciais";
+import type { ItemListaVerificacao } from "@/dados/dados-iniciais";
 import "./item-lista-verificacao-linha.css";
 
 export interface PropsItemListaVerificacaoLinha {
   cardId: string;
   checklistId: string;
-  item: ChecklistItem;
+  item: ItemListaVerificacao;
   aoAlternar?: (itemId: string) => void;
   aoAtualizarTitulo?: (itemId: string, titulo: string) => void;
   aoExcluir?: (itemId: string) => void;

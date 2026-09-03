@@ -1,16 +1,16 @@
 import { useDataProvider } from '@/lib/provedor-dados';
 import { Tabs, TabsList, TabsTrigger } from '@/componentes/ui/abas';
-import type { Theme } from '@/dados/dados-iniciais';
+import type { Tema } from '@/dados/dados-iniciais';
 
 export function AlternadorTema() {
   const { useCurrentUser, useUpdateTheme } = useDataProvider();
   const { data: usuarioAtual } = useCurrentUser();
   const { mutate: atualizarTema } = useUpdateTheme();
 
-  const temaAtual: Theme = usuarioAtual?.theme ?? 'system';
+  const temaAtual: Tema = usuarioAtual?.theme ?? 'system';
 
   const lidarComMudanca = (valor: string) => {
-    atualizarTema(valor as Theme);
+    atualizarTema(valor as Tema);
   };
 
   return (

@@ -19,8 +19,8 @@ import {
   DropdownMenuTrigger,
 } from '@/componentes/ui/menu-suspenso';
 import { useDataProvider } from '@/lib/provedor-dados';
-import { columns as columnDefs } from '@/dados/dados-iniciais';
-import type { ColumnId, Priority } from '@/dados/dados-iniciais';
+import { colunas as columnDefs } from '@/dados/dados-iniciais';
+import type { IdColuna, Prioridade } from '@/dados/dados-iniciais';
 import { PriorityPopover } from './seletor-prioridade';
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
 import { AssigneePopover } from './seletor-responsavel';

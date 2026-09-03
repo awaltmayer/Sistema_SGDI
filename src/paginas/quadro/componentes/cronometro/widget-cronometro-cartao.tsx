@@ -16,18 +16,18 @@ import {
   formatSecondsToTime,
   formatSecondsToShort,
 } from "./dialogo-registro-tempo";
-import type { TaskTimeTracker } from "@/dados/dados-iniciais";
+import type { RastreadorTempoTarefa } from "@/dados/dados-iniciais";
 import { cn } from "@/lib/utilitarios";
 import "./widget-cronometro-cartao.css";
 
 export interface PropsWidgetCronometroCartao {
   cardId: string;
   cardTitle: string;
-  timeTracker?: TaskTimeTracker;
+  timeTracker?: RastreadorTempoTarefa;
   compact?: boolean;
   // Aliases compatibilidade
   tituloCartao?: string;
-  rastreadorTempo?: TaskTimeTracker;
+  rastreadorTempo?: RastreadorTempoTarefa;
   compacto?: boolean;
 }
 export type CardTimerWidgetProps = PropsWidgetCronometroCartao;

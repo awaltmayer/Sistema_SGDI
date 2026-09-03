@@ -79,7 +79,7 @@ export function SeletorResponsavel({
                 <CommandItem
                   key={member.id}
                   onSelect={() => {
-                    // TODO: selecionar responsavel
+                    selecionar(member.id);
                     setAberto(false);
                   }}
                 >
@@ -99,7 +99,7 @@ export function SeletorResponsavel({
             <CommandGroup>
               <CommandItem
                 onSelect={() => {
-                  // TODO: desatribuir responsavel
+                  selecionar(null);
                   setAberto(false);
                 }}
               >

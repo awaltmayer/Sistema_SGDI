@@ -30,6 +30,7 @@ export function SeletorDataVencimento({
   const [aberto, setAberto] = useState(false);
   const dataAtual = dataVencimento !== undefined ? dataVencimento : dueDate ?? null;
   const dataSelecionada = dataAtual ? parseISO(dataAtual) : undefined;
+  const acaoSelecionar = aoSelecionar ?? onSelect;
 
   const formatarDataVencimento = (strData: string) => {
     return format(parseISO(strData), 'MMM d');
@@ -65,8 +66,11 @@ export function SeletorDataVencimento({
           <Calendar
             mode="single"
             selected={dataSelecionada}
-            onSelect={(_date) => {
-              // TODO: selecionar data
+            onSelect={(date) => {
+              if (date) {
+                const isoDate = date.toISOString().split('T')[0];
+                acaoSelecionar?.(isoDate);
+              }
               setAberto(false);
             }}
             defaultMonth={dataSelecionada}
@@ -77,7 +81,7 @@ export function SeletorDataVencimento({
               size="sm"
               className="w-full text-muted-foreground"
               onClick={() => {
-                // TODO: limpar data
+                acaoSelecionar?.(null);
                 setAberto(false);
               }}
             >

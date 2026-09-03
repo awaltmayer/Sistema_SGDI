@@ -24,7 +24,7 @@ import { useDataProvider } from '@/lib/provedor-dados';
 import { useAuth } from '@/lib/autenticacao/provedor-autenticacao';
 import { cn } from '@/lib/utilitarios';
 import { DialogoNovaDemanda } from './dialogo-nova-demanda';
-import type { Theme } from '@/dados/dados-iniciais';
+import type { Tema } from '@/dados/dados-iniciais';
 import './barra-superior-quadro.css';
 
 const itensNavegacao = [
@@ -44,7 +44,7 @@ export function BarraSuperiorQuadro() {
   const [novaDemandaAberta, setNovaDemandaAberta] = useState(false);
   const linkConfiguracoes = '/settings';
 
-  const temaAtual: Theme = usuarioAtual?.theme ?? 'system';
+  const temaAtual: Tema = usuarioAtual?.theme ?? 'system';
 
   const lidarComDesconectar = async () => {
     await signOut();
@@ -52,7 +52,7 @@ export function BarraSuperiorQuadro() {
     window.location.href = '/auth';
   };
 
-  const lidarComMudancaTema = (t: Theme) => {
+  const lidarComMudancaTema = (t: Tema) => {
     updateTheme(t);
   };
 

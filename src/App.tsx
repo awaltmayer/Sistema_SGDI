@@ -1,69 +1,85 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from '@/lib/autenticacao/provedor-autenticacao';
 import { AppData } from '@/lib/provedor-dados';
-import PaginaNaoEncontrada from '@/paginas/nao-encontrado';
-import PaginaAutenticacao from '@/paginas/autenticacao';
-import RetornoOAuth from '@/paginas/autenticacao/retorno-oauth';
-import PaginaQuadro from '@/paginas/quadro';
-import { DetalhesCartaoPagina } from '@/paginas/quadro/componentes/detalhes-cartao-pagina';
-import PaginaConfiguracoes from '@/paginas/configuracoes';
+
+// Lazy loading das páginas para divisão de bundle (Code-Splitting)
+const PaginaAutenticacao = lazy(() => import('@/paginas/autenticacao'));
+const RetornoOAuth = lazy(() => import('@/paginas/autenticacao/retorno-oauth'));
+const PaginaQuadro = lazy(() => import('@/paginas/quadro'));
+const DetalhesCartaoPagina = lazy(() =>
+  import('@/paginas/quadro/componentes/detalhes-cartao-pagina').then((m) => ({
+    default: m.PaginaDetalhesCartao,
+  }))
+);
+const PaginaConfiguracoes = lazy(() => import('@/paginas/configuracoes'));
+const PaginaNaoEncontrada = lazy(() => import('@/paginas/nao-encontrado'));
 
 const clienteConsulta = new QueryClient();
+
+function CarregandoFallback() {
+  return (
+    <div className="flex h-dvh items-center justify-center bg-background">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  );
+}
 
 function RedirecionamentoInicial() {
   const { usuario, carregando } = useAuth();
   if (carregando) {
-    return (
-      <div className="flex h-dvh items-center justify-center bg-background">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
+    return <CarregandoFallback />;
   }
   return usuario ? <Navigate to="/board" replace /> : <Navigate to="/auth" replace />;
+}
+
+// Layout que mantém o Provedor de Dados (WebSocket Realtime) persistentemente montado entre as rotas protegidas
+function LayoutAutenticado() {
+  const { usuario, carregando } = useAuth();
+
+  if (carregando) {
+    return <CarregandoFallback />;
+  }
+
+  if (!usuario) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return (
+    <AppData>
+      <Outlet />
+    </AppData>
+  );
 }
 
 const App = () => (
   <QueryClientProvider client={clienteConsulta}>
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          {/* Rota inicial: Redireciona para /auth na primeira vez se não estiver logado */}
-          <Route path="/" element={<RedirecionamentoInicial />} />
-          <Route path="/auth" element={<PaginaAutenticacao />} />
-          
-          {/* Retorno OAuth gerenciado para Google */}
-          <Route path="/auth/callback" element={<RetornoOAuth />} />
+        <Suspense fallback={<CarregandoFallback />}>
+          <Routes>
+            {/* Rota inicial */}
+            <Route path="/" element={<RedirecionamentoInicial />} />
+            <Route path="/auth" element={<PaginaAutenticacao />} />
+            
+            {/* Retorno OAuth gerenciado para Google */}
+            <Route path="/auth/callback" element={<RetornoOAuth />} />
 
-          {/* Rotas principais do app */}
-          <Route
-            path="/board"
-            element={
-              <AppData>
-                <PaginaQuadro />
-              </AppData>
-            }
-          />
-          <Route
-            path="/board/:cardId"
-            element={
-              <AppData>
-                <DetalhesCartaoPagina caminhoBase="/board" basePath="/board" />
-              </AppData>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <AppData>
-                <PaginaConfiguracoes />
-              </AppData>
-            }
-          />
+            {/* Rotas protegidas envolvidas no Provedor de Dados persistente */}
+            <Route element={<LayoutAutenticado />}>
+              <Route path="/board" element={<PaginaQuadro />} />
+              <Route
+                path="/board/:cardId"
+                element={<DetalhesCartaoPagina caminhoBase="/board" basePath="/board" />}
+              />
+              <Route path="/settings" element={<PaginaConfiguracoes />} />
+            </Route>
 
-          <Route path="*" element={<PaginaNaoEncontrada />} />
-        </Routes>
+            <Route path="*" element={<PaginaNaoEncontrada />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
       <Toaster />
     </AuthProvider>

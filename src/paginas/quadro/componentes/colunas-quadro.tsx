@@ -30,9 +30,9 @@ import {
   type CardWithAssignee,
   type ReorderInput,
 } from '@/lib/provedor-dados';
-import { columns as columnDefs } from '@/dados/dados-iniciais';
-import type { ColumnId } from '@/dados/dados-iniciais';
-import { CardTile } from './cartao-item';
+import { colunas as columnDefs } from '@/dados/dados-iniciais';
+import type { IdColuna } from '@/dados/dados-iniciais';
+import { CartaoItem, CardTile } from './cartao-item';
 import { AddCardInput } from './entrada-novo-cartao';
 import { ColumnIcon } from './icone-coluna';
 import { MenuRapidoColuna } from './menu-rapido-coluna';
@@ -134,13 +134,13 @@ export function ColunasQuadro({
   }, [cartoes, termoBusca, prioridadeFiltro, filtrarMinhas, usuarioAtual]);
 
   const cartoesPorColuna = useMemo(() => {
-    const agrupados: Record<ColumnId, CardWithAssignee[]> = {
+    const agrupados: Record<IdColuna, CardWithAssignee[]> = {
       'todo': [],
       'in-progress': [],
       'done': [],
     };
-    for (const item of (cartoesFiltrados ?? [])) agrupados[item.column]?.push(item);
-    for (const col of Object.keys(agrupados) as ColumnId[]) {
+    for (const item of (cartoesFiltrados ?? [])) agrupados[item.column as IdColuna]?.push(item);
+    for (const col of Object.keys(agrupados) as IdColuna[]) {
       agrupados[col] = sortCards(agrupados[col] ?? [], ordenar);
     }
     return agrupados;
@@ -158,7 +158,7 @@ export function ColunasQuadro({
     });
   };
 
-  const alternarColapsoTodos = (columnId: ColumnId) => {
+  const alternarColapsoTodos = (columnId: IdColuna) => {
     const ids = cartoesPorColuna[columnId].map((c) => c.id);
     setIdsColapsados((prev) => {
       const proximo = new Set(prev);
@@ -185,7 +185,7 @@ export function ColunasQuadro({
     let colSobre = encontrarColunaDoLocal(cartoesLocais, overId);
     if (!colAtiva) return;
     if (!colSobre) {
-      if (columnDefs.some((c) => c.id === overId)) colSobre = overId as ColumnId;
+      if (columnDefs.some((c) => c.id === overId)) colSobre = overId as IdColuna;
       else return;
     }
     if (colAtiva === colSobre) return;
@@ -204,7 +204,7 @@ export function ColunasQuadro({
     const activeId = active.id as string;
     const overId = over.id as string;
     let colSobre = encontrarColunaDoLocal(cartoesLocais, overId);
-    if (!colSobre && columnDefs.some((c) => c.id === overId)) colSobre = overId as ColumnId;
+    if (!colSobre && columnDefs.some((c) => c.id === overId)) colSobre = overId as IdColuna;
     if (!colSobre) {
       setCartoesLocais(null);
       return;
@@ -226,7 +226,7 @@ export function ColunasQuadro({
         ...reordenados.map((c, i) => ({ ...c, position: i })),
       ];
     } else {
-      for (const colId of ['todo', 'in-progress', 'done'] as ColumnId[]) {
+      for (const colId of ['todo', 'in-progress', 'done'] as IdColuna[]) {
         const ordenados = cartoesFinais
           .filter((c) => c.column === colId)
           .sort((a, b) => a.position - b.position);
@@ -310,7 +310,7 @@ export function ColunasQuadro({
 }
 
 interface PropsColunaQuadro {
-  columnId: ColumnId;
+  columnId: IdColuna;
   label: string;
   iconName: 'circle-dashed' | 'progress' | 'circle-check';
   cards?: CardWithAssignee[];
@@ -397,14 +397,14 @@ function ColunaQuadro({
         >
           <div ref={setNodeRef} className="sgdi-coluna-cards-area">
             {(cards ?? []).map((card) => (
-              <CardTile
+              <CartaoItem
                 key={card.id}
-                card={card}
-                commentCount={commentCounts?.[card.id] ?? 0}
-                collapsed={collapsedIds.has(card.id)}
-                onToggleCollapse={() => onToggleCollapse(card.id)}
-                onOpenDetail={onOpenDetail}
-                dragDisabled={dragDisabled}
+                cartao={card}
+                contagemComentarios={commentCounts?.[card.id] ?? 0}
+                colapsado={collapsedIds.has(card.id)}
+                aoAlternarColapso={() => onToggleCollapse(card.id)}
+                aoAbrirDetalhes={onOpenDetail}
+                arrastoDesabilitado={dragDisabled}
               />
             ))}
           </div>
@@ -439,12 +439,9 @@ function EstadoVazio({ onAddFirst }: { onAddFirst: () => void }) {
   );
 }
 
-function encontrarColunaDoLocal(cards: CardWithAssignee[], id: string): ColumnId | null {
-  const item = cards.find((c) => c.id === id);
-  return item?.column ?? null;
+function encontrarColunaDoLocal(cards: CardWithAssignee[], id: string): IdColuna | null {
+  const card = cards.find((c) => c.id === id);
+  return card ? (card.column as IdColuna) : null;
 }
 
 export const BoardColumns = ColunasQuadro;
-
-
-

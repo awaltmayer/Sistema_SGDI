@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -7,171 +7,169 @@
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
-      cards: {
+      cartoes: {
         Row: {
-          assignee_id: string | null
-          column: string
-          created_at: string
-          description: string
-          due_date: string | null
           id: string
-          position: number
-          priority: string
-          title: string
-          user_id: string
+          id_usuario: string
+          titulo: string
+          descricao: string
+          coluna: string
+          prioridade: string
+          data_vencimento: string | null
+          posicao: number
+          id_responsavel: string | null
+          criado_em: string
         }
         Insert: {
-          assignee_id?: string | null
-          column?: string
-          created_at?: string
-          description?: string
-          due_date?: string | null
           id?: string
-          position?: number
-          priority?: string
-          title: string
-          user_id?: string
+          id_usuario?: string
+          titulo: string
+          descricao?: string
+          coluna?: string
+          prioridade?: string
+          data_vencimento?: string | null
+          posicao?: number
+          id_responsavel?: string | null
+          criado_em?: string
         }
         Update: {
-          assignee_id?: string | null
-          column?: string
-          created_at?: string
-          description?: string
-          due_date?: string | null
           id?: string
-          position?: number
-          priority?: string
-          title?: string
-          user_id?: string
+          id_usuario?: string
+          titulo?: string
+          descricao?: string
+          coluna?: string
+          prioridade?: string
+          data_vencimento?: string | null
+          posicao?: number
+          id_responsavel?: string | null
+          criado_em?: string
         }
         Relationships: [
           {
-            foreignKeyName: "cards_assignee_id_fkey"
-            columns: ["assignee_id"]
+            foreignKeyName: "cartoes_id_responsavel_fkey"
+            columns: ["id_responsavel"]
             isOneToOne: false
-            referencedRelation: "team_members"
+            referencedRelation: "membros_equipe"
             referencedColumns: ["id"]
           },
         ]
       }
-      comments: {
+      comentarios: {
         Row: {
-          author_id: string
-          body: string
-          card_id: string
-          created_at: string
           id: string
-          user_id: string
+          id_usuario: string
+          id_cartao: string
+          id_autor: string
+          conteudo: string
+          criado_em: string
         }
         Insert: {
-          author_id: string
-          body: string
-          card_id: string
-          created_at?: string
           id?: string
-          user_id?: string
+          id_usuario?: string
+          id_cartao: string
+          id_autor: string
+          conteudo: string
+          criado_em?: string
         }
         Update: {
-          author_id?: string
-          body?: string
-          card_id?: string
-          created_at?: string
           id?: string
-          user_id?: string
+          id_usuario?: string
+          id_cartao?: string
+          id_autor?: string
+          conteudo?: string
+          criado_em?: string
         }
         Relationships: [
           {
-            foreignKeyName: "comments_author_id_fkey"
-            columns: ["author_id"]
+            foreignKeyName: "comentarios_id_autor_fkey"
+            columns: ["id_autor"]
             isOneToOne: false
-            referencedRelation: "team_members"
+            referencedRelation: "membros_equipe"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "comments_card_id_fkey"
-            columns: ["card_id"]
+            foreignKeyName: "comentarios_id_cartao_fkey"
+            columns: ["id_cartao"]
             isOneToOne: false
-            referencedRelation: "cards"
+            referencedRelation: "cartoes"
             referencedColumns: ["id"]
           },
         ]
       }
-      profiles: {
+      perfis: {
         Row: {
-          avatar_url: string | null
-          created_at: string
+          id: string
+          nome_completo: string
+          iniciais: string
           email: string
-          full_name: string
-          id: string
-          initials: string
-          theme: string
+          tema: string
+          url_avatar: string | null
+          criado_em: string
         }
         Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          email?: string
-          full_name?: string
           id: string
-          initials?: string
-          theme?: string
+          nome_completo?: string
+          iniciais?: string
+          email?: string
+          tema?: string
+          url_avatar?: string | null
+          criado_em?: string
         }
         Update: {
-          avatar_url?: string | null
-          created_at?: string
-          email?: string
-          full_name?: string
           id?: string
-          initials?: string
-          theme?: string
+          nome_completo?: string
+          iniciais?: string
+          email?: string
+          tema?: string
+          url_avatar?: string | null
+          criado_em?: string
         }
         Relationships: []
       }
-      team_members: {
+      membros_equipe: {
         Row: {
-          avatar_url: string | null
-          created_at: string
-          email: string
-          full_name: string
           id: string
-          initials: string
-          invited_at: string | null
-          member_user_id: string | null
-          role: string
+          id_usuario: string
+          id_usuario_membro: string | null
+          nome_completo: string
+          iniciais: string
+          email: string
+          funcao: string
           status: string
-          user_id: string
+          url_avatar: string | null
+          convidado_em: string | null
+          criado_em: string
         }
         Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          email: string
-          full_name?: string
           id?: string
-          initials?: string
-          invited_at?: string | null
-          member_user_id?: string | null
-          role?: string
+          id_usuario?: string
+          id_usuario_membro?: string | null
+          nome_completo?: string
+          iniciais?: string
+          email: string
+          funcao?: string
           status?: string
-          user_id?: string
+          url_avatar?: string | null
+          convidado_em?: string | null
+          criado_em?: string
         }
         Update: {
-          avatar_url?: string | null
-          created_at?: string
-          email?: string
-          full_name?: string
           id?: string
-          initials?: string
-          invited_at?: string | null
-          member_user_id?: string | null
-          role?: string
+          id_usuario?: string
+          id_usuario_membro?: string | null
+          nome_completo?: string
+          iniciais?: string
+          email?: string
+          funcao?: string
           status?: string
-          user_id?: string
+          url_avatar?: string | null
+          convidado_em?: string | null
+          criado_em?: string
         }
         Relationships: []
       }
@@ -300,7 +298,7 @@ export type CompositeTypes<
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
+> = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
@@ -313,7 +311,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
-
-
-

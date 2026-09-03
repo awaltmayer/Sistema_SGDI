@@ -2,7 +2,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useState,
   type ReactNode,
 } from "react";
 import { Navigate } from "react-router-dom";
@@ -40,46 +39,69 @@ export type ChecklistItem = ItemListaVerificacao;
 // ── Tipos de entrada ──────────────────────────────────────────────────
 
 export interface EntradaCriarCartao {
-  title: string;
-  column: ColumnId;
-  nextPosition: number;
+  titulo?: string;
+  title?: string;
+  coluna?: IdColuna;
+  column?: IdColuna;
+  nextPosition?: number;
+  posicao?: number;
+  descricao?: string;
   description?: string;
-  priority?: Priority;
+  prioridade?: Prioridade;
+  priority?: Prioridade;
+  id_responsavel?: string | null;
   assignee_id?: string | null;
+  data_vencimento?: string | null;
   due_date?: string | null;
 }
 export type CreateCardInput = EntradaCriarCartao;
 
 export interface EntradaAtualizarCartao {
+  titulo?: string;
   title?: string;
+  descricao?: string;
   description?: string;
-  column?: ColumnId;
-  priority?: Priority;
+  coluna?: IdColuna;
+  column?: IdColuna;
+  prioridade?: Prioridade;
+  priority?: Prioridade;
+  complexidade?: Complexidade;
   complexity?: Complexity;
+  id_responsavel?: string | null;
   assignee_id?: string | null;
+  data_vencimento?: string | null;
   due_date?: string | null;
+  cor?: string | null;
   color?: string | null;
+  rastreador_tempo?: TaskTimeTracker;
   time_tracker?: TaskTimeTracker;
 }
 export type UpdateCardInput = EntradaAtualizarCartao;
 
 export interface EntradaReordenar {
   id: string;
-  column: ColumnId;
-  position: number;
+  coluna?: IdColuna;
+  column?: IdColuna;
+  posicao?: number;
+  position?: number;
 }
 export type ReorderInput = EntradaReordenar;
 
 export interface EntradaCriarComentario {
-  cardId: string;
-  authorId: string;
-  body: string;
+  idCartao?: string;
+  cardId?: string;
+  idAutor?: string;
+  authorId?: string;
+  conteudo?: string;
+  body?: string;
 }
 export type CreateCommentInput = EntradaCriarComentario;
 
 export interface EntradaAtualizarPerfil {
-  fullName: string;
-  initials: string;
+  nomeCompleto?: string;
+  fullName?: string;
+  iniciais?: string;
+  initials?: string;
   email: string;
 }
 export type UpdateProfileInput = EntradaAtualizarPerfil;
@@ -120,11 +142,23 @@ export type VelocityByDay = VelocidadePorDia;
 
 // ── Cartão com responsável vinculado (para exibição) ──────────────────
 
-export interface CartaoComResponsavel extends Card {
+export interface CartaoComResponsavel extends CartaoTarefa {
+  responsavel?: {
+    id: string;
+    nome_completo: string;
+    iniciais: string;
+    url_avatar?: string | null;
+    full_name?: string;
+    initials?: string;
+    avatar_url?: string | null;
+  } | null;
   assignee?: {
     id: string;
-    full_name: string;
-    initials: string;
+    nome_completo: string;
+    iniciais: string;
+    url_avatar?: string | null;
+    full_name?: string;
+    initials?: string;
     avatar_url?: string | null;
   } | null;
 }
@@ -152,43 +186,53 @@ export interface ProvedorDadosApp {
 
   // Checklists (até 5 por cartão)
   useCreateChecklist(): {
-    mutate: (input: { cardId: string; title: string }) => void;
+    mutate: (input: { cardId?: string; card_id?: string; title?: string; titulo?: string }) => void;
     isPending: boolean;
   };
   useUpdateChecklist(): {
-    mutate: (input: { cardId: string; checklistId: string; title: string }) => void;
+    mutate: (input: { cardId?: string; card_id?: string; checklistId?: string; checklist_id?: string; title?: string; titulo?: string }) => void;
     isPending: boolean;
   };
   useDeleteChecklist(): {
-    mutate: (input: { cardId: string; checklistId: string }) => void;
+    mutate: (input: { cardId?: string; card_id?: string; checklistId?: string; checklist_id?: string }) => void;
     isPending: boolean;
   };
   useCreateChecklistItem(): {
-    mutate: (input: { cardId: string; checklistId: string; title: string }) => void;
+    mutate: (input: { cardId?: string; card_id?: string; checklistId?: string; checklist_id?: string; title?: string; titulo?: string }) => void;
     isPending: boolean;
   };
   useUpdateChecklistItem(): {
     mutate: (input: {
-      cardId: string;
-      checklistId: string;
-      itemId: string;
-      title: string;
+      cardId?: string;
+      card_id?: string;
+      checklistId?: string;
+      checklist_id?: string;
+      itemId?: string;
+      item_id?: string;
+      title?: string;
+      titulo?: string;
     }) => void;
     isPending: boolean;
   };
   useDeleteChecklistItem(): {
     mutate: (input: {
-      cardId: string;
-      checklistId: string;
-      itemId: string;
+      cardId?: string;
+      card_id?: string;
+      checklistId?: string;
+      checklist_id?: string;
+      itemId?: string;
+      item_id?: string;
     }) => void;
     isPending: boolean;
   };
   useToggleChecklistItem(): {
     mutate: (input: {
-      cardId: string;
-      checklistId: string;
-      itemId: string;
+      cardId?: string;
+      card_id?: string;
+      checklistId?: string;
+      checklist_id?: string;
+      itemId?: string;
+      item_id?: string;
     }) => void;
     isPending: boolean;
   };
@@ -199,7 +243,7 @@ export interface ProvedorDadosApp {
     isPending: boolean;
   };
   usePauseTaskTimer(): {
-    mutate: (input: { cardId: string; reason: string }) => void;
+    mutate: (input: { cardId?: string; card_id?: string; reason?: string; motivo?: string }) => void;
     isPending: boolean;
   };
   useResumeTaskTimer(): {
@@ -211,7 +255,7 @@ export interface ProvedorDadosApp {
     isPending: boolean;
   };
   useUpdateTaskComplexity(): {
-    mutate: (input: { cardId: string; complexity: Complexity }) => void;
+    mutate: (input: { cardId?: string; card_id?: string; complexity?: Complexity; complexidade?: Complexity }) => void;
     isPending: boolean;
   };
 
@@ -234,7 +278,7 @@ export interface ProvedorDadosApp {
     isPending: boolean;
   };
   useUpdateMemberRole(): {
-    mutate: (input: { memberId: string; role: "admin" | "member" }) => void;
+    mutate: (input: { memberId?: string; member_id?: string; role?: "admin" | "member"; funcao?: "admin" | "member" }) => void;
     isPending: boolean;
   };
 
@@ -278,34 +322,7 @@ function getWeekStart(dateStr: string): string {
   return monday.toISOString().slice(0, 10);
 }
 
-// ── Vincular dados do responsável ao cartão ───────────────────────────
-
-function joinAssignee(card: Card, members: TeamMember[]): CardWithAssignee {
-  const member = card.assignee_id
-    ? (members.find((m) => m.id === card.assignee_id) ?? null)
-    : null;
-  return {
-    ...card,
-    checklists: card.checklists ?? [],
-    complexity: card.complexity ?? "medium",
-    time_tracker: card.time_tracker ?? {
-      is_running: false,
-      total_spent_seconds: 0,
-      pauses: [],
-    },
-    assignee: member
-      ? {
-        id: member.id,
-        full_name: member.full_name,
-        initials: member.initials,
-        avatar_url: member.avatar_url,
-      }
-      : null,
-  };
-}
-
 // ── AppData — Provedor de dados autenticado via Supabase ───────────────
-// Exige que o usuário esteja autenticado; redireciona para /auth caso contrário.
 
 export function AppData({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -327,7 +344,6 @@ export function AppData({ children }: { children: ReactNode }) {
 
 // ── Provedor de Dados Supabase ─────────────────────────────────────────
 
-// Armazenamento auxiliar para checklists no modo Supabase
 const SUPABASE_CHECKLISTS_KEY = "supabase-card-checklists-v1";
 function loadSupabaseChecklists(): Record<string, seed.Checklist[]> {
   try {
@@ -368,17 +384,17 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     supabase
-      .from("profiles")
-      .select("theme")
+      .from("perfis")
+      .select("tema")
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
-        const theme = (data?.theme ?? "system") as Theme;
+        const tema = (data?.tema ?? "system") as Theme;
         const root = document.documentElement;
         root.classList.remove("dark");
         if (
-          theme === "dark" ||
-          (theme === "system" &&
+          tema === "dark" ||
+          (tema === "system" &&
             window.matchMedia("(prefers-color-scheme: dark)").matches)
         ) {
           root.classList.add("dark");
@@ -386,7 +402,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       });
   }, [user]);
 
-  // Inscrição em Tempo Real (Supabase Realtime) para sincronização instantânea entre múltiplos usuários
+  // Inscrição em Tempo Real (Supabase Realtime)
   useEffect(() => {
     if (!user) return;
 
@@ -394,7 +410,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       .channel("sgdi-mudancas-tempo-real")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "cards" },
+        { event: "*", schema: "public", table: "cartoes" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
           queryClient.invalidateQueries({ queryKey: ["card"] });
@@ -406,7 +422,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "comments" },
+        { event: "*", schema: "public", table: "comentarios" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["comments"] });
           queryClient.invalidateQueries({ queryKey: ["comment-counts"] });
@@ -414,14 +430,14 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "team_members" },
+        { event: "*", schema: "public", table: "membros_equipe" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["team_members"] });
         }
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "profiles" },
+        { event: "*", schema: "public", table: "perfis" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["profile"] });
           queryClient.invalidateQueries({ queryKey: ["team_members"] });
@@ -443,43 +459,78 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["cards"],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("cards")
+            .from("cartoes")
             .select(
               `
-              id, title, description, column, priority,
-              assignee_id, due_date, position, created_at,
-              team_members!cards_assignee_id_fkey (id, full_name, initials, avatar_url)
+              id, id_usuario, titulo, descricao, coluna, prioridade,
+              id_responsavel, data_vencimento, posicao, criado_em,
+              membros_equipe (id, nome_completo, iniciais, url_avatar)
             `
             )
-            .order("column", { ascending: true })
-            .order("position", { ascending: true });
+            .order("coluna", { ascending: true })
+            .order("posicao", { ascending: true });
           if (error) throw error;
           const chkMap = loadSupabaseChecklists();
           const metaMap = loadSupabaseMetadata();
-          return (data ?? []).map((row) => {
-            const tm: any = Array.isArray(row.team_members)
-              ? row.team_members[0]
-              : row.team_members;
+          return (data ?? []).map((row: any) => {
+            const tm = Array.isArray(row.membros_equipe)
+              ? row.membros_equipe[0]
+              : row.membros_equipe;
             const meta = metaMap[row.id] ?? {};
+            const respObj = tm
+              ? {
+                  id: tm.id,
+                  nome_completo: tm.nome_completo,
+                  iniciais: tm.iniciais,
+                  url_avatar: tm.url_avatar,
+                  full_name: tm.nome_completo,
+                  initials: tm.iniciais,
+                  avatar_url: tm.url_avatar,
+                }
+              : null;
+
             return {
               id: row.id,
-              title: row.title,
-              description: row.description,
-              column: row.column as ColumnId,
-              priority: row.priority as Priority,
-              assignee_id: row.assignee_id,
-              due_date: row.due_date,
-              position: row.position,
-              created_at: row.created_at,
+              id_usuario: row.id_usuario,
+              titulo: row.titulo,
+              descricao: row.descricao,
+              coluna: row.coluna as IdColuna,
+              prioridade: row.prioridade as Prioridade,
+              id_responsavel: row.id_responsavel,
+              data_vencimento: row.data_vencimento,
+              posicao: row.posicao,
+              criado_em: row.criado_em,
+              listas_verificacao: chkMap[row.id] ?? [],
               checklists: chkMap[row.id] ?? [],
-              assignee: tm
-                ? {
-                  id: tm.id,
-                  full_name: tm.full_name,
-                  initials: tm.initials,
-                  avatar_url: tm.avatar_url,
-                }
-                : null,
+              complexidade: meta.complexity ?? "medium",
+              complexity: meta.complexity ?? "medium",
+              rastreador_tempo: meta.time_tracker ?? {
+                em_execucao: false,
+                is_running: false,
+                tempo_total_segundos: 0,
+                total_spent_seconds: 0,
+                pausas: [],
+                pauses: [],
+              },
+              time_tracker: meta.time_tracker ?? {
+                em_execucao: false,
+                is_running: false,
+                tempo_total_segundos: 0,
+                total_spent_seconds: 0,
+                pausas: [],
+                pauses: [],
+              },
+              // Aliases de compatibilidade
+              title: row.titulo,
+              description: row.descricao,
+              column: row.coluna as IdColuna,
+              priority: row.prioridade as Prioridade,
+              assignee_id: row.id_responsavel,
+              due_date: row.data_vencimento,
+              position: row.posicao,
+              created_at: row.criado_em,
+              responsavel: respObj,
+              assignee: respObj,
             };
           });
         },
@@ -494,42 +545,77 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["card", id],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("cards")
+            .from("cartoes")
             .select(
               `
-              id, title, description, column, priority, due_date, position, created_at,
-              assignee_id,
-              team_members!cards_assignee_id_fkey (id, full_name, initials, avatar_url)
+              id, id_usuario, titulo, descricao, coluna, prioridade, data_vencimento, posicao, criado_em,
+              id_responsavel,
+              membros_equipe (id, nome_completo, iniciais, url_avatar)
             `,
             )
             .eq("id", id)
             .single();
           if (error) throw error;
           const chkMap = loadSupabaseChecklists();
+          const metaMap = loadSupabaseMetadata();
+          const meta = metaMap[data.id] ?? {};
+          const tm: any = Array.isArray((data as any).membros_equipe)
+            ? (data as any).membros_equipe[0]
+            : (data as any).membros_equipe;
+          const respObj = tm
+            ? {
+                id: tm.id,
+                nome_completo: tm.nome_completo,
+                iniciais: tm.iniciais,
+                url_avatar: tm.url_avatar,
+                full_name: tm.nome_completo,
+                initials: tm.iniciais,
+                avatar_url: tm.url_avatar,
+              }
+            : null;
+
           return {
             id: data.id,
-            title: data.title,
-            description: data.description,
-            column: data.column as ColumnId,
-            priority: data.priority as Priority,
-            assignee_id: data.assignee_id,
-            due_date: data.due_date,
-            position: data.position,
-            created_at: data.created_at,
+            id_usuario: data.id_usuario,
+            titulo: data.titulo,
+            descricao: data.descricao,
+            coluna: data.coluna as IdColuna,
+            prioridade: data.prioridade as Prioridade,
+            id_responsavel: data.id_responsavel,
+            data_vencimento: data.data_vencimento,
+            posicao: data.posicao,
+            criado_em: data.criado_em,
+            listas_verificacao: chkMap[data.id] ?? [],
             checklists: chkMap[data.id] ?? [],
-            assignee: (() => {
-              const tm: any = Array.isArray(data.team_members)
-                ? data.team_members[0]
-                : data.team_members;
-              return tm
-                ? {
-                  id: tm.id,
-                  full_name: tm.full_name,
-                  initials: tm.initials,
-                  avatar_url: tm.avatar_url,
-                }
-                : null;
-            })(),
+            complexidade: meta.complexity ?? "medium",
+            complexity: meta.complexity ?? "medium",
+            rastreador_tempo: meta.time_tracker ?? {
+              em_execucao: false,
+              is_running: false,
+              tempo_total_segundos: 0,
+              total_spent_seconds: 0,
+              pausas: [],
+              pauses: [],
+            },
+            time_tracker: meta.time_tracker ?? {
+              em_execucao: false,
+              is_running: false,
+              tempo_total_segundos: 0,
+              total_spent_seconds: 0,
+              pausas: [],
+              pauses: [],
+            },
+            // Aliases de compatibilidade
+            title: data.titulo,
+            description: data.descricao,
+            column: data.coluna as IdColuna,
+            priority: data.prioridade as Prioridade,
+            assignee_id: data.id_responsavel,
+            due_date: data.data_vencimento,
+            position: data.posicao,
+            created_at: data.criado_em,
+            responsavel: respObj,
+            assignee: respObj,
           };
         },
         enabled: !!user && !!id,
@@ -542,16 +628,16 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       const mutation = useMutation({
         mutationFn: async (input: CreateCardInput) => {
           const { data, error } = await supabase
-            .from("cards")
+            .from("cartoes")
             .insert({
-              user_id: user?.id ?? null,
-              title: input.title,
-              column: input.column,
-              priority: input.priority ?? "low",
-              assignee_id: input.assignee_id ?? null,
-              due_date: input.due_date ?? null,
-              position: input.nextPosition,
-              description: input.description ?? "",
+              id_usuario: user?.id ?? undefined,
+              titulo: input.titulo ?? input.title ?? "",
+              coluna: input.coluna ?? input.column ?? "todo",
+              prioridade: input.prioridade ?? input.priority ?? "low",
+              id_responsavel: input.id_responsavel ?? input.assignee_id ?? null,
+              data_vencimento: input.data_vencimento ?? input.due_date ?? null,
+              posicao: input.posicao ?? input.nextPosition ?? 0,
+              descricao: input.descricao ?? input.description ?? "",
             })
             .select()
             .single();
@@ -562,7 +648,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
         },
         onError: () => {
-          toast.error("Failed to create card");
+          toast.error("Falha ao criar cartão");
         },
       });
       return {
@@ -580,9 +666,29 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           id: string;
           fields: UpdateCardInput;
         }) => {
+          const patch: any = {};
+          if (fields.titulo !== undefined || fields.title !== undefined) {
+            patch.titulo = fields.titulo ?? fields.title;
+          }
+          if (fields.descricao !== undefined || fields.description !== undefined) {
+            patch.descricao = fields.descricao ?? fields.description;
+          }
+          if (fields.coluna !== undefined || fields.column !== undefined) {
+            patch.coluna = fields.coluna ?? fields.column;
+          }
+          if (fields.prioridade !== undefined || fields.priority !== undefined) {
+            patch.prioridade = fields.prioridade ?? fields.priority;
+          }
+          if (fields.id_responsavel !== undefined || fields.assignee_id !== undefined) {
+            patch.id_responsavel = fields.id_responsavel ?? fields.assignee_id;
+          }
+          if (fields.data_vencimento !== undefined || fields.due_date !== undefined) {
+            patch.data_vencimento = fields.data_vencimento ?? fields.due_date;
+          }
+
           const { data, error } = await supabase
-            .from("cards")
-            .update(fields)
+            .from("cartoes")
+            .update(patch)
             .eq("id", id)
             .select()
             .single();
@@ -606,7 +712,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           if (context?.previous) {
             queryClient.setQueryData(["cards"], context.previous);
           }
-          toast.error("Failed to update card");
+          toast.error("Falha ao atualizar cartão");
         },
         onSettled: (_data, _err, { id }) => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
@@ -624,7 +730,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       const mutation = useMutation({
         mutationFn: async (id: string) => {
           const { error } = await supabase
-            .from("cards")
+            .from("cartoes")
             .delete()
             .eq("id", id);
           if (error) throw error;
@@ -646,7 +752,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           if (context?.previous) {
             queryClient.setQueryData(["cards"], context.previous);
           }
-          toast.error("Failed to delete card");
+          toast.error("Falha ao excluir cartão");
         },
         onSettled: () => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
@@ -663,8 +769,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         mutationFn: async (reordered: ReorderInput[]) => {
           for (const c of reordered) {
             const { error } = await supabase
-              .from("cards")
-              .update({ column: c.column, position: c.position })
+              .from("cartoes")
+              .update({
+                coluna: c.coluna ?? c.column,
+                posicao: c.posicao ?? c.position,
+              })
               .eq("id", c.id);
             if (error) throw error;
           }
@@ -681,9 +790,16 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
               ["cards"],
               previous.map((c) => {
                 const update = reorderMap.get(c.id);
-                return update
-                  ? { ...c, column: update.column, position: update.position }
-                  : c;
+                if (!update) return c;
+                const nextCol = update.coluna ?? update.column ?? c.coluna;
+                const nextPos = update.posicao ?? update.position ?? c.posicao;
+                return {
+                  ...c,
+                  coluna: nextCol,
+                  column: nextCol,
+                  posicao: nextPos,
+                  position: nextPos,
+                };
               }),
             );
           }
@@ -693,7 +809,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           if (context?.previous) {
             queryClient.setQueryData(["cards"], context.previous);
           }
-          toast.error("Failed to reorder cards");
+          toast.error("Falha ao reordenar cartões");
         },
         onSettled: () => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
@@ -708,25 +824,31 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     // ── Checklists ─────────────────────────────────────────────────
     useCreateChecklist: () => {
       return {
-        mutate: ({ cardId, title }: { cardId: string; title: string }) => {
+        mutate: ({ cardId, card_id, title, titulo }: { cardId?: string; card_id?: string; title?: string; titulo?: string }) => {
+          const cId = cardId ?? card_id ?? "";
+          const t = (titulo ?? title ?? "Checklist").trim();
           const chkMap = loadSupabaseChecklists();
-          const current = chkMap[cardId] ?? [];
+          const current = chkMap[cId] ?? [];
           if (current.length >= 5) {
             toast.error("Limite máximo de 5 checklists por cartão atingido");
             return;
           }
           const newChecklist: seed.Checklist = {
             id: `chk-${Date.now()}`,
-            card_id: cardId,
-            title: title.trim() || "Checklist",
+            id_cartao: cId,
+            card_id: cId,
+            titulo: t,
+            title: t,
+            posicao: current.length,
             position: current.length,
+            itens: [],
             items: [],
           };
-          chkMap[cardId] = [...current, newChecklist];
+          chkMap[cId] = [...current, newChecklist];
           saveSupabaseChecklists(chkMap);
 
           queryClient.invalidateQueries({ queryKey: ["cards"] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["card", cId] });
         },
         isPending: false,
       };
@@ -736,24 +858,32 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       return {
         mutate: ({
           cardId,
+          card_id,
           checklistId,
+          checklist_id,
           title,
+          titulo,
         }: {
-          cardId: string;
-          checklistId: string;
-          title: string;
+          cardId?: string;
+          card_id?: string;
+          checklistId?: string;
+          checklist_id?: string;
+          title?: string;
+          titulo?: string;
         }) => {
-          const trimmed = title.trim();
+          const cId = cardId ?? card_id ?? "";
+          const chkId = checklistId ?? checklist_id ?? "";
+          const trimmed = (titulo ?? title ?? "").trim();
           if (!trimmed) return;
           const chkMap = loadSupabaseChecklists();
-          const current = chkMap[cardId] ?? [];
-          chkMap[cardId] = current.map((chk) =>
-            chk.id === checklistId ? { ...chk, title: trimmed } : chk
+          const current = chkMap[cId] ?? [];
+          chkMap[cId] = current.map((chk) =>
+            chk.id === chkId ? { ...chk, titulo: trimmed, title: trimmed } : chk
           );
           saveSupabaseChecklists(chkMap);
 
           queryClient.invalidateQueries({ queryKey: ["cards"] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["card", cId] });
         },
         isPending: false,
       };
@@ -763,18 +893,24 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       return {
         mutate: ({
           cardId,
+          card_id,
           checklistId,
+          checklist_id,
         }: {
-          cardId: string;
-          checklistId: string;
+          cardId?: string;
+          card_id?: string;
+          checklistId?: string;
+          checklist_id?: string;
         }) => {
+          const cId = cardId ?? card_id ?? "";
+          const chkId = checklistId ?? checklist_id ?? "";
           const chkMap = loadSupabaseChecklists();
-          const current = chkMap[cardId] ?? [];
-          chkMap[cardId] = current.filter((chk) => chk.id !== checklistId);
+          const current = chkMap[cId] ?? [];
+          chkMap[cId] = current.filter((chk) => chk.id !== chkId);
           saveSupabaseChecklists(chkMap);
 
           queryClient.invalidateQueries({ queryKey: ["cards"] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["card", cId] });
         },
         isPending: false,
       };
@@ -784,34 +920,48 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       return {
         mutate: ({
           cardId,
+          card_id,
           checklistId,
+          checklist_id,
           title,
+          titulo,
         }: {
-          cardId: string;
-          checklistId: string;
-          title: string;
+          cardId?: string;
+          card_id?: string;
+          checklistId?: string;
+          checklist_id?: string;
+          title?: string;
+          titulo?: string;
         }) => {
-          const trimmed = title.trim();
+          const cId = cardId ?? card_id ?? "";
+          const chkId = checklistId ?? checklist_id ?? "";
+          const trimmed = (titulo ?? title ?? "").trim();
           if (!trimmed) return;
           const chkMap = loadSupabaseChecklists();
-          const current = chkMap[cardId] ?? [];
-          chkMap[cardId] = current.map((chk) => {
-            if (chk.id !== checklistId) return chk;
+          const current = chkMap[cId] ?? [];
+          chkMap[cId] = current.map((chk) => {
+            if (chk.id !== chkId) return chk;
+            const existingItems = chk.itens ?? chk.items ?? [];
             const newItem: seed.ChecklistItem = {
               id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              titulo: trimmed,
               title: trimmed,
+              esta_concluido: false,
               is_completed: false,
-              position: chk.items.length,
+              posicao: existingItems.length,
+              position: existingItems.length,
             };
+            const updatedItems = [...existingItems, newItem];
             return {
               ...chk,
-              items: [...chk.items, newItem],
+              itens: updatedItems,
+              items: updatedItems,
             };
           });
           saveSupabaseChecklists(chkMap);
 
           queryClient.invalidateQueries({ queryKey: ["cards"] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["card", cId] });
         },
         isPending: false,
       };
@@ -821,32 +971,46 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       return {
         mutate: ({
           cardId,
+          card_id,
           checklistId,
+          checklist_id,
           itemId,
+          item_id,
           title,
+          titulo,
         }: {
-          cardId: string;
-          checklistId: string;
-          itemId: string;
-          title: string;
+          cardId?: string;
+          card_id?: string;
+          checklistId?: string;
+          checklist_id?: string;
+          itemId?: string;
+          item_id?: string;
+          title?: string;
+          titulo?: string;
         }) => {
-          const trimmed = title.trim();
+          const cId = cardId ?? card_id ?? "";
+          const chkId = checklistId ?? checklist_id ?? "";
+          const itId = itemId ?? item_id ?? "";
+          const trimmed = (titulo ?? title ?? "").trim();
           if (!trimmed) return;
           const chkMap = loadSupabaseChecklists();
-          const current = chkMap[cardId] ?? [];
-          chkMap[cardId] = current.map((chk) => {
-            if (chk.id !== checklistId) return chk;
+          const current = chkMap[cId] ?? [];
+          chkMap[cId] = current.map((chk) => {
+            if (chk.id !== chkId) return chk;
+            const existingItems = chk.itens ?? chk.items ?? [];
+            const updated = existingItems.map((item) =>
+              item.id === itId ? { ...item, titulo: trimmed, title: trimmed } : item
+            );
             return {
               ...chk,
-              items: chk.items.map((item) =>
-                item.id === itemId ? { ...item, title: trimmed } : item
-              ),
+              itens: updated,
+              items: updated,
             };
           });
           saveSupabaseChecklists(chkMap);
 
           queryClient.invalidateQueries({ queryKey: ["cards"] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["card", cId] });
         },
         isPending: false,
       };
@@ -856,26 +1020,38 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       return {
         mutate: ({
           cardId,
+          card_id,
           checklistId,
+          checklist_id,
           itemId,
+          item_id,
         }: {
-          cardId: string;
-          checklistId: string;
-          itemId: string;
+          cardId?: string;
+          card_id?: string;
+          checklistId?: string;
+          checklist_id?: string;
+          itemId?: string;
+          item_id?: string;
         }) => {
+          const cId = cardId ?? card_id ?? "";
+          const chkId = checklistId ?? checklist_id ?? "";
+          const itId = itemId ?? item_id ?? "";
           const chkMap = loadSupabaseChecklists();
-          const current = chkMap[cardId] ?? [];
-          chkMap[cardId] = current.map((chk) => {
-            if (chk.id !== checklistId) return chk;
+          const current = chkMap[cId] ?? [];
+          chkMap[cId] = current.map((chk) => {
+            if (chk.id !== chkId) return chk;
+            const existingItems = chk.itens ?? chk.items ?? [];
+            const updated = existingItems.filter((item) => item.id !== itId);
             return {
               ...chk,
-              items: chk.items.filter((item) => item.id !== itemId),
+              itens: updated,
+              items: updated,
             };
           });
           saveSupabaseChecklists(chkMap);
 
           queryClient.invalidateQueries({ queryKey: ["cards"] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["card", cId] });
         },
         isPending: false,
       };
@@ -885,54 +1061,77 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       return {
         mutate: ({
           cardId,
+          card_id,
           checklistId,
+          checklist_id,
           itemId,
+          item_id,
         }: {
-          cardId: string;
-          checklistId: string;
-          itemId: string;
+          cardId?: string;
+          card_id?: string;
+          checklistId?: string;
+          checklist_id?: string;
+          itemId?: string;
+          item_id?: string;
         }) => {
+          const cId = cardId ?? card_id ?? "";
+          const chkId = checklistId ?? checklist_id ?? "";
+          const itId = itemId ?? item_id ?? "";
           const chkMap = loadSupabaseChecklists();
-          const current = chkMap[cardId] ?? [];
-          chkMap[cardId] = current.map((chk) => {
-            if (chk.id !== checklistId) return chk;
+          const current = chkMap[cId] ?? [];
+          chkMap[cId] = current.map((chk) => {
+            if (chk.id !== chkId) return chk;
+            const existingItems = chk.itens ?? chk.items ?? [];
+            const updated = existingItems.map((item) => {
+              if (item.id !== itId) return item;
+              const nextVal = !(item.esta_concluido ?? item.is_completed);
+              return {
+                ...item,
+                esta_concluido: nextVal,
+                is_completed: nextVal,
+              };
+            });
             return {
               ...chk,
-              items: chk.items.map((item) =>
-                item.id === itemId
-                  ? { ...item, is_completed: !item.is_completed }
-                  : item
-              ),
+              itens: updated,
+              items: updated,
             };
           });
           saveSupabaseChecklists(chkMap);
 
           queryClient.invalidateQueries({ queryKey: ["cards"] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["card", cId] });
         },
         isPending: false,
       };
     },
 
-    // ── Cronômetro e Complexidade (SupabaseDataProvider) ───────────
+    // ── Cronômetro e Complexidade ──────────────────────────────────
     useStartTaskTimer: () => {
       return {
         mutate: (cardId: string) => {
           const metaMap = loadSupabaseMetadata();
           const currentMeta = metaMap[cardId] ?? {};
           const tracker = currentMeta.time_tracker ?? {
+            em_execucao: false,
             is_running: false,
+            tempo_total_segundos: 0,
             total_spent_seconds: 0,
+            pausas: [],
             pauses: [],
           };
-          if (tracker.is_running) return;
+          if (tracker.em_execucao || tracker.is_running) return;
+          const nowIso = new Date().toISOString();
           metaMap[cardId] = {
             ...currentMeta,
             time_tracker: {
               ...tracker,
+              em_execucao: true,
               is_running: true,
-              started_at: new Date().toISOString(),
-              last_action_at: new Date().toISOString(),
+              iniciado_em: nowIso,
+              started_at: nowIso,
+              ultima_acao_em: nowIso,
+              last_action_at: nowIso,
             },
           };
           saveSupabaseMetadata(metaMap);
@@ -946,41 +1145,57 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
 
     usePauseTaskTimer: () => {
       return {
-        mutate: ({ cardId, reason }: { cardId: string; reason: string }) => {
+        mutate: ({ cardId, card_id, reason, motivo }: { cardId?: string; card_id?: string; reason?: string; motivo?: string }) => {
+          const cId = cardId ?? card_id ?? "";
           const metaMap = loadSupabaseMetadata();
-          const currentMeta = metaMap[cardId] ?? {};
+          const currentMeta = metaMap[cId] ?? {};
           const tracker = currentMeta.time_tracker ?? {
+            em_execucao: false,
             is_running: false,
+            tempo_total_segundos: 0,
             total_spent_seconds: 0,
+            pausas: [],
             pauses: [],
           };
-          if (!tracker.is_running || !tracker.started_at) return;
+          const started = tracker.iniciado_em ?? tracker.started_at;
+          if ((!tracker.em_execucao && !tracker.is_running) || !started) return;
           const now = new Date();
           const elapsed = Math.max(
             0,
             Math.floor(
-              (now.getTime() - new Date(tracker.started_at).getTime()) / 1000
+              (now.getTime() - new Date(started).getTime()) / 1000
             )
           );
+          const reasonText = (motivo ?? reason ?? "Pausa").trim() || "Pausa";
           const newPause = {
             id: `pause-${Date.now()}`,
+            pausado_em: now.toISOString(),
             paused_at: now.toISOString(),
+            duracao_segundos: 0,
             duration_seconds: 0,
-            reason: reason.trim() || "Pausa",
+            motivo: reasonText,
+            reason: reasonText,
           };
-          metaMap[cardId] = {
+          const existingPauses = tracker.pausas ?? tracker.pauses ?? [];
+          const totalSpent = (tracker.tempo_total_segundos ?? tracker.total_spent_seconds ?? 0) + elapsed;
+          metaMap[cId] = {
             ...currentMeta,
             time_tracker: {
+              em_execucao: false,
               is_running: false,
+              iniciado_em: null,
               started_at: null,
-              total_spent_seconds: tracker.total_spent_seconds + elapsed,
+              tempo_total_segundos: totalSpent,
+              total_spent_seconds: totalSpent,
+              ultima_acao_em: now.toISOString(),
               last_action_at: now.toISOString(),
-              pauses: [...tracker.pauses, newPause],
+              pausas: [...existingPauses, newPause],
+              pauses: [...existingPauses, newPause],
             },
           };
           saveSupabaseMetadata(metaMap);
           queryClient.invalidateQueries({ queryKey: ["cards"] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["card", cId] });
           toast.info("Cronômetro pausado");
         },
         isPending: false,
@@ -993,26 +1208,32 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           const metaMap = loadSupabaseMetadata();
           const currentMeta = metaMap[cardId] ?? {};
           const tracker = currentMeta.time_tracker ?? {
+            em_execucao: false,
             is_running: false,
+            tempo_total_segundos: 0,
             total_spent_seconds: 0,
+            pausas: [],
             pauses: [],
           };
-          if (tracker.is_running) return;
+          if (tracker.em_execucao || tracker.is_running) return;
           const now = new Date();
-          const updatedPauses = [...tracker.pauses];
-          if (updatedPauses.length > 0) {
-            const lastIdx = updatedPauses.length - 1;
-            const last = updatedPauses[lastIdx];
-            if (!last.resumed_at) {
+          const existingPauses = [...(tracker.pausas ?? tracker.pauses ?? [])];
+          if (existingPauses.length > 0) {
+            const lastIdx = existingPauses.length - 1;
+            const last = existingPauses[lastIdx];
+            const pausedAt = last.pausado_em ?? last.paused_at;
+            if (pausedAt && (!last.retomado_em && !last.resumed_at)) {
               const pauseDur = Math.max(
                 0,
                 Math.floor(
-                  (now.getTime() - new Date(last.paused_at).getTime()) / 1000
+                  (now.getTime() - new Date(pausedAt).getTime()) / 1000
                 )
               );
-              updatedPauses[lastIdx] = {
+              existingPauses[lastIdx] = {
                 ...last,
+                retomado_em: now.toISOString(),
                 resumed_at: now.toISOString(),
+                duracao_segundos: pauseDur,
                 duration_seconds: pauseDur,
               };
             }
@@ -1021,10 +1242,14 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             ...currentMeta,
             time_tracker: {
               ...tracker,
+              em_execucao: true,
               is_running: true,
+              iniciado_em: now.toISOString(),
               started_at: now.toISOString(),
+              ultima_acao_em: now.toISOString(),
               last_action_at: now.toISOString(),
-              pauses: updatedPauses,
+              pausas: existingPauses,
+              pauses: existingPauses,
             },
           };
           saveSupabaseMetadata(metaMap);
@@ -1042,28 +1267,37 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           const metaMap = loadSupabaseMetadata();
           const currentMeta = metaMap[cardId] ?? {};
           const tracker = currentMeta.time_tracker ?? {
+            em_execucao: false,
             is_running: false,
+            tempo_total_segundos: 0,
             total_spent_seconds: 0,
+            pausas: [],
             pauses: [],
           };
           const now = new Date();
+          const isRunning = tracker.em_execucao || tracker.is_running;
+          const started = tracker.iniciado_em ?? tracker.started_at;
           const elapsed =
-            tracker.is_running && tracker.started_at
+            isRunning && started
               ? Math.max(
                 0,
                 Math.floor(
-                  (now.getTime() - new Date(tracker.started_at).getTime()) /
-                  1000
+                  (now.getTime() - new Date(started).getTime()) / 1000
                 )
               )
               : 0;
+          const totalSpent = (tracker.tempo_total_segundos ?? tracker.total_spent_seconds ?? 0) + elapsed;
           metaMap[cardId] = {
             ...currentMeta,
             time_tracker: {
               ...tracker,
+              em_execucao: false,
               is_running: false,
+              iniciado_em: null,
               started_at: null,
-              total_spent_seconds: tracker.total_spent_seconds + elapsed,
+              tempo_total_segundos: totalSpent,
+              total_spent_seconds: totalSpent,
+              ultima_acao_em: now.toISOString(),
               last_action_at: now.toISOString(),
             },
           };
@@ -1080,22 +1314,28 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       return {
         mutate: ({
           cardId,
+          card_id,
           complexity,
+          complexidade,
         }: {
-          cardId: string;
-          complexity: Complexity;
+          cardId?: string;
+          card_id?: string;
+          complexity?: Complexity;
+          complexidade?: Complexity;
         }) => {
+          const cId = cardId ?? card_id ?? "";
+          const compl = (complexidade ?? complexity ?? "medium") as Complexity;
           const metaMap = loadSupabaseMetadata();
-          const currentMeta = metaMap[cardId] ?? {};
-          metaMap[cardId] = {
+          const currentMeta = metaMap[cId] ?? {};
+          metaMap[cId] = {
             ...currentMeta,
-            complexity,
+            complexity: compl,
           };
           saveSupabaseMetadata(metaMap);
           queryClient.invalidateQueries({ queryKey: ["cards"] });
-          queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["card", cId] });
           toast.success(
-            `Complexidade alterada para ${seed.complexityConfig[complexity].label}`
+            `Complexidade alterada para ${seed.configuracaoComplexidade[compl].label}`
           );
         },
         isPending: false,
@@ -1109,23 +1349,28 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["comments", cardId],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("comments")
+            .from("comentarios")
             .select(
               `
-              id, body, created_at,
-              author_id,
-              team_members!comments_author_id_fkey (id, full_name, initials)
+              id, id_usuario, id_cartao, id_autor, conteudo, criado_em,
+              membros_equipe (id, nome_completo, iniciais)
             `,
             )
-            .eq("card_id", cardId)
-            .order("created_at", { ascending: true });
+            .eq("id_cartao", cardId)
+            .order("criado_em", { ascending: true });
           if (error) throw error;
-          return (data ?? []).map((row) => ({
+          return (data ?? []).map((row: any) => ({
             id: row.id,
-            card_id: cardId,
-            author_id: row.author_id,
-            body: row.body,
-            created_at: row.created_at,
+            id_usuario: row.id_usuario,
+            id_cartao: row.id_cartao,
+            id_autor: row.id_autor,
+            conteudo: row.conteudo,
+            criado_em: row.criado_em,
+            // Aliases de compatibilidade
+            card_id: row.id_cartao,
+            author_id: row.id_autor,
+            body: row.conteudo,
+            created_at: row.criado_em,
           }));
         },
         enabled: !!user && !!cardId,
@@ -1137,13 +1382,16 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     useCreateComment: () => {
       const mutation = useMutation({
         mutationFn: async (input: CreateCommentInput) => {
+          const cId = input.idCartao ?? input.cardId ?? "";
+          const aId = input.idAutor ?? input.authorId ?? "";
+          const bodyText = input.conteudo ?? input.body ?? "";
           const { data, error } = await supabase
-            .from("comments")
+            .from("comentarios")
             .insert({
-              user_id: user?.id ?? null,
-              card_id: input.cardId,
-              author_id: input.authorId,
-              body: input.body,
+              id_usuario: user?.id ?? undefined,
+              id_cartao: cId,
+              id_autor: aId,
+              conteudo: bodyText,
             })
             .select()
             .single();
@@ -1151,15 +1399,16 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           return data;
         },
         onSuccess: (_data, variables) => {
+          const cId = variables.idCartao ?? variables.cardId;
           queryClient.invalidateQueries({
-            queryKey: ["comments", variables.cardId],
+            queryKey: ["comments", cId],
           });
           queryClient.invalidateQueries({
             queryKey: ["comment-counts"],
           });
         },
         onError: () => {
-          toast.error("Failed to add comment");
+          toast.error("Falha ao adicionar comentário");
         },
       });
       return {
@@ -1173,12 +1422,12 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["comment-counts"],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("comments")
-            .select("card_id");
+            .from("comentarios")
+            .select("id_cartao");
           if (error) throw error;
           const counts: Record<string, number> = {};
-          for (const row of data ?? []) {
-            counts[row.card_id] = (counts[row.card_id] ?? 0) + 1;
+          for (const row of (data ?? []) as any[]) {
+            counts[row.id_cartao] = (counts[row.id_cartao] ?? 0) + 1;
           }
           return counts;
         },
@@ -1195,13 +1444,32 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["team_members"],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("team_members")
-            .select("id, full_name, initials, email, role, status, avatar_url")
+            .from("membros_equipe")
+            .select("id, id_usuario, id_usuario_membro, nome_completo, iniciais, email, funcao, status, url_avatar, convidado_em, criado_em")
             .neq("status", "removed")
-            .order("role", { ascending: false })
-            .order("full_name", { ascending: true });
+            .order("funcao", { ascending: false })
+            .order("nome_completo", { ascending: true });
           if (error) throw error;
-          return (data ?? []) as TeamMember[];
+          return (data ?? []).map((m: any) => ({
+            id: m.id,
+            id_usuario: m.id_usuario,
+            id_usuario_membro: m.id_usuario_membro,
+            nome_completo: m.nome_completo,
+            iniciais: m.iniciais,
+            email: m.email,
+            funcao: m.funcao,
+            status: m.status,
+            url_avatar: m.url_avatar,
+            convidado_em: m.convidado_em,
+            criado_em: m.criado_em,
+            // Aliases de compatibilidade
+            full_name: m.nome_completo,
+            initials: m.iniciais,
+            role: m.funcao,
+            avatar_url: m.url_avatar,
+            invited_at: m.convidado_em,
+            created_at: m.criado_em,
+          })) as TeamMember[];
         },
         enabled: !!user,
         refetchOnWindowFocus: true,
@@ -1213,15 +1481,15 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       const mutation = useMutation({
         mutationFn: async (email: string) => {
           const { data, error } = await supabase
-            .from("team_members")
+            .from("membros_equipe")
             .insert({
-              user_id: user?.id ?? null,
+              id_usuario: user?.id ?? undefined,
               email,
-              full_name: "",
-              initials: "",
-              role: "member",
+              nome_completo: "",
+              iniciais: "",
+              funcao: "member",
               status: "pending",
-              invited_at: new Date().toISOString(),
+              convidado_em: new Date().toISOString(),
             })
             .select()
             .single();
@@ -1232,10 +1500,10 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           queryClient.invalidateQueries({
             queryKey: ["team_members"],
           });
-          toast.success(`Invite sent to ${email}`);
+          toast.success(`Convite enviado para ${email}`);
         },
         onError: () => {
-          toast.error("Failed to send invite");
+          toast.error("Falha ao enviar convite");
         },
       });
       return {
@@ -1248,7 +1516,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       const mutation = useMutation({
         mutationFn: async (memberId: string) => {
           const { error } = await supabase
-            .from("team_members")
+            .from("membros_equipe")
             .update({ status: "removed" })
             .eq("id", memberId);
           if (error) throw error;
@@ -1275,7 +1543,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
               context.previous,
             );
           }
-          toast.error("Failed to remove team member");
+          toast.error("Falha ao remover membro da equipe");
         },
         onSettled: () => {
           queryClient.invalidateQueries({
@@ -1291,29 +1559,25 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
 
     useUpdateMemberRole: () => {
       const mutation = useMutation({
-        mutationFn: async ({
-          memberId,
-          role,
-        }: {
-          memberId: string;
-          role: "admin" | "member";
-        }) => {
+        mutationFn: async (input: { memberId?: string; member_id?: string; role?: "admin" | "member"; funcao?: "admin" | "member" }) => {
+          const mId = input.memberId ?? input.member_id ?? "";
+          const f = input.funcao ?? input.role ?? "member";
           const { error } = await supabase
-            .from("team_members")
-            .update({ role })
-            .eq("id", memberId);
+            .from("membros_equipe")
+            .update({ funcao: f })
+            .eq("id", mId);
           if (error) throw error;
         },
         onSuccess: () => {
           queryClient.invalidateQueries({
             queryKey: ["team_members"],
           });
-          toast.success("Role updated");
+          toast.success("Função do membro atualizada");
         },
-        onError: () => toast.error("Failed to update role"),
+        onError: () => toast.error("Falha ao atualizar função"),
       });
       return {
-        mutate: (input: { memberId: string; role: "admin" | "member" }) =>
+        mutate: (input: { memberId?: string; member_id?: string; role?: "admin" | "member"; funcao?: "admin" | "member" }) =>
           mutation.mutate(input),
         isPending: mutation.isPending,
       };
@@ -1326,12 +1590,26 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["profile", user?.id],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("profiles")
-            .select("id, full_name, initials, email, theme, avatar_url")
+            .from("perfis")
+            .select("id, nome_completo, iniciais, email, tema, url_avatar, criado_em")
             .eq("id", user!.id)
             .single();
           if (error) throw error;
-          return data as Profile;
+          return {
+            id: data.id,
+            nome_completo: data.nome_completo,
+            iniciais: data.iniciais,
+            email: data.email,
+            tema: data.tema as Tema,
+            url_avatar: data.url_avatar,
+            criado_em: data.criado_em,
+            // Aliases de compatibilidade
+            full_name: data.nome_completo,
+            initials: data.iniciais,
+            theme: data.tema as Tema,
+            avatar_url: data.url_avatar,
+            created_at: data.criado_em,
+          } as Profile;
         },
         enabled: !!user,
       });
@@ -1341,11 +1619,13 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     useUpdateProfile: () => {
       const mutation = useMutation({
         mutationFn: async (fields: UpdateProfileInput) => {
+          const nome = fields.nomeCompleto ?? fields.fullName ?? "";
+          const inic = fields.iniciais ?? fields.initials ?? "";
           const { data, error } = await supabase
-            .from("profiles")
+            .from("perfis")
             .update({
-              full_name: fields.fullName,
-              initials: fields.initials,
+              nome_completo: nome,
+              iniciais: inic,
               email: fields.email,
             })
             .eq("id", user!.id)
@@ -1361,11 +1641,15 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             user?.id,
           ]);
           if (previous) {
+            const nome = fields.nomeCompleto ?? fields.fullName ?? previous.nome_completo;
+            const inic = fields.iniciais ?? fields.initials ?? previous.iniciais;
             queryClient.setQueryData<Profile>(["profile", user?.id], {
               ...previous,
-              full_name: fields.fullName,
-              initials: fields.initials,
+              nome_completo: nome,
+              iniciais: inic,
               email: fields.email,
+              full_name: nome,
+              initials: inic,
             });
           }
           return { previous };
@@ -1374,10 +1658,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           if (context?.previous) {
             queryClient.setQueryData(["profile", user?.id], context.previous);
           }
-          toast.error("Failed to update profile");
+          toast.error("Falha ao atualizar perfil");
         },
         onSettled: () => {
           queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["team_members"] });
         },
       });
       return {
@@ -1395,10 +1680,10 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           if (error) throw error;
         },
         onSuccess: () => {
-          toast.success("Password updated");
+          toast.success("Senha atualizada com sucesso");
         },
         onError: () => {
-          toast.error("Failed to update password");
+          toast.error("Falha ao atualizar senha");
         },
       });
       return {
@@ -1411,8 +1696,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       const mutation = useMutation({
         mutationFn: async (theme: Theme) => {
           const { data, error } = await supabase
-            .from("profiles")
-            .update({ theme })
+            .from("perfis")
+            .update({ tema: theme })
             .eq("id", user!.id)
             .select()
             .single();
@@ -1428,10 +1713,10 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           if (previous) {
             queryClient.setQueryData<Profile>(["profile", user?.id], {
               ...previous,
+              tema: theme,
               theme,
             });
           }
-          // Aplica o tema imediatamente
           const root = document.documentElement;
           root.classList.remove("dark");
           if (
@@ -1447,7 +1732,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         onError: (_err, _vars, context) => {
           if (context?.previous) {
             queryClient.setQueryData(["profile", user?.id], context.previous);
-            const prev = context.previous.theme;
+            const prev = context.previous.tema ?? context.previous.theme ?? "system";
             const root = document.documentElement;
             root.classList.remove("dark");
             if (
@@ -1459,7 +1744,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
             }
             localStorage.setItem("theme", prev);
           }
-          toast.error("Failed to update theme");
+          toast.error("Falha ao atualizar tema");
         },
         onSettled: () => {
           queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
@@ -1475,7 +1760,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       const mutation = useMutation({
         mutationFn: async () => {
           const { error } = await supabase
-            .from("cards")
+            .from("cartoes")
             .delete()
             .neq("id", "");
           if (error) throw error;
@@ -1483,10 +1768,10 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
           queryClient.invalidateQueries({ queryKey: ["comments"] });
-          toast.success("Board data deleted");
+          toast.success("Dados do quadro excluídos");
         },
         onError: () => {
-          toast.error("Failed to delete board data");
+          toast.error("Falha ao excluir dados do quadro");
         },
       });
       return {
@@ -1502,15 +1787,15 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["dashboard-kpis"],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("cards")
-            .select("id, column");
+            .from("cartoes")
+            .select("id, coluna");
           if (error) throw error;
           const rows = data ?? [];
           return {
             total: rows.length,
-            done: rows.filter((c) => c.column === "done").length,
-            inProgress: rows.filter((c) => c.column === "in-progress").length,
-            todo: rows.filter((c) => c.column === "todo").length,
+            done: rows.filter((c) => c.coluna === "done").length,
+            inProgress: rows.filter((c) => c.coluna === "in-progress").length,
+            todo: rows.filter((c) => c.coluna === "todo").length,
           };
         },
         enabled: !!user,
@@ -1526,13 +1811,13 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["completion-by-week"],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("cards")
-            .select("id, column, created_at")
-            .eq("column", "done");
+            .from("cartoes")
+            .select("id, coluna, criado_em")
+            .eq("coluna", "done");
           if (error) throw error;
           const weekMap = new Map<string, number>();
-          for (const card of data ?? []) {
-            const weekStart = getWeekStart(card.created_at);
+          for (const card of (data ?? []) as any[]) {
+            const weekStart = getWeekStart(card.criado_em);
             weekMap.set(weekStart, (weekMap.get(weekStart) ?? 0) + 1);
           }
           return Array.from(weekMap.entries())
@@ -1549,14 +1834,14 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["priority-donut"],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("cards")
-            .select("id, priority");
+            .from("cartoes")
+            .select("id, prioridade");
           if (error) throw error;
           const priorityMap = new Map<string, number>();
-          for (const card of data ?? []) {
+          for (const card of (data ?? []) as any[]) {
             priorityMap.set(
-              card.priority,
-              (priorityMap.get(card.priority) ?? 0) + 1,
+              card.prioridade,
+              (priorityMap.get(card.prioridade) ?? 0) + 1,
             );
           }
           return ["high", "medium", "low"].map((p) => ({
@@ -1574,13 +1859,13 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
         queryKey: ["velocity-by-day"],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("cards")
-            .select("id, created_at")
-            .order("created_at", { ascending: true });
+            .from("cartoes")
+            .select("id, criado_em")
+            .order("criado_em", { ascending: true });
           if (error) throw error;
           const dayMap = new Map<string, number>();
-          for (const card of data ?? []) {
-            const date = card.created_at.slice(0, 10);
+          for (const card of (data ?? []) as any[]) {
+            const date = card.criado_em.slice(0, 10);
             dayMap.set(date, (dayMap.get(date) ?? 0) + 1);
           }
           return Array.from(dayMap.entries())
@@ -1599,7 +1884,3 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     </ContextoProvedorDados.Provider>
   );
 }
-
-
-
-

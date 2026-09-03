@@ -38,26 +38,26 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
         if (avatar || nomeCompleto) {
           setTimeout(() => {
             supabase
-              .from('profiles')
-              .select('avatar_url, full_name')
+              .from('perfis')
+              .select('url_avatar, nome_completo')
               .eq('id', u.id)
               .maybeSingle()
               .then(({ data }) => {
-                const patch: { avatar_url?: string; full_name?: string } = {};
-                if (avatar && !data?.avatar_url) patch.avatar_url = avatar;
-                if (nomeCompleto && !data?.full_name) patch.full_name = nomeCompleto;
+                const patch: { url_avatar?: string; nome_completo?: string } = {};
+                if (avatar && !data?.url_avatar) patch.url_avatar = avatar;
+                if (nomeCompleto && !data?.nome_completo) patch.nome_completo = nomeCompleto;
                 if (Object.keys(patch).length > 0) {
-                  void supabase.from('profiles').update(patch).eq('id', u.id);
+                  void supabase.from('perfis').update(patch).eq('id', u.id);
                 }
-                const tmPatch: { avatar_url?: string; full_name?: string } = {};
-                if (avatar) tmPatch.avatar_url = avatar;
-                if (nomeCompleto) tmPatch.full_name = nomeCompleto;
+                const tmPatch: { url_avatar?: string; nome_completo?: string } = {};
+                if (avatar) tmPatch.url_avatar = avatar;
+                if (nomeCompleto) tmPatch.nome_completo = nomeCompleto;
                 if (Object.keys(tmPatch).length > 0) {
                   void supabase
-                    .from('team_members')
+                    .from('membros_equipe')
                     .update(tmPatch)
-                    .eq('user_id', u.id)
-                    .eq('member_user_id', u.id);
+                    .eq('id_usuario', u.id)
+                    .eq('id_usuario_membro', u.id);
                 }
               });
           }, 0);
@@ -105,7 +105,3 @@ export function usarAutenticacao() {
 }
 
 export const useAuth = usarAutenticacao;
-
-
-
-

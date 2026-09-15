@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   IconArrowsSort,
   IconUser,
@@ -23,8 +24,6 @@ export type TipoOrdenacao = SortBy;
 export interface PropsBarraFerramentasQuadro {
   sortBy?: SortBy;
   onSortByChange?: (s: SortBy) => void;
-  onlyMyTasks?: boolean;
-  onOnlyMyTasksChange?: (val: boolean) => void;
   searchQuery?: string;
   onSearchQueryChange?: (query: string) => void;
   priorityFilter?: string;
@@ -32,8 +31,6 @@ export interface PropsBarraFerramentasQuadro {
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   aoMudarOrdenacao?: (s: SortBy) => void;
-  apenasMinhasTarefas?: boolean;
-  aoMudarApenasMinhasTarefas?: (val: boolean) => void;
   busca?: string;
   aoMudarBusca?: (query: string) => void;
   filtroPrioridade?: string;
@@ -54,16 +51,12 @@ export const sortLabels = rotulosOrdenacao;
 export function BarraFerramentasQuadro({
   sortBy,
   onSortByChange,
-  onlyMyTasks,
-  onOnlyMyTasksChange,
   searchQuery = '',
   onSearchQueryChange,
   priorityFilter = 'all',
   onPriorityFilterChange,
   ordenarPor,
   aoMudarOrdenacao,
-  apenasMinhasTarefas,
-  aoMudarApenasMinhasTarefas,
   busca,
   aoMudarBusca,
   filtroPrioridade,
@@ -71,8 +64,7 @@ export function BarraFerramentasQuadro({
 }: PropsBarraFerramentasQuadro) {
   const ordenacaoAtual = ordenarPor ?? sortBy ?? 'manual';
   const mudarOrdenacao = aoMudarOrdenacao ?? onSortByChange ?? (() => { });
-  const minhasTarefas = apenasMinhasTarefas !== undefined ? apenasMinhasTarefas : onlyMyTasks ?? false;
-  const mudarMinhasTarefas = aoMudarApenasMinhasTarefas ?? onOnlyMyTasksChange ?? (() => { });
+  const [minhasTarefas, setMinhasTarefas] = useState(false);
   const termoBusca = busca !== undefined ? busca : searchQuery;
   const mudarBusca = aoMudarBusca ?? onSearchQueryChange;
   const prioFiltro = filtroPrioridade !== undefined ? filtroPrioridade : priorityFilter;
@@ -80,13 +72,12 @@ export function BarraFerramentasQuadro({
 
   const temFiltrosAtivos =
     termoBusca.trim().length > 0 ||
-    prioFiltro !== 'all' ||
-    minhasTarefas;
+    prioFiltro !== 'all';
 
   const limparFiltros = () => {
     mudarBusca?.('');
     mudarPrioFiltro?.('all');
-    mudarMinhasTarefas(false);
+    setMinhasTarefas(false);
   };
 
   return (
@@ -160,12 +151,12 @@ export function BarraFerramentasQuadro({
             </Select>
           </div>
 
-          {/* Checkbox Apenas Minhas Tarefas */}
+          {/* Checkbox Apenas Minhas Tarefas (Apenas visual, sem funcionalidade) */}
           <div className="flex items-center gap-1.5 pl-1">
             <Checkbox
               id="only-my-tasks"
               checked={minhasTarefas}
-              onCheckedChange={(checked) => mudarMinhasTarefas(Boolean(checked))}
+              onCheckedChange={(checked) => setMinhasTarefas(Boolean(checked))}
             />
             <Label
               htmlFor="only-my-tasks"

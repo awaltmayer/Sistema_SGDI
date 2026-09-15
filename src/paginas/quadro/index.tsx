@@ -8,7 +8,6 @@ export default function PaginaQuadro() {
   const caminhoBase = '/board';
 
   const [ordenarPor, setOrdenarPor] = useState<TipoOrdenacao>('manual');
-  const [apenasMinhasTarefas, setApenasMinhasTarefas] = useState(false);
   const [busca, setBusca] = useState('');
   const [filtroPrioridade, setFiltroPrioridade] = useState('all');
 
@@ -18,8 +17,6 @@ export default function PaginaQuadro() {
       <BarraFerramentasQuadro
         ordenarPor={ordenarPor}
         aoMudarOrdenacao={setOrdenarPor}
-        apenasMinhasTarefas={apenasMinhasTarefas}
-        aoMudarApenasMinhasTarefas={setApenasMinhasTarefas}
         busca={busca}
         aoMudarBusca={setBusca}
         filtroPrioridade={filtroPrioridade}
@@ -29,7 +26,6 @@ export default function PaginaQuadro() {
         <ColunasQuadro
           ordenarPor={ordenarPor}
           caminhoBase={caminhoBase}
-          apenasMinhasTarefas={apenasMinhasTarefas}
           busca={busca}
           filtroPrioridade={filtroPrioridade}
         />

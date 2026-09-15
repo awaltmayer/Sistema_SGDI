@@ -45,13 +45,11 @@ import './colunas-quadro.css';
 export interface PropsColunasQuadro {
   sortBy?: SortBy;
   basePath?: string;
-  onlyMyTasks?: boolean;
   searchQuery?: string;
   priorityFilter?: string;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   caminhoBase?: string;
-  apenasMinhasTarefas?: boolean;
   busca?: string;
   filtroPrioridade?: string;
 }
@@ -76,12 +74,10 @@ function salvarCoresColunas(cores: Record<string, string>) {
 export function ColunasQuadro({
   sortBy,
   basePath,
-  onlyMyTasks: _onlyMyTasks,
   searchQuery: _searchQuery = '',
   priorityFilter: _priorityFilter = 'all',
   ordenarPor,
   caminhoBase,
-  apenasMinhasTarefas,
   busca,
   filtroPrioridade,
 }: PropsColunasQuadro) {
@@ -89,7 +85,7 @@ export function ColunasQuadro({
   const rotaBase = caminhoBase ?? basePath ?? '';
 
   const navegar = useNavigate();
-  const { useCards, useCommentCounts, useReorderCards, useCurrentUser: _useCurrentUser } = useDataProvider();
+  const { useCards, useCommentCounts, useReorderCards } = useDataProvider();
   const { data: todosCartoes = [], isLoading: carregando } = useCards();
   const { data: contagensComentarios = {} } = useCommentCounts();
   const { mutate: reorderCards } = useReorderCards();
@@ -111,10 +107,8 @@ export function ColunasQuadro({
   const cartoes = cartoesLocais ?? todosCartoes ?? [];
   const arrastoDesabilitado = ordenar !== 'manual';
 
-  const { data: usuarioAtual } = _useCurrentUser();
   const termoBusca = (busca ?? _searchQuery ?? '').trim().toLowerCase();
   const prioridadeFiltro = filtroPrioridade ?? _priorityFilter ?? 'all';
-  const filtrarMinhas = apenasMinhasTarefas !== undefined ? apenasMinhasTarefas : _onlyMyTasks ?? false;
 
   const cartoesFiltrados = useMemo(() => {
     return (cartoes ?? []).filter((c) => {
@@ -124,14 +118,9 @@ export function ColunasQuadro({
       if (prioridadeFiltro !== 'all' && c.priority !== prioridadeFiltro) {
         return false;
       }
-      if (filtrarMinhas && usuarioAtual) {
-        if (c.assignee?.id !== usuarioAtual.id && c.assignee_id !== usuarioAtual.id) {
-          return false;
-        }
-      }
       return true;
     });
-  }, [cartoes, termoBusca, prioridadeFiltro, filtrarMinhas, usuarioAtual]);
+  }, [cartoes, termoBusca, prioridadeFiltro]);
 
   const cartoesPorColuna = useMemo(() => {
     const agrupados: Record<IdColuna, CardWithAssignee[]> = {

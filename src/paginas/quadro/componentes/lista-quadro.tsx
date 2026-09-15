@@ -35,13 +35,11 @@ import './lista-quadro.css';
 export interface PropsListaQuadro {
   sortBy?: SortBy;
   basePath?: string;
-  onlyMyTasks?: boolean;
   searchQuery?: string;
   priorityFilter?: string;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   caminhoBase?: string;
-  apenasMinhasTarefas?: boolean;
   busca?: string;
   filtroPrioridade?: string;
 }
@@ -50,22 +48,18 @@ export type BoardListProps = PropsListaQuadro;
 export function ListaQuadro({
   sortBy,
   basePath,
-  onlyMyTasks: _onlyMyTasks,
   searchQuery: _searchQuery = '',
   priorityFilter: _priorityFilter = 'all',
   ordenarPor,
   caminhoBase,
-  apenasMinhasTarefas,
   busca,
   filtroPrioridade,
 }: PropsListaQuadro) {
   const ordenar = ordenarPor ?? sortBy ?? 'manual';
   const rotaBase = caminhoBase ?? basePath ?? '';
 
-  const { data: usuarioAtual } = _useCurrentUser();
   const termoBusca = (busca ?? _searchQuery ?? '').trim().toLowerCase();
   const prioridadeFiltro = filtroPrioridade ?? _priorityFilter ?? 'all';
-  const filtrarMinhas = apenasMinhasTarefas !== undefined ? apenasMinhasTarefas : _onlyMyTasks ?? false;
 
   const cartoesFiltrados = useMemo(() => {
     return (cartoes ?? []).filter((c) => {
@@ -75,14 +69,9 @@ export function ListaQuadro({
       if (prioridadeFiltro !== 'all' && c.priority !== prioridadeFiltro) {
         return false;
       }
-      if (filtrarMinhas && usuarioAtual) {
-        if (c.assignee?.id !== usuarioAtual.id && c.assignee_id !== usuarioAtual.id) {
-          return false;
-        }
-      }
       return true;
     });
-  }, [cartoes, termoBusca, prioridadeFiltro, filtrarMinhas, usuarioAtual]);
+  }, [cartoes, termoBusca, prioridadeFiltro]);
 
   const ordenados = useMemo(() => sortCards(cartoesFiltrados ?? [], ordenar), [cartoesFiltrados, ordenar]);
 

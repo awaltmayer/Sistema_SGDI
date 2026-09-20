@@ -5,6 +5,7 @@ import {
   IconColumns,
   IconFlag,
   IconUser,
+  IconUserCheck,
   IconCalendar,
   IconFileX,
   IconSquareCheck,
@@ -367,6 +368,29 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                     ))}
                   </SelectContent>
                 </Select>
+              </LinhaCampo>
+
+              <LinhaCampo icon={IconUserCheck} label="Solicitante">
+                <div className="flex items-center gap-2 rounded-md border border-border/80 bg-muted/30 px-2.5 py-1.5 text-xs">
+                  <Avatar className="size-5">
+                    {cartao.solicitante?.avatar_url && (
+                      <AvatarImage src={cartao.solicitante.avatar_url} alt={cartao.solicitante.full_name} />
+                    )}
+                    <AvatarFallback className="text-[10px]">
+                      {cartao.solicitante?.initials ?? 'S'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="font-medium text-foreground truncate">
+                      {cartao.solicitante?.full_name ?? 'Solicitante do Sistema'}
+                    </span>
+                    {cartao.solicitante?.email && (
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        {cartao.solicitante.email}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </LinhaCampo>
 
               <LinhaCampo icon={IconUser} label="Responsável">

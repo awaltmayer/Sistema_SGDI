@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { MoreHorizontalIcon } from 'lucide-react';
-import { IconSquareCheck, IconAlertTriangle } from '@tabler/icons-react';
+import { IconSquareCheck, IconAlertTriangle, IconUserCheck } from '@tabler/icons-react';
 import {
   Table,
   TableBody,
@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/componentes/ui/menu-suspenso';
 import { useDataProvider } from '@/lib/provedor-dados';
+import { useAuth } from '@/lib/autenticacao/provedor-autenticacao';
 import { colunas as columnDefs } from '@/dados/dados-iniciais';
 import type { IdColuna, Prioridade } from '@/dados/dados-iniciais';
 import { PriorityPopover } from './seletor-prioridade';
@@ -37,11 +38,15 @@ export interface PropsListaQuadro {
   basePath?: string;
   searchQuery?: string;
   priorityFilter?: string;
+  requesterFilter?: string;
+  onlyMyTasks?: boolean;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   caminhoBase?: string;
   busca?: string;
   filtroPrioridade?: string;
+  filtroSolicitante?: string;
+  apenasMinhas?: boolean;
 }
 export type BoardListProps = PropsListaQuadro;
 
@@ -50,16 +55,27 @@ export function ListaQuadro({
   basePath,
   searchQuery: _searchQuery = '',
   priorityFilter: _priorityFilter = 'all',
+  requesterFilter: _requesterFilter = 'all',
+  onlyMyTasks: _onlyMyTasks = false,
   ordenarPor,
   caminhoBase,
   busca,
   filtroPrioridade,
+  filtroSolicitante,
+  apenasMinhas,
 }: PropsListaQuadro) {
   const ordenar = ordenarPor ?? sortBy ?? 'manual';
   const rotaBase = caminhoBase ?? basePath ?? '';
 
+  const { usuario } = useAuth();
+  const { useCards, useUpdateCard } = useDataProvider();
+  const { data: cartoes = [] } = useCards();
+  const { mutate: updateCard } = useUpdateCard();
+
   const termoBusca = (busca ?? _searchQuery ?? '').trim().toLowerCase();
   const prioridadeFiltro = filtroPrioridade ?? _priorityFilter ?? 'all';
+  const solFiltro = filtroSolicitante ?? _requesterFilter ?? 'all';
+  const somenteMinhas = apenasMinhas ?? _onlyMyTasks ?? false;
 
   const cartoesFiltrados = useMemo(() => {
     return (cartoes ?? []).filter((c) => {
@@ -69,9 +85,23 @@ export function ListaQuadro({
       if (prioridadeFiltro !== 'all' && c.priority !== prioridadeFiltro) {
         return false;
       }
+      if (solFiltro !== 'all') {
+        const idSol = c.id_solicitante || c.solicitante_id || c.id_usuario;
+        if (idSol !== solFiltro && c.solicitante?.id !== solFiltro) {
+          return false;
+        }
+      }
+      if (somenteMinhas && usuario) {
+        const idSol = c.id_solicitante || c.solicitante_id || c.id_usuario;
+        const ehSolicitante = idSol === usuario.id;
+        const ehResponsavel = c.assignee_id === usuario.id || c.id_responsavel === usuario.id;
+        if (!ehSolicitante && !ehResponsavel) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [cartoes, termoBusca, prioridadeFiltro]);
+  }, [cartoes, termoBusca, prioridadeFiltro, solFiltro, somenteMinhas, usuario]);
 
   const ordenados = useMemo(() => sortCards(cartoesFiltrados ?? [], ordenar), [cartoesFiltrados, ordenar]);
 
@@ -86,10 +116,11 @@ export function ListaQuadro({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[30%]">Título</TableHead>
+            <TableHead className="w-[28%]">Título</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Prioridade</TableHead>
             <TableHead>Tempo</TableHead>
+            <TableHead>Solicitante</TableHead>
             <TableHead>Responsável</TableHead>
             <TableHead>Vencimento</TableHead>
             <TableHead className="w-[60px]"></TableHead>
@@ -98,7 +129,7 @@ export function ListaQuadro({
         <TableBody>
           {ordenados.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="sgdi-lista-quadro-vazio">
+              <TableCell colSpan={8} className="sgdi-lista-quadro-vazio">
                 Nenhuma tarefa encontrada com os filtros selecionados.
               </TableCell>
             </TableRow>
@@ -181,6 +212,24 @@ export function ListaQuadro({
                     />
                   </TableCell>
                   <TableCell>
+                    <span className="sgdi-lista-responsavel-tag">
+                      {card.solicitante ? (
+                        <>
+                          <Avatar className="size-5">
+                            {card.solicitante.avatar_url && (
+                              <AvatarImage src={card.solicitante.avatar_url} alt={card.solicitante.full_name} />
+                            )}
+                            <AvatarFallback className="text-[9px]">
+                              {card.solicitante.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="truncate max-w-[120px]">{card.solicitante.full_name}</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">Automático</span>
+                      )}
+                    </span>
+                  </TableCell>
                     {/* TODO: atribuir responsavel */}
                     <AssigneePopover
                       assignee={card.assignee ?? null}

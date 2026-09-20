@@ -10,6 +10,8 @@ export default function PaginaQuadro() {
   const [ordenarPor, setOrdenarPor] = useState<TipoOrdenacao>('manual');
   const [busca, setBusca] = useState('');
   const [filtroPrioridade, setFiltroPrioridade] = useState('all');
+  const [filtroSolicitante, setFiltroSolicitante] = useState('all');
+  const [apenasMinhas, setApenasMinhas] = useState(false);
 
   return (
     <div className="sgdi-quadro-pagina-container">
@@ -21,6 +23,10 @@ export default function PaginaQuadro() {
         aoMudarBusca={setBusca}
         filtroPrioridade={filtroPrioridade}
         aoMudarFiltroPrioridade={setFiltroPrioridade}
+        filtroSolicitante={filtroSolicitante}
+        aoMudarFiltroSolicitante={setFiltroSolicitante}
+        apenasMinhas={apenasMinhas}
+        aoMudarApenasMinhas={setApenasMinhas}
       />
       <div className="sgdi-quadro-conteudo-area">
         <ColunasQuadro
@@ -28,6 +34,8 @@ export default function PaginaQuadro() {
           caminhoBase={caminhoBase}
           busca={busca}
           filtroPrioridade={filtroPrioridade}
+          filtroSolicitante={filtroSolicitante}
+          apenasMinhas={apenasMinhas}
         />
       </div>
     </div>

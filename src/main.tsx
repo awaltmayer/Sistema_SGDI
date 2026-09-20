@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { LimiteErro } from "./componentes/base/limite-erro.tsx";
 import "./index.css";
 import "./style-pack.css";
 
@@ -8,7 +9,11 @@ if (tema === "dark" || (tema === "system" && window.matchMedia("(prefers-color-s
   document.documentElement.classList.add("dark");
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <LimiteErro>
+    <App />
+  </LimiteErro>
+);
 
 
 

@@ -1,0 +1,148 @@
+================================================================================
+           SGDI - SISTEMA DE GESTÃO DE DEMANDAS DE TI
+        GUIA DE AMBIENTE, EXTENSÕES E PACOTES NECESSÁRIOS
+================================================================================
+
+1. PRÉ-REQUISITOS DE SISTEMA / RUNTIMES
+--------------------------------------------------------------------------------
+Para executar o projeto localmente na máquina, é necessário ter instalado:
+
+- Node.js: Versão 18.x ou superior (Recomendado: v20 LTS ou v22 LTS)
+  Download: https://nodejs.org/
+  Verificar no terminal:
+    node -v
+
+- Gerenciador de Pacotes: npm (versão 9+ ou 10+) ou pnpm / yarn
+  Verificar no terminal:
+    npm -v
+
+- Git (opcional, mas recomendado para controle de versão):
+  Download: https://git-scm.com/
+  Verificar no terminal:
+    git --version
+
+
+2. EXTENSÕES RECOMENDADAS PARA O EDITOR (VS CODE / CURSOR / WINDSURF)
+--------------------------------------------------------------------------------
+Para produtividade, formatação e verificação estática de código:
+
+1. Tailwind CSS IntelliSense
+   - ID: bradlc.vscode-tailwindcss
+   - Função: Autocomplete de classes, validação e destaque de sintaxe CSS/Tailwind.
+
+2. ESLint
+   - ID: dbaeumer.vscode-eslint
+   - Função: Integração do linter em tempo real (compatível com ESLint 9).
+
+3. Prettier - Code formatter
+   - ID: esbenp.prettier-vscode
+   - Função: Padronização e formatação automática do código.
+
+4. PostCSS Language Support
+   - ID: csstools.postcss
+   - Função: Realce de sintaxe e suporte às diretivas do PostCSS e Tailwind (@tailwind, @apply).
+
+5. TypeScript and JavaScript Language Features
+   - (Extensão nativa do VS Code / Cursor)
+   - Função: Suporte à tipagem estática e inteligência de código TypeScript 5+.
+
+
+3. PACOTES DO PROJETO (DEPENDÊNCIAS NPM)
+--------------------------------------------------------------------------------
+O projeto utiliza um arquivo package.json com todas as dependências mapeadas.
+Para instalar todos os pacotes automaticamente de uma só vez, execute no terminal:
+
+    npm install
+    (ou 'npm ci' para instalar exatamente as versões travadas no package-lock.json)
+
+Caso prefira ou precise instalar individualmente, abaixo estão listados todos os pacotes:
+
+--- A. Dependências de Produção (dependencies) ---
+- @dnd-kit/core (^6.3.1)                -> Biblioteca principal para arrastar e soltar (Kanban)
+- @dnd-kit/sortable (^10.0.0)            -> Funcionalidades de reordenação e ordenação
+- @dnd-kit/utilities (^3.2.2)           -> Utilitários auxiliares para drag and drop
+- @radix-ui/react-alert-dialog (^1.1.16) -> Modal de diálogo de confirmação/alerta acessível
+- @radix-ui/react-avatar (^1.1.12)       -> Componente de foto/avatar de perfil
+- @radix-ui/react-checkbox (^1.3.4)      -> Caixa de seleção acessível (checklists)
+- @radix-ui/react-dialog (^1.1.16)       -> Modais e caixas de diálogo sobrepostas
+- @radix-ui/react-dropdown-menu (^2.1.17)-> Menus suspensos de ações
+- @radix-ui/react-label (^2.1.9)         -> Rótulos de acessibilidade para formulários
+- @radix-ui/react-popover (^1.1.16)      -> Janelas popover (seletores de prazo, usuário, cor)
+- @radix-ui/react-progress (^1.1.9)      -> Barra de progresso para tarefas/checklists
+- @radix-ui/react-select (^2.3.0)        -> Menus de seleção customizados
+- @radix-ui/react-separator (^1.1.9)     -> Linhas separadoras semânticas
+- @radix-ui/react-slot (^1.2.5)          -> Composição flexível de componentes React
+- @radix-ui/react-tabs (^1.1.14)         -> Sistema de navegação por abas
+- @radix-ui/react-toggle (^1.1.11)       -> Botão de alternância de estado (toggle)
+- @radix-ui/react-toggle-group (^1.1.12) -> Grupo de alternadores (ex: Kanban / Lista)
+- @supabase/supabase-js (2.108.2)        -> Cliente de conexão e autenticação com Supabase
+- @tabler/icons-react (^3.44.0)          -> Pacote de ícones Tabler
+- @tanstack/react-query (5.101.0)        -> Gerenciador de estado assíncrono e cache de dados
+- @tanstack/react-table (^8.21.3)        -> Utilitário headless para tabelas de dados
+- class-variance-authority (^0.7.1)      -> Gerenciador de variantes de classes CSS (CVA)
+- clsx (^2.1.1)                          -> Utilitário para concatenação condicional de classes
+- cmdk (^1.1.1)                          -> Menu de comando rápido (paleta de comando)
+- date-fns (^4.4.0)                      -> Manipulação e formatação de datas
+- lucide-react (^1.17.0)                 -> Conjunto de ícones Lucide
+- motion (^12.40.0)                      -> Biblioteca de animações (Framer Motion)
+- nanoid (^5.1.11)                       -> Gerador de IDs únicos seguros
+- react (^18.3.1)                        -> Biblioteca principal React
+- react-day-picker (^10.0.1)             -> Componente de calendário para seleção de datas
+- react-dom (^18.3.1)                    -> Integração do React com a DOM do navegador
+- react-router-dom (^6.30.1)             -> Roteamento e navegação de páginas (SPA)
+- sonner (^2.0.7)                        -> Sistema de notificações toast modernas
+- tailwind-merge (^2.6.0)                -> Mesclagem inteligente de classes Tailwind sem conflitos
+
+--- B. Dependências de Desenvolvimento (devDependencies) ---
+- @eslint/js (^9.32.0)                   -> Configurações recomendadas do ESLint
+- @testing-library/jest-dom (^6.6.0)     -> Matchers de teste para o DOM
+- @testing-library/react (^16.0.0)       -> Utilitários para testes de componentes React
+- @types/node (^22.16.5)                 -> Tipagens TypeScript para Node.js
+- @types/react (^18.3.23)                -> Tipagens TypeScript para React
+- @types/react-dom (^18.3.7)             -> Tipagens TypeScript para React DOM
+- @vitejs/plugin-react-swc (^3.11.0)     -> Plugin de compilação rápida do React via SWC
+- autoprefixer (^10.4.21)                -> Adiciona prefixos de navegadores às regras CSS
+- eslint (^9.32.0)                       -> Linter estático para identificar erros no código
+- eslint-plugin-react-hooks (^5.2.0)     -> Regras de lint para React Hooks
+- eslint-plugin-react-refresh (^0.4.20)  -> Suporte a Fast Refresh sem perder estado
+- globals (^15.15.0)                     -> Lista de variáveis globais reconhecidas pelo ESLint
+- jsdom (^20.0.3)                        -> Emulação de ambiente DOM para testes unitários
+- postcss (^8.5.6)                       -> Ferramenta de transformação de CSS
+- tailwindcss (^3.4.17)                  -> Framework CSS utilitário
+- tailwindcss-animate (^1.0.7)           -> Animações utilitárias pré-configuradas para Tailwind
+- typescript (^5.8.3)                    -> Compilador e tipagem do TypeScript
+- typescript-eslint (^8.38.0)            -> Ferramentas de linting específicas para TypeScript
+- vite (^5.4.19)                         -> Servidor de desenvolvimento e empacotador de assets
+- vitest (^3.2.4)                        -> Executor de testes unitários ultrarrápido
+
+
+4. CONFIGURAÇÃO DE VARIÁVEIS DE AMBIENTE (.env)
+--------------------------------------------------------------------------------
+Para a comunicação com o backend e autenticação, é necessário criar um arquivo
+chamado '.env' na raiz do projeto contendo:
+
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-anon-ou-publishable-aqui
+# (o projeto também aceita VITE_SUPABASE_ANON_KEY como alternativa)
+
+Existe um arquivo modelo pronto na raiz chamado '.env.example'.
+Para usá-lo, você pode duplicá-lo e renomeá-lo para '.env'.
+
+
+5. PASSO A PASSO PARA INICIALIZAÇÃO DO PROJETO
+--------------------------------------------------------------------------------
+1. Abra o terminal na pasta raiz do projeto (Sistema_SGDI).
+2. Instale todas as dependências:
+   npm install
+
+3. Crie e preencha o arquivo .env:
+   (copie de .env.example)
+
+4. Inicie o servidor de desenvolvimento:
+   npm run dev
+
+5. Acesse a aplicação no seu navegador pelo link exibido (normalmente http://localhost:8080 ou http://localhost:5173).
+
+6. Para rodar a suíte de testes:
+   npm run test
+================================================================================

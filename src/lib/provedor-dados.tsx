@@ -51,6 +51,8 @@ export interface EntradaCriarCartao {
   priority?: Prioridade;
   id_responsavel?: string | null;
   assignee_id?: string | null;
+  id_solicitante?: string | null;
+  solicitante_id?: string | null;
   data_vencimento?: string | null;
   due_date?: string | null;
 }
@@ -69,6 +71,8 @@ export interface EntradaAtualizarCartao {
   complexity?: Complexity;
   id_responsavel?: string | null;
   assignee_id?: string | null;
+  id_solicitante?: string | null;
+  solicitante_id?: string | null;
   data_vencimento?: string | null;
   due_date?: string | null;
   cor?: string | null;
@@ -156,6 +160,16 @@ export interface CartaoComResponsavel extends CartaoTarefa {
     id: string;
     nome_completo: string;
     iniciais: string;
+    url_avatar?: string | null;
+    full_name?: string;
+    initials?: string;
+    avatar_url?: string | null;
+  } | null;
+  solicitante?: {
+    id: string;
+    nome_completo: string;
+    iniciais: string;
+    email?: string;
     url_avatar?: string | null;
     full_name?: string;
     initials?: string;
@@ -362,6 +376,7 @@ const SUPABASE_METADATA_KEY = "supabase-card-metadata-v1";
 interface SupabaseCardMeta {
   complexity?: Complexity;
   time_tracker?: TaskTimeTracker;
+  id_solicitante?: string | null;
 }
 function loadSupabaseMetadata(): Record<string, SupabaseCardMeta> {
   try {
@@ -374,6 +389,52 @@ function saveSupabaseMetadata(map: Record<string, SupabaseCardMeta>) {
   try {
     localStorage.setItem(SUPABASE_METADATA_KEY, JSON.stringify(map));
   } catch { }
+}
+
+function resolverSolicitante(
+  idSolicitante: string | null | undefined,
+  idUsuario: string | null | undefined,
+  membros: any[],
+  usuarioAtualAuth: any
+) {
+  const idAlvo = idSolicitante || idUsuario;
+  if (!idAlvo) return null;
+
+  const membroEncontrado = membros.find(
+    (m) => m.id === idAlvo || m.id_usuario_membro === idAlvo || m.id_usuario === idAlvo
+  );
+
+  if (membroEncontrado) {
+    return {
+      id: membroEncontrado.id,
+      nome_completo: membroEncontrado.nome_completo,
+      iniciais: membroEncontrado.iniciais,
+      email: membroEncontrado.email,
+      url_avatar: membroEncontrado.url_avatar,
+      full_name: membroEncontrado.nome_completo,
+      initials: membroEncontrado.iniciais,
+      avatar_url: membroEncontrado.url_avatar,
+    };
+  }
+
+  if (usuarioAtualAuth && (usuarioAtualAuth.id === idAlvo || usuarioAtualAuth.id === idUsuario)) {
+    const nome = usuarioAtualAuth.user_metadata?.full_name ?? usuarioAtualAuth.email?.split("@")[0] ?? "Usuário";
+    const iniciais = (usuarioAtualAuth.user_metadata?.full_name ?? usuarioAtualAuth.email ?? "U")
+      .slice(0, 2)
+      .toUpperCase();
+    return {
+      id: usuarioAtualAuth.id,
+      nome_completo: nome,
+      iniciais: iniciais,
+      email: usuarioAtualAuth.email,
+      url_avatar: usuarioAtualAuth.user_metadata?.avatar_url ?? null,
+      full_name: nome,
+      initials: iniciais,
+      avatar_url: usuarioAtualAuth.user_metadata?.avatar_url ?? null,
+    };
+  }
+
+  return null;
 }
 
 export function SupabaseDataProvider({ children }: { children: ReactNode }) {
@@ -458,21 +519,45 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       const { data, isLoading } = useQuery({
         queryKey: ["cards"],
         queryFn: async () => {
-          const { data, error } = await supabase
+          let rows: any[] = [];
+          const res = await supabase
             .from("cartoes")
             .select(
               `
-              id, id_usuario, titulo, descricao, coluna, prioridade,
+              id, id_usuario, id_solicitante, titulo, descricao, coluna, prioridade,
               id_responsavel, data_vencimento, posicao, criado_em,
               membros_equipe (id, nome_completo, iniciais, url_avatar)
             `
             )
             .order("coluna", { ascending: true })
             .order("posicao", { ascending: true });
-          if (error) throw error;
+
+          if (res.error) {
+            const fallback = await supabase
+              .from("cartoes")
+              .select(
+                `
+                id, id_usuario, titulo, descricao, coluna, prioridade,
+                id_responsavel, data_vencimento, posicao, criado_em,
+                membros_equipe (id, nome_completo, iniciais, url_avatar)
+              `
+              )
+              .order("coluna", { ascending: true })
+              .order("posicao", { ascending: true });
+            if (fallback.error) throw fallback.error;
+            rows = fallback.data ?? [];
+          } else {
+            rows = res.data ?? [];
+          }
+
+          const { data: todosMembros } = await supabase
+            .from("membros_equipe")
+            .select("id, id_usuario, id_usuario_membro, nome_completo, iniciais, email, url_avatar")
+            .neq("status", "removed");
+
           const chkMap = loadSupabaseChecklists();
           const metaMap = loadSupabaseMetadata();
-          return (data ?? []).map((row: any) => {
+          return rows.map((row: any) => {
             const tm = Array.isArray(row.membros_equipe)
               ? row.membros_equipe[0]
               : row.membros_equipe;
@@ -489,9 +574,15 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
                 }
               : null;
 
+            const idSolicitante = row.id_solicitante ?? meta.id_solicitante ?? row.id_usuario ?? null;
+            const solicitanteObj = resolverSolicitante(idSolicitante, row.id_usuario, todosMembros ?? [], user);
+
             return {
               id: row.id,
               id_usuario: row.id_usuario,
+              id_solicitante: idSolicitante,
+              solicitante_id: idSolicitante,
+              solicitante: solicitanteObj,
               titulo: row.titulo,
               descricao: row.descricao,
               coluna: row.coluna as IdColuna,
@@ -544,24 +635,48 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       const { data, isLoading } = useQuery({
         queryKey: ["card", id],
         queryFn: async () => {
-          const { data, error } = await supabase
+          let dataRow: any = null;
+          const res = await supabase
             .from("cartoes")
             .select(
               `
-              id, id_usuario, titulo, descricao, coluna, prioridade, data_vencimento, posicao, criado_em,
+              id, id_usuario, id_solicitante, titulo, descricao, coluna, prioridade, data_vencimento, posicao, criado_em,
               id_responsavel,
               membros_equipe (id, nome_completo, iniciais, url_avatar)
             `,
             )
             .eq("id", id)
             .single();
-          if (error) throw error;
+
+          if (res.error) {
+            const fallback = await supabase
+              .from("cartoes")
+              .select(
+                `
+                id, id_usuario, titulo, descricao, coluna, prioridade, data_vencimento, posicao, criado_em,
+                id_responsavel,
+                membros_equipe (id, nome_completo, iniciais, url_avatar)
+              `
+              )
+              .eq("id", id)
+              .single();
+            if (fallback.error) throw fallback.error;
+            dataRow = fallback.data;
+          } else {
+            dataRow = res.data;
+          }
+
+          const { data: todosMembros } = await supabase
+            .from("membros_equipe")
+            .select("id, id_usuario, id_usuario_membro, nome_completo, iniciais, email, url_avatar")
+            .neq("status", "removed");
+
           const chkMap = loadSupabaseChecklists();
           const metaMap = loadSupabaseMetadata();
-          const meta = metaMap[data.id] ?? {};
-          const tm: any = Array.isArray((data as any).membros_equipe)
-            ? (data as any).membros_equipe[0]
-            : (data as any).membros_equipe;
+          const meta = metaMap[dataRow.id] ?? {};
+          const tm: any = Array.isArray(dataRow.membros_equipe)
+            ? dataRow.membros_equipe[0]
+            : dataRow.membros_equipe;
           const respObj = tm
             ? {
                 id: tm.id,
@@ -574,19 +689,25 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
               }
             : null;
 
+          const idSolicitante = dataRow.id_solicitante ?? meta.id_solicitante ?? dataRow.id_usuario ?? null;
+          const solicitanteObj = resolverSolicitante(idSolicitante, dataRow.id_usuario, todosMembros ?? [], user);
+
           return {
-            id: data.id,
-            id_usuario: data.id_usuario,
-            titulo: data.titulo,
-            descricao: data.descricao,
-            coluna: data.coluna as IdColuna,
-            prioridade: data.prioridade as Prioridade,
-            id_responsavel: data.id_responsavel,
-            data_vencimento: data.data_vencimento,
-            posicao: data.posicao,
-            criado_em: data.criado_em,
-            listas_verificacao: chkMap[data.id] ?? [],
-            checklists: chkMap[data.id] ?? [],
+            id: dataRow.id,
+            id_usuario: dataRow.id_usuario,
+            id_solicitante: idSolicitante,
+            solicitante_id: idSolicitante,
+            solicitante: solicitanteObj,
+            titulo: dataRow.titulo,
+            descricao: dataRow.descricao,
+            coluna: dataRow.coluna as IdColuna,
+            prioridade: dataRow.prioridade as Prioridade,
+            id_responsavel: dataRow.id_responsavel,
+            data_vencimento: dataRow.data_vencimento,
+            posicao: dataRow.posicao,
+            criado_em: dataRow.criado_em,
+            listas_verificacao: chkMap[dataRow.id] ?? [],
+            checklists: chkMap[dataRow.id] ?? [],
             complexidade: meta.complexity ?? "medium",
             complexity: meta.complexity ?? "medium",
             rastreador_tempo: meta.time_tracker ?? {
@@ -606,14 +727,14 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
               pauses: [],
             },
             // Aliases de compatibilidade
-            title: data.titulo,
-            description: data.descricao,
-            column: data.coluna as IdColuna,
-            priority: data.prioridade as Prioridade,
-            assignee_id: data.id_responsavel,
-            due_date: data.data_vencimento,
-            position: data.posicao,
-            created_at: data.criado_em,
+            title: dataRow.titulo,
+            description: dataRow.descricao,
+            column: dataRow.coluna as IdColuna,
+            priority: dataRow.prioridade as Prioridade,
+            assignee_id: dataRow.id_responsavel,
+            due_date: dataRow.data_vencimento,
+            position: dataRow.posicao,
+            created_at: dataRow.criado_em,
             responsavel: respObj,
             assignee: respObj,
           };
@@ -627,22 +748,40 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     useCreateCard: () => {
       const mutation = useMutation({
         mutationFn: async (input: CreateCardInput) => {
-          const { data, error } = await supabase
-            .from("cartoes")
-            .insert({
-              id_usuario: user?.id ?? undefined,
-              titulo: input.titulo ?? input.title ?? "",
-              coluna: input.coluna ?? input.column ?? "todo",
-              prioridade: input.prioridade ?? input.priority ?? "low",
-              id_responsavel: input.id_responsavel ?? input.assignee_id ?? null,
-              data_vencimento: input.data_vencimento ?? input.due_date ?? null,
-              posicao: input.posicao ?? input.nextPosition ?? 0,
-              descricao: input.descricao ?? input.description ?? "",
-            })
-            .select()
-            .single();
-          if (error) throw error;
-          return data;
+          const idSolicitante = input.id_solicitante ?? input.solicitante_id ?? user?.id ?? null;
+          const payload: any = {
+            id_usuario: user?.id ?? undefined,
+            id_solicitante: idSolicitante,
+            titulo: input.titulo ?? input.title ?? "",
+            coluna: input.coluna ?? input.column ?? "todo",
+            prioridade: input.prioridade ?? input.priority ?? "low",
+            id_responsavel: input.id_responsavel ?? input.assignee_id ?? null,
+            data_vencimento: input.data_vencimento ?? input.due_date ?? null,
+            posicao: input.posicao ?? input.nextPosition ?? 0,
+            descricao: input.descricao ?? input.description ?? "",
+          };
+
+          let dataResult: any;
+          const res = await supabase.from("cartoes").insert(payload).select().single();
+          if (res.error) {
+            delete payload.id_solicitante;
+            const retry = await supabase.from("cartoes").insert(payload).select().single();
+            if (retry.error) throw retry.error;
+            dataResult = retry.data;
+          } else {
+            dataResult = res.data;
+          }
+
+          if (idSolicitante && dataResult?.id) {
+            const metaMap = loadSupabaseMetadata();
+            metaMap[dataResult.id] = {
+              ...(metaMap[dataResult.id] ?? {}),
+              id_solicitante: idSolicitante,
+            };
+            saveSupabaseMetadata(metaMap);
+          }
+
+          return dataResult;
         },
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
@@ -682,18 +821,58 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           if (fields.id_responsavel !== undefined || fields.assignee_id !== undefined) {
             patch.id_responsavel = fields.id_responsavel ?? fields.assignee_id;
           }
+          if (fields.id_solicitante !== undefined || fields.solicitante_id !== undefined) {
+            patch.id_solicitante = fields.id_solicitante ?? fields.solicitante_id;
+          }
           if (fields.data_vencimento !== undefined || fields.due_date !== undefined) {
             patch.data_vencimento = fields.data_vencimento ?? fields.due_date;
           }
 
-          const { data, error } = await supabase
+          let dataResult: any;
+          const res = await supabase
             .from("cartoes")
             .update(patch)
             .eq("id", id)
             .select()
             .single();
-          if (error) throw error;
-          return data;
+
+          if (res.error) {
+            if (patch.id_solicitante !== undefined) {
+              const solId = patch.id_solicitante;
+              delete patch.id_solicitante;
+              const retry = await supabase
+                .from("cartoes")
+                .update(patch)
+                .eq("id", id)
+                .select()
+                .single();
+              if (retry.error) throw retry.error;
+              dataResult = retry.data;
+
+              const metaMap = loadSupabaseMetadata();
+              metaMap[id] = {
+                ...(metaMap[id] ?? {}),
+                id_solicitante: solId,
+              };
+              saveSupabaseMetadata(metaMap);
+            } else {
+              throw res.error;
+            }
+          } else {
+            dataResult = res.data;
+          }
+
+          if (fields.id_solicitante !== undefined || fields.solicitante_id !== undefined) {
+            const solId = fields.id_solicitante ?? fields.solicitante_id ?? null;
+            const metaMap = loadSupabaseMetadata();
+            metaMap[id] = {
+              ...(metaMap[id] ?? {}),
+              id_solicitante: solId,
+            };
+            saveSupabaseMetadata(metaMap);
+          }
+
+          return dataResult;
         },
         onMutate: async ({ id, fields }) => {
           await queryClient.cancelQueries({ queryKey: ["cards"] });

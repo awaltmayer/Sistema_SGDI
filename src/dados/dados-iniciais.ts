@@ -156,6 +156,7 @@ export type TaskTimeTracker = RastreadorTempoTarefa;
 export interface CartaoTarefa {
   id: string;
   id_usuario?: string;
+  id_solicitante?: string | null;
   titulo: string;
   descricao: string;
   coluna: IdColuna;
@@ -169,6 +170,18 @@ export interface CartaoTarefa {
   listas_verificacao?: ListaVerificacao[];
   cor?: string | null;
 
+  // Objeto de dados do solicitante vinculado
+  solicitante?: {
+    id: string;
+    nome_completo: string;
+    iniciais: string;
+    email?: string;
+    url_avatar?: string | null;
+    full_name?: string;
+    initials?: string;
+    avatar_url?: string | null;
+  } | null;
+
   // Aliases para retrocompatibilidade
   title?: string;
   description?: string;
@@ -176,6 +189,7 @@ export interface CartaoTarefa {
   priority?: Prioridade;
   complexity?: Complexidade;
   time_tracker?: RastreadorTempoTarefa;
+  solicitante_id?: string | null;
   assignee_id?: string | null;
   due_date?: string | null;
   position?: number;

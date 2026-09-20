@@ -25,11 +25,8 @@ import {
   IconChevronDown,
   IconChevronRight,
 } from '@tabler/icons-react';
-import {
-  useDataProvider,
-  type CardWithAssignee,
-  type ReorderInput,
-} from '@/lib/provedor-dados';
+import { useDataProvider, type CardWithAssignee, type ReorderInput } from '@/lib/provedor-dados';
+import { useAuth } from '@/lib/autenticacao/provedor-autenticacao';
 import { colunas as columnDefs } from '@/dados/dados-iniciais';
 import type { IdColuna } from '@/dados/dados-iniciais';
 import { CartaoItem, CardTile } from './cartao-item';
@@ -47,11 +44,15 @@ export interface PropsColunasQuadro {
   basePath?: string;
   searchQuery?: string;
   priorityFilter?: string;
+  requesterFilter?: string;
+  onlyMyTasks?: boolean;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   caminhoBase?: string;
   busca?: string;
   filtroPrioridade?: string;
+  filtroSolicitante?: string;
+  apenasMinhas?: boolean;
 }
 export type BoardColumnsProps = PropsColunasQuadro;
 
@@ -76,15 +77,20 @@ export function ColunasQuadro({
   basePath,
   searchQuery: _searchQuery = '',
   priorityFilter: _priorityFilter = 'all',
+  requesterFilter: _requesterFilter = 'all',
+  onlyMyTasks: _onlyMyTasks = false,
   ordenarPor,
   caminhoBase,
   busca,
   filtroPrioridade,
+  filtroSolicitante,
+  apenasMinhas,
 }: PropsColunasQuadro) {
   const ordenar = ordenarPor ?? sortBy ?? 'manual';
   const rotaBase = caminhoBase ?? basePath ?? '';
 
   const navegar = useNavigate();
+  const { usuario } = useAuth();
   const { useCards, useCommentCounts, useReorderCards } = useDataProvider();
   const { data: todosCartoes = [], isLoading: carregando } = useCards();
   const { data: contagensComentarios = {} } = useCommentCounts();
@@ -109,6 +115,8 @@ export function ColunasQuadro({
 
   const termoBusca = (busca ?? _searchQuery ?? '').trim().toLowerCase();
   const prioridadeFiltro = filtroPrioridade ?? _priorityFilter ?? 'all';
+  const solFiltro = filtroSolicitante ?? _requesterFilter ?? 'all';
+  const somenteMinhas = apenasMinhas ?? _onlyMyTasks ?? false;
 
   const cartoesFiltrados = useMemo(() => {
     return (cartoes ?? []).filter((c) => {
@@ -118,9 +126,23 @@ export function ColunasQuadro({
       if (prioridadeFiltro !== 'all' && c.priority !== prioridadeFiltro) {
         return false;
       }
+      if (solFiltro !== 'all') {
+        const idSol = c.id_solicitante || c.solicitante_id || c.id_usuario;
+        if (idSol !== solFiltro && c.solicitante?.id !== solFiltro) {
+          return false;
+        }
+      }
+      if (somenteMinhas && usuario) {
+        const idSol = c.id_solicitante || c.solicitante_id || c.id_usuario;
+        const ehSolicitante = idSol === usuario.id;
+        const ehResponsavel = c.assignee_id === usuario.id || c.id_responsavel === usuario.id;
+        if (!ehSolicitante && !ehResponsavel) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [cartoes, termoBusca, prioridadeFiltro]);
+  }, [cartoes, termoBusca, prioridadeFiltro, solFiltro, somenteMinhas, usuario]);
 
   const cartoesPorColuna = useMemo(() => {
     const agrupados: Record<IdColuna, CardWithAssignee[]> = {

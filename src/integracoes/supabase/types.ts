@@ -16,6 +16,7 @@ export type Database = {
         Row: {
           id: string
           id_usuario: string
+          id_solicitante: string | null
           titulo: string
           descricao: string
           coluna: string
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           id?: string
           id_usuario?: string
+          id_solicitante?: string | null
           titulo: string
           descricao?: string
           coluna?: string
@@ -40,6 +42,7 @@ export type Database = {
         Update: {
           id?: string
           id_usuario?: string
+          id_solicitante?: string | null
           titulo?: string
           descricao?: string
           coluna?: string
@@ -55,6 +58,13 @@ export type Database = {
             columns: ["id_responsavel"]
             isOneToOne: false
             referencedRelation: "membros_equipe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cartoes_id_solicitante_fkey"
+            columns: ["id_solicitante"]
+            isOneToOne: false
+            referencedRelation: "perfis"
             referencedColumns: ["id"]
           },
         ]

@@ -143,25 +143,10 @@ cd SGDI-ti
 npm install
 ```
 
-### 2. Configurar variáveis de ambiente
-Crie um arquivo `.env` na raiz do projeto com as credenciais do seu projeto Supabase:
-```env
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anonima-aqui
-```
-
-### 3. Iniciar o servidor de desenvolvimento
+### 2. Iniciar o servidor de desenvolvimento
 ```bash
 npm run dev
 ```
-O aplicativo estará acessível em `http://localhost:8080` (ou na porta informada pelo terminal).
-
-### 4. Build de Produção
-```bash
-npm run build
-```
-Para testar a versão otimizada localmente:
-```bash
 npm run preview
 ```
 

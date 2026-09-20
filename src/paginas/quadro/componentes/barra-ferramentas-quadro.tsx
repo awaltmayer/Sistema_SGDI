@@ -292,7 +292,3 @@ export function BarraFerramentasQuadro({
 }
 
 export const BoardToolbar = BarraFerramentasQuadro;
-<<<<<<< HEAD
-=======
-
->>>>>>> ec99f6c (Atrelação a ID e complemento a tabela para verificações)

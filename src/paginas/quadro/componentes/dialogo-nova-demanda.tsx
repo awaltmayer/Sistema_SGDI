@@ -102,12 +102,9 @@ export function DialogoNovaDemanda({
     const cartoesDaColuna = cartoes.filter((c) => c.column === coluna);
     const proximaPosicao = cartoesDaColuna.length;
 
-<<<<<<< HEAD
-=======
     // Vinculação garantida ao user_id autenticado ou selecionado por admin
     const solicitanteFinal = idSolicitante || usuario?.id || null;
 
->>>>>>> ec99f6c (Atrelação a ID e complemento a tabela para verificações)
     createCard({
       title: tituloLimpo,
       column: coluna,

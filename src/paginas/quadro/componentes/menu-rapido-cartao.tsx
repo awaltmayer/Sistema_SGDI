@@ -22,7 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/componentes/ui/dialogo-alerta";
 import { useDataProvider, type CardWithAssignee } from "@/lib/provedor-dados";
-import { toast } from "sonner";
 import { cn } from "@/lib/utilitarios";
 import "./menu-rapido-cartao.css";
 
@@ -50,15 +49,13 @@ export function MenuRapidoCartao({
   const estiloGatilho = classeGatilho ?? triggerClassName;
 
   const [dialogoExclusaoAberto, setDialogoExclusaoAberto] = useState(false);
-  const { useUpdateCard, useDeleteCard } = useDataProvider();
-  const { mutate: updateCard } = useUpdateCard();
+  const { useDeleteCard } = useDataProvider();
   const { mutate: deleteCard } = useDeleteCard();
 
-  // TODO: alterar cor
-  const selecionarCor = (_idCor: string) => {};
-
-  // TODO: deletar card
   const excluirCartao = () => {
+    if (itemCartao?.id) {
+      deleteCard(itemCartao.id);
+    }
     setDialogoExclusaoAberto(false);
   };
 
@@ -117,17 +114,27 @@ export function MenuRapidoCartao({
       <AlertDialog open={dialogoExclusaoAberto} onOpenChange={setDialogoExclusaoAberto}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir &ldquo;{itemCartao.title}&rdquo;?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir #{itemCartao.id} &ldquo;{itemCartao.title}&rdquo;?</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza de que deseja excluir este cartão? Esta ação é definitiva e removerá todos os checklists e comentários associados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDialogoExclusaoAberto(false)}>
+            <AlertDialogCancel
+              onClick={(e) => {
+                e.stopPropagation();
+                setDialogoExclusaoAberto(false);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={excluirCartao}
+              onClick={(e) => {
+                e.stopPropagation();
+                excluirCartao();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir cartão

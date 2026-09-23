@@ -14,42 +14,39 @@ export type Database = {
     Tables: {
       cartoes: {
         Row: {
-          id: string
+          id: number | string
           id_usuario: string
-          id_solicitante: string | null
           titulo: string
           descricao: string
           coluna: string
           prioridade: string
           data_vencimento: string | null
           posicao: number
-          id_responsavel: string | null
+          id_responsavel: number | string | null
           criado_em: string
         }
         Insert: {
-          id?: string
+          id?: number | string
           id_usuario?: string
-          id_solicitante?: string | null
           titulo: string
           descricao?: string
           coluna?: string
           prioridade?: string
           data_vencimento?: string | null
           posicao?: number
-          id_responsavel?: string | null
+          id_responsavel?: number | string | null
           criado_em?: string
         }
         Update: {
-          id?: string
+          id?: number | string
           id_usuario?: string
-          id_solicitante?: string | null
           titulo?: string
           descricao?: string
           coluna?: string
           prioridade?: string
           data_vencimento?: string | null
           posicao?: number
-          id_responsavel?: string | null
+          id_responsavel?: number | string | null
           criado_em?: string
         }
         Relationships: [
@@ -60,37 +57,30 @@ export type Database = {
             referencedRelation: "membros_equipe"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "cartoes_id_solicitante_fkey"
-            columns: ["id_solicitante"]
-            isOneToOne: false
-            referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
         ]
       }
       comentarios: {
         Row: {
-          id: string
+          id: number | string
           id_usuario: string
-          id_cartao: string
-          id_autor: string
+          id_cartao: number | string
+          id_autor: number | string
           conteudo: string
           criado_em: string
         }
         Insert: {
-          id?: string
+          id?: number | string
           id_usuario?: string
-          id_cartao: string
-          id_autor: string
+          id_cartao: number | string
+          id_autor: number | string
           conteudo: string
           criado_em?: string
         }
         Update: {
-          id?: string
+          id?: number | string
           id_usuario?: string
-          id_cartao?: string
-          id_autor?: string
+          id_cartao?: number | string
+          id_autor?: number | string
           conteudo?: string
           criado_em?: string
         }
@@ -143,7 +133,7 @@ export type Database = {
       }
       membros_equipe: {
         Row: {
-          id: string
+          id: number | string
           id_usuario: string
           id_usuario_membro: string | null
           nome_completo: string
@@ -156,7 +146,7 @@ export type Database = {
           criado_em: string
         }
         Insert: {
-          id?: string
+          id?: number | string
           id_usuario?: string
           id_usuario_membro?: string | null
           nome_completo?: string
@@ -169,7 +159,7 @@ export type Database = {
           criado_em?: string
         }
         Update: {
-          id?: string
+          id?: number | string
           id_usuario?: string
           id_usuario_membro?: string | null
           nome_completo?: string

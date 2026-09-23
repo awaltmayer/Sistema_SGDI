@@ -54,13 +54,8 @@ export function CartaoItem({
   onOpenDetail,
   dragDisabled,
 }: PropsCartaoItem) {
-  const itemCartao = cartao ?? card!;
-  if (!itemCartao) return null;
-
-  const contagem = contagemComentarios ?? commentCount ?? 0;
-  const estaColapsado = colapsado ?? collapsed ?? false;
-  const alternarColapso = aoAlternarColapso ?? onToggleCollapse ?? (() => {});
-  const abrirDetalhes = aoAbrirDetalhes ?? onOpenDetail ?? (() => {});
+  const itemCartao = cartao ?? card;
+  const idCartao = itemCartao?.id ?? "";
   const arrastoBloqueado = arrastoDesabilitado ?? dragDisabled ?? false;
 
   const { useUpdateCard } = useDataProvider();
@@ -73,7 +68,14 @@ export function CartaoItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: itemCartao.id, disabled: arrastoBloqueado });
+  } = useSortable({ id: idCartao, disabled: arrastoBloqueado || !itemCartao });
+
+  if (!itemCartao) return null;
+
+  const contagem = contagemComentarios ?? commentCount ?? 0;
+  const estaColapsado = colapsado ?? collapsed ?? false;
+  const alternarColapso = aoAlternarColapso ?? onToggleCollapse ?? (() => {});
+  const abrirDetalhes = aoAbrirDetalhes ?? onOpenDetail ?? (() => {});
 
   const estilo = {
     transform: CSS.Transform.toString(transform),
@@ -84,7 +86,7 @@ export function CartaoItem({
     updateCard(itemCartao.id, { priority: prioridade });
 
   const selecionarResponsavel = (idResponsavel: string | null) =>
-    updateCard(itemCartao.id, { assignee_id: idResponsavel });
+    updateCard(itemCartao.id, { id_responsavel: idResponsavel, assignee_id: idResponsavel });
 
   const selecionarDataVencimento = (data: string | null) =>
     updateCard(itemCartao.id, { due_date: data });
@@ -133,6 +135,9 @@ export function CartaoItem({
 
       <div className="sgdi-cartao-cabecalho">
         <p className="flex-1 text-sm font-semibold line-clamp-2 text-foreground">
+          <span className="mr-1.5 text-xs font-mono font-bold text-muted-foreground">
+            #{itemCartao.id}
+          </span>
           {itemCartao.title}
         </p>
         <div className="sgdi-cartao-acoes-cabecalho">

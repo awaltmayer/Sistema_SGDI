@@ -21,76 +21,57 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    let ativo = true;
-
-    try {
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((evento, sessaoAtual) => {
-        if (!ativo) return;
-        setSessao(sessaoAtual);
-        setUsuario(sessaoAtual?.user ?? null);
-        setCarregando(false);
-
-        if (evento === 'SIGNED_IN' && sessaoAtual?.user) {
-          const u = sessaoAtual.user;
-          const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
-          const avatar =
-            (meta.avatar_url as string | undefined) ?? (meta.picture as string | undefined) ?? null;
-          const nomeCompleto =
-            (meta.full_name as string | undefined) ?? (meta.name as string | undefined) ?? null;
-          if (avatar || nomeCompleto) {
-            setTimeout(() => {
-              supabase
-                .from('perfis')
-                .select('url_avatar, nome_completo')
-                .eq('id', u.id)
-                .maybeSingle()
-                .then(({ data }) => {
-                  const patch: { url_avatar?: string; nome_completo?: string } = {};
-                  if (avatar && !data?.url_avatar) patch.url_avatar = avatar;
-                  if (nomeCompleto && !data?.nome_completo) patch.nome_completo = nomeCompleto;
-                  if (Object.keys(patch).length > 0) {
-                    void supabase.from('perfis').update(patch).eq('id', u.id);
-                  }
-                  const tmPatch: { url_avatar?: string; nome_completo?: string } = {};
-                  if (avatar) tmPatch.url_avatar = avatar;
-                  if (nomeCompleto) tmPatch.nome_completo = nomeCompleto;
-                  if (Object.keys(tmPatch).length > 0) {
-                    void supabase
-                      .from('membros_equipe')
-                      .update(tmPatch)
-                      .eq('id_usuario', u.id)
-                      .eq('id_usuario_membro', u.id);
-                  }
-                })
-                .catch(() => {});
-            }, 0);
-          }
-        }
-      });
-
-      supabase.auth
-        .getSession()
-        .then(({ data: { session: sessaoAtual } }) => {
-          if (!ativo) return;
-          setSessao(sessaoAtual);
-          setUsuario(sessaoAtual?.user ?? null);
-          setCarregando(false);
-        })
-        .catch((erro) => {
-          console.warn("Não foi possível carregar a sessão do Supabase:", erro);
-          if (ativo) setCarregando(false);
-        });
-
-      return () => {
-        ativo = false;
-        subscription?.unsubscribe();
-      };
-    } catch (erro) {
-      console.warn("Erro ao inicializar autenticação Supabase:", erro);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((evento, sessaoAtual) => {
+      setSessao(sessaoAtual);
+      setUsuario(sessaoAtual?.user ?? null);
       setCarregando(false);
-    }
+
+      if (evento === 'SIGNED_IN' && sessaoAtual?.user) {
+        const u = sessaoAtual.user;
+        const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
+        const avatar =
+          (meta.avatar_url as string | undefined) ?? (meta.picture as string | undefined) ?? null;
+        const nomeCompleto =
+          (meta.full_name as string | undefined) ?? (meta.name as string | undefined) ?? null;
+        if (avatar || nomeCompleto) {
+          setTimeout(() => {
+            supabase
+              .from('perfis')
+              .select('url_avatar, nome_completo')
+              .eq('id', u.id)
+              .maybeSingle()
+              .then(({ data }) => {
+                const patch: { url_avatar?: string; nome_completo?: string } = {};
+                if (avatar && !data?.url_avatar) patch.url_avatar = avatar;
+                if (nomeCompleto && !data?.nome_completo) patch.nome_completo = nomeCompleto;
+                if (Object.keys(patch).length > 0) {
+                  void supabase.from('perfis').update(patch).eq('id', u.id);
+                }
+                const tmPatch: { url_avatar?: string; nome_completo?: string } = {};
+                if (avatar) tmPatch.url_avatar = avatar;
+                if (nomeCompleto) tmPatch.nome_completo = nomeCompleto;
+                if (Object.keys(tmPatch).length > 0) {
+                  void supabase
+                    .from('membros_equipe')
+                    .update(tmPatch)
+                    .eq('id_usuario', u.id)
+                    .eq('id_usuario_membro', u.id);
+                }
+              });
+          }, 0);
+        }
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session: sessaoAtual } }) => {
+      setSessao(sessaoAtual);
+      setUsuario(sessaoAtual?.user ?? null);
+      setCarregando(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const desconectar = async () => {
@@ -117,10 +98,11 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
 
 export const AuthProvider = ProvedorAutenticacao;
 
-export function usarAutenticacao() {
+export function useAutenticacao() {
   const ctx = useContext(ContextoAuth);
-  if (!ctx) throw new Error('usarAutenticacao deve ser usado dentro de ProvedorAutenticacao');
+  if (!ctx) throw new Error('useAutenticacao deve ser usado dentro de ProvedorAutenticacao');
   return ctx;
 }
 
-export const useAuth = usarAutenticacao;
+export const useAuth = useAutenticacao;
+export const usarAutenticacao = useAutenticacao;

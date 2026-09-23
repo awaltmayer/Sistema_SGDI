@@ -46,7 +46,7 @@ SGDI-ti/
 │   ├── paginas/            # Telas da aplicação
 │   │   ├── autenticacao/   # Login, Cadastro, OAuth Callback
 │   │   ├── configuracoes/  # Perfil, Senha, Membros da Equipe
-│   │   └── quadro/         # Quadro Kanban, Lista e Detalhes do Cartão
+│   │   └── quadro/         # Quadro Kanban e Detalhes do Cartão
 │   ├── App.tsx             # Configuração de rotas e provedores globais
 │   ├── index.css           # Estilos globais e tokens de cores
 │   └── main.tsx            # Ponto de entrada da aplicação
@@ -74,10 +74,12 @@ SGDI-ti/
    - [x] Interface 100% responsiva (Desktop, Tablet e Mobile)
    - [x] Notificações toast em ações da aplicação
 
-3. **Quadro Kanban & Visualização em Lista**
-   - [x] Renderização de colunas (A Fazer, Em Andamento, Concluído)
+3. **Quadro Kanban Interativo**
+   - [x] Renderização de colunas dinâmicas (A Fazer, Em Andamento, Concluído)
    - [x] Arrastar e soltar cartões entre colunas e reordenação vertical (`@dnd-kit`)
-   - [x] Alternância dinâmica entre modo Quadro (Kanban) e modo Lista
+   - [x] Personalização de cores das colunas com persistência local
+   - [x] Filtragem em tempo real por termo de busca e nível de prioridade
+   - [x] Ordenação múltipla (manual, prioridade, data de vencimento, responsável, etc.)
    - [x] Modal de Criação Rápida de Demandas ("Nova Demanda")
    - [x] Criação de cartões direto na coluna "A Fazer"
    - [x] Navegação completa para a página de detalhes da tarefa (`/board/:cardId`)
@@ -92,9 +94,9 @@ SGDI-ti/
 
 ---
 
-### ⏳ Funcionalidades com Interface Pronta (Sem a implementação lógica)
+### ⏳ Funcionalidades com Interface Pronta (Sem a persistência lógica completa)
 
-As seguintes funcionalidades estão com **100% dos estilos, componentes visuais, botões e modais mantidos no front-end**, prontas para terem sua persistência e regras de negócio reativadas/conectadas:
+As seguintes funcionalidades estão com **100% dos estilos, componentes visuais, botões e modais mantidos no front-end**, prontas para terem sua persistência e regras de negócio ativadas:
 
 1. **Comentários nas Demandas**
    - *Status atual:* Campo de texto, listagem visual e atalho `⌘ + Enter` disponíveis.
@@ -116,17 +118,9 @@ As seguintes funcionalidades estão com **100% dos estilos, componentes visuais,
    - *Status atual:* Campo de área de texto expansível com estilos e placeholders.
    - *Falta:* Salvar o conteúdo digitado no campo `description` no evento `onBlur`/debounce.
 
-6. **Paleta de Cores do Cartão**
-   - *Status atual:* Seletor com 15 opções de cores, contraste automático e pré-visualização.
-   - *Falta:* Salvar a cor selecionada no campo `color` do cartão.
-
-7. **Exclusão de Cartões**
+6. **Exclusão de Cartões**
    - *Status atual:* Botões de exclusão no menu rápido e na página de detalhes com diálogo de confirmação (`AlertDialog`).
    - *Falta:* Disparar a mutação `useDeleteCard` na confirmação.
-
-8. **Filtros da Barra de Ferramentas**
-   - *Status atual:* Dropdowns de ordenação, filtro de prioridade, complexidade e campo de busca presentes e interativos.
-   - *Falta:* Aplicar a filtragem no array de cartões do quadro.
 
 ---
 
@@ -143,10 +137,25 @@ cd SGDI-ti
 npm install
 ```
 
-### 2. Iniciar o servidor de desenvolvimento
+### 2. Configurar variáveis de ambiente
+Crie um arquivo `.env` na raiz do projeto com as credenciais do seu projeto Supabase:
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anonima-aqui
+```
+
+### 3. Iniciar o servidor de desenvolvimento
 ```bash
 npm run dev
 ```
+O aplicativo estará acessível em `http://localhost:8080` (ou na porta informada pelo terminal).
+
+### 4. Build de Produção
+```bash
+npm run build
+```
+Para testar a versão otimizada localmente:
+```bash
 npm run preview
 ```
 

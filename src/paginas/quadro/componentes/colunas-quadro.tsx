@@ -25,8 +25,11 @@ import {
   IconChevronDown,
   IconChevronRight,
 } from '@tabler/icons-react';
-import { useDataProvider, type CardWithAssignee, type ReorderInput } from '@/lib/provedor-dados';
-import { useAuth } from '@/lib/autenticacao/provedor-autenticacao';
+import {
+  useDataProvider,
+  type CardWithAssignee,
+  type ReorderInput,
+} from '@/lib/provedor-dados';
 import { colunas as columnDefs } from '@/dados/dados-iniciais';
 import type { IdColuna } from '@/dados/dados-iniciais';
 import { CartaoItem, CardTile } from './cartao-item';
@@ -45,14 +48,14 @@ export interface PropsColunasQuadro {
   searchQuery?: string;
   priorityFilter?: string;
   requesterFilter?: string;
-  onlyMyTasks?: boolean;
+  assigneeFilter?: string;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   caminhoBase?: string;
   busca?: string;
   filtroPrioridade?: string;
   filtroSolicitante?: string;
-  apenasMinhas?: boolean;
+  filtroResponsavel?: string;
 }
 export type BoardColumnsProps = PropsColunasQuadro;
 
@@ -62,14 +65,18 @@ function carregarCoresColunasSalvas(): Record<string, string> {
   try {
     const salvo = localStorage.getItem(LOCAL_STORAGE_CHAVE_CORES_COLUNAS);
     if (salvo) return JSON.parse(salvo);
-  } catch {}
+  } catch {
+    /* fallback para objeto vazio */
+  }
   return {};
 }
 
 function salvarCoresColunas(cores: Record<string, string>) {
   try {
     localStorage.setItem(LOCAL_STORAGE_CHAVE_CORES_COLUNAS, JSON.stringify(cores));
-  } catch {}
+  } catch {
+    /* erro silencioso ao persistir cores no cache */
+  }
 }
 
 export function ColunasQuadro({
@@ -78,19 +85,18 @@ export function ColunasQuadro({
   searchQuery: _searchQuery = '',
   priorityFilter: _priorityFilter = 'all',
   requesterFilter: _requesterFilter = 'all',
-  onlyMyTasks: _onlyMyTasks = false,
+  assigneeFilter: _assigneeFilter = 'all',
   ordenarPor,
   caminhoBase,
   busca,
   filtroPrioridade,
   filtroSolicitante,
-  apenasMinhas,
+  filtroResponsavel,
 }: PropsColunasQuadro) {
   const ordenar = ordenarPor ?? sortBy ?? 'manual';
   const rotaBase = caminhoBase ?? basePath ?? '';
 
   const navegar = useNavigate();
-  const { usuario } = useAuth();
   const { useCards, useCommentCounts, useReorderCards } = useDataProvider();
   const { data: todosCartoes = [], isLoading: carregando } = useCards();
   const { data: contagensComentarios = {} } = useCommentCounts();
@@ -110,13 +116,13 @@ export function ColunasQuadro({
     });
   };
 
-  const cartoes = cartoesLocais ?? todosCartoes ?? [];
+  const cartoes = useMemo(() => cartoesLocais ?? todosCartoes ?? [], [cartoesLocais, todosCartoes]);
   const arrastoDesabilitado = ordenar !== 'manual';
 
   const termoBusca = (busca ?? _searchQuery ?? '').trim().toLowerCase();
   const prioridadeFiltro = filtroPrioridade ?? _priorityFilter ?? 'all';
-  const solFiltro = filtroSolicitante ?? _requesterFilter ?? 'all';
-  const somenteMinhas = apenasMinhas ?? _onlyMyTasks ?? false;
+  const solicitanteFiltro = filtroSolicitante ?? _requesterFilter ?? 'all';
+  const responsavelFiltro = filtroResponsavel ?? _assigneeFilter ?? 'all';
 
   const cartoesFiltrados = useMemo(() => {
     return (cartoes ?? []).filter((c) => {
@@ -126,23 +132,23 @@ export function ColunasQuadro({
       if (prioridadeFiltro !== 'all' && c.priority !== prioridadeFiltro) {
         return false;
       }
-      if (solFiltro !== 'all') {
-        const idSol = c.id_solicitante || c.solicitante_id || c.id_usuario;
-        if (idSol !== solFiltro && c.solicitante?.id !== solFiltro) {
+      if (solicitanteFiltro !== 'all') {
+        const idCriador = c.id_usuario ?? c.user_id;
+        if (idCriador !== solicitanteFiltro) {
           return false;
         }
       }
-      if (somenteMinhas && usuario) {
-        const idSol = c.id_solicitante || c.solicitante_id || c.id_usuario;
-        const ehSolicitante = idSol === usuario.id;
-        const ehResponsavel = c.assignee_id === usuario.id || c.id_responsavel === usuario.id;
-        if (!ehSolicitante && !ehResponsavel) {
-          return false;
+      if (responsavelFiltro !== 'all') {
+        const idResp = c.id_responsavel ?? c.assignee_id;
+        if (responsavelFiltro === 'unassigned') {
+          if (idResp) return false;
+        } else {
+          if (idResp !== responsavelFiltro) return false;
         }
       }
       return true;
     });
-  }, [cartoes, termoBusca, prioridadeFiltro, solFiltro, somenteMinhas, usuario]);
+  }, [cartoes, termoBusca, prioridadeFiltro, solicitanteFiltro, responsavelFiltro]);
 
   const cartoesPorColuna = useMemo(() => {
     const agrupados: Record<IdColuna, CardWithAssignee[]> = {
@@ -164,7 +170,11 @@ export function ColunasQuadro({
   const alternarColapso = (id: string) => {
     setIdsColapsados((prev) => {
       const proximo = new Set(prev);
-      proximo.has(id) ? proximo.delete(id) : proximo.add(id);
+      if (proximo.has(id)) {
+        proximo.delete(id);
+      } else {
+        proximo.add(id);
+      }
       return proximo;
     });
   };

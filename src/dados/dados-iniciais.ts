@@ -156,7 +156,6 @@ export type TaskTimeTracker = RastreadorTempoTarefa;
 export interface CartaoTarefa {
   id: string;
   id_usuario?: string;
-  id_solicitante?: string | null;
   titulo: string;
   descricao: string;
   coluna: IdColuna;
@@ -170,18 +169,6 @@ export interface CartaoTarefa {
   listas_verificacao?: ListaVerificacao[];
   cor?: string | null;
 
-  // Objeto de dados do solicitante vinculado
-  solicitante?: {
-    id: string;
-    nome_completo: string;
-    iniciais: string;
-    email?: string;
-    url_avatar?: string | null;
-    full_name?: string;
-    initials?: string;
-    avatar_url?: string | null;
-  } | null;
-
   // Aliases para retrocompatibilidade
   title?: string;
   description?: string;
@@ -189,7 +176,6 @@ export interface CartaoTarefa {
   priority?: Prioridade;
   complexity?: Complexidade;
   time_tracker?: RastreadorTempoTarefa;
-  solicitante_id?: string | null;
   assignee_id?: string | null;
   due_date?: string | null;
   position?: number;
@@ -276,7 +262,7 @@ export const colunas: Coluna[] = [
 
 export const membrosEquipe: MembroEquipe[] = [
   {
-    id: '1138165',
+    id: '1',
     nome_completo: 'Enio Muliterno Neto',
     iniciais: 'EN',
     email: '1138165@atitus.edu.br',
@@ -289,7 +275,7 @@ export const membrosEquipe: MembroEquipe[] = [
     avatar_url: null,
   },
   {
-    id: '1138100',
+    id: '2',
     nome_completo: 'Augusto Wolfart Altmayer',
     iniciais: 'AA',
     email: '1138100@atitus.edu.br',
@@ -302,7 +288,7 @@ export const membrosEquipe: MembroEquipe[] = [
     avatar_url: null,
   },
   {
-    id: '1138132',
+    id: '3',
     nome_completo: 'Ricardo Pereira Drews',
     iniciais: 'RD',
     email: '1138132@atitus.edu.br',
@@ -315,7 +301,7 @@ export const membrosEquipe: MembroEquipe[] = [
     avatar_url: null,
   },
   {
-    id: '1138930',
+    id: '4',
     nome_completo: 'Luiz Henrique Appelt Weller',
     iniciais: 'LW',
     email: '1138930@atitus.edu.br',
@@ -330,7 +316,7 @@ export const membrosEquipe: MembroEquipe[] = [
 ];
 
 export const usuarioAtual: PerfilUsuario = {
-  id: '1138165',
+  id: '1',
   nome_completo: 'Enio Muliterno Neto',
   iniciais: 'EN',
   email: '1138165@atitus.edu.br',
@@ -344,13 +330,13 @@ export const usuarioAtual: PerfilUsuario = {
 
 export const cartoes: CartaoTarefa[] = [
   {
-    id: 'c1',
+    id: '1',
     titulo: 'Auditoria do sistema de design',
     descricao: 'Audite os tokens e a biblioteca de componentes atuais. Documente as lacunas e proponha atualizações antes do kickoff do sprint do Q2.',
     coluna: 'todo',
     prioridade: 'high',
     complexidade: 'high',
-    id_responsavel: '1138165',
+    id_responsavel: '1',
     data_vencimento: '2026-07-08',
     posicao: 0,
     criado_em: '2026-06-28T09:00:00Z',
@@ -366,20 +352,20 @@ export const cartoes: CartaoTarefa[] = [
     column: 'todo',
     priority: 'high',
     complexity: 'high',
-    assignee_id: '1138165',
+    assignee_id: '1',
     due_date: '2026-07-08',
     position: 0,
     created_at: '2026-06-28T09:00:00Z',
     color: 'blue',
   },
   {
-    id: 'c2',
+    id: '2',
     titulo: 'Escrever documentação de onboarding',
     descricao: 'Crie um guia passo a passo para novos membros da equipe.',
     coluna: 'todo',
     prioridade: 'low',
     complexidade: 'low',
-    id_responsavel: '1138930',
+    id_responsavel: '4',
     data_vencimento: '2026-07-12',
     posicao: 1,
     criado_em: '2026-07-01T10:00:00Z',
@@ -390,19 +376,19 @@ export const cartoes: CartaoTarefa[] = [
     column: 'todo',
     priority: 'low',
     complexity: 'low',
-    assignee_id: '1138930',
+    assignee_id: '4',
     due_date: '2026-07-12',
     position: 1,
     created_at: '2026-07-01T10:00:00Z',
   },
   {
-    id: 'c3',
+    id: '3',
     titulo: 'Atualizar página de preços',
     descricao: 'Revise o texto e o layout da página de preços.',
     coluna: 'todo',
     prioridade: 'medium',
     complexidade: 'medium',
-    id_responsavel: '1138100',
+    id_responsavel: '2',
     data_vencimento: '2026-07-15',
     posicao: 2,
     criado_em: '2026-07-02T11:00:00Z',
@@ -413,19 +399,19 @@ export const cartoes: CartaoTarefa[] = [
     column: 'todo',
     priority: 'medium',
     complexity: 'medium',
-    assignee_id: '1138100',
+    assignee_id: '2',
     due_date: '2026-07-15',
     position: 2,
     created_at: '2026-07-02T11:00:00Z',
   },
   {
-    id: 'c4',
+    id: '4',
     titulo: 'Auditoria de acessibilidade',
     descricao: 'Execute uma auditoria de acessibilidade em todas as páginas públicas e produza um relatório de conformidade WCAG 2.1 AA.',
     coluna: 'todo',
     prioridade: 'high',
     complexidade: 'very-high',
-    id_responsavel: '1138132',
+    id_responsavel: '3',
     data_vencimento: '2026-07-20',
     posicao: 3,
     criado_em: '2026-07-03T09:30:00Z',
@@ -448,7 +434,7 @@ export const cartoes: CartaoTarefa[] = [
     column: 'todo',
     priority: 'high',
     complexity: 'very-high',
-    assignee_id: '1138132',
+    assignee_id: '3',
     due_date: '2026-07-20',
     position: 3,
     created_at: '2026-07-03T09:30:00Z',
@@ -457,24 +443,24 @@ export const cartoes: CartaoTarefa[] = [
 
 export const comentarios: Comentario[] = [
   {
-    id: 'cm1',
-    id_cartao: 'c1',
-    id_autor: '1138165',
+    id: '1',
+    id_cartao: '1',
+    id_autor: '1',
     conteudo: 'Arquivo de tokens atualizado — precisa de revisão por pares.',
     criado_em: '2026-07-06T10:00:00Z',
-    card_id: 'c1',
-    author_id: '1138165',
+    card_id: '1',
+    author_id: '1',
     body: 'Arquivo de tokens atualizado — precisa de revisão por pares.',
     created_at: '2026-07-06T10:00:00Z',
   },
   {
-    id: 'cm2',
-    id_cartao: 'c1',
-    id_autor: '1138100',
+    id: '2',
+    id_cartao: '1',
+    id_autor: '2',
     conteudo: 'Claro — vou revisar até o fim do dia.',
     criado_em: '2026-07-07T14:30:00Z',
-    card_id: 'c1',
-    author_id: '1138100',
+    card_id: '1',
+    author_id: '2',
     body: 'Claro — vou revisar até o fim do dia.',
     created_at: '2026-07-07T14:30:00Z',
   },

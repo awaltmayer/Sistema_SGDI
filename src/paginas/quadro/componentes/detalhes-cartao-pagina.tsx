@@ -5,7 +5,6 @@ import {
   IconColumns,
   IconFlag,
   IconUser,
-  IconUserCheck,
   IconCalendar,
   IconFileX,
   IconSquareCheck,
@@ -71,10 +70,11 @@ export type CardDetailPageProps = PropsPaginaDetalhesCartao;
 export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetalhesCartao) {
   const rotaBase = caminhoBase ?? basePath;
   const { cardId } = useParams<{ cardId: string }>();
-  const _navegar = useNavigate();
+  const navegar = useNavigate();
   const {
     useCard,
     useUpdateCard,
+    useDeleteCard,
     useComments,
     useTeamMembers,
     useCurrentUser,
@@ -82,6 +82,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
   const { data: cartao, isLoading: carregando } = useCard(cardId ?? '');
   const { mutate: updateCard } = useUpdateCard();
+  const { mutate: deleteCard } = useDeleteCard();
   const { data: membros = [] } = useTeamMembers();
   const { data: usuarioAtual } = useCurrentUser();
   const { data: comentarios = [] } = useComments(cardId ?? '');
@@ -175,9 +176,17 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
     if (titulo !== cartao.title) updateCard(cartao.id, { title: titulo });
   };
 
-  const salvarDescricao = () => {};
+  const salvarDescricao = () => {
+    if (cartao && descricao !== cartao.description) {
+      updateCard(cartao.id, { description: descricao });
+    }
+  };
 
-  const excluirCartao = () => {};
+  const excluirCartao = () => {
+    if (!cartao) return;
+    deleteCard(cartao.id);
+    navegar(rotaBase);
+  };
 
   const adicionarComentario = () => {
     setTextoComentario('');
@@ -204,19 +213,27 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage className="max-w-[40ch] truncate">{cartao.title}</BreadcrumbPage>
+                <BreadcrumbPage className="max-w-[40ch] truncate">
+                  <span className="font-mono font-semibold text-muted-foreground mr-1">#{cartao.id}</span>
+                  {cartao.title}
+                </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
 
           <div className="grid grid-cols-1 gap-12 md:grid-cols-[1fr_280px]">
             <div className="space-y-6">
-              <Input
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-                onBlur={salvarTitulo}
-                className="h-auto -mx-2 -my-1 rounded-md border-none bg-transparent px-2 py-1 text-3xl md:text-3xl font-semibold tracking-tight text-balance shadow-none transition-colors hover:bg-accent focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring"
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-2xl md:text-3xl font-mono font-bold text-muted-foreground select-none">
+                  #{cartao.id}
+                </span>
+                <Input
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  onBlur={salvarTitulo}
+                  className="h-auto -mx-2 -my-1 rounded-md border-none bg-transparent px-2 py-1 text-3xl md:text-3xl font-semibold tracking-tight text-balance shadow-none transition-colors hover:bg-accent focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring flex-1"
+                />
+              </div>
 
               <div className="space-y-2">
                 <p className="text-lg font-semibold text-foreground">Descrição</p>
@@ -370,33 +387,12 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                 </Select>
               </LinhaCampo>
 
-              <LinhaCampo icon={IconUserCheck} label="Solicitante">
-                <div className="flex items-center gap-2 rounded-md border border-border/80 bg-muted/30 px-2.5 py-1.5 text-xs">
-                  <Avatar className="size-5">
-                    {cartao.solicitante?.avatar_url && (
-                      <AvatarImage src={cartao.solicitante.avatar_url} alt={cartao.solicitante.full_name} />
-                    )}
-                    <AvatarFallback className="text-[10px]">
-                      {cartao.solicitante?.initials ?? 'S'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="font-medium text-foreground truncate">
-                      {cartao.solicitante?.full_name ?? 'Solicitante do Sistema'}
-                    </span>
-                    {cartao.solicitante?.email && (
-                      <span className="text-[10px] text-muted-foreground truncate">
-                        {cartao.solicitante.email}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </LinhaCampo>
-
               <LinhaCampo icon={IconUser} label="Responsável">
                 <Select
                   value={cartao.assignee_id ?? 'unassigned'}
-                  onValueChange={(_v) => {
+                  onValueChange={(val) => {
+                    const novoId = val === 'unassigned' ? null : val;
+                    updateCard(cartao.id, { id_responsavel: novoId, assignee_id: novoId });
                   }}
                 >
                   <SelectTrigger className="h-8">
@@ -519,7 +515,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir cartão</AlertDialogTitle>
+                    <AlertDialogTitle>Excluir cartão #{cartao.id}?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Tem certeza de que deseja excluir &ldquo;{cartao.title}&rdquo;? Esta ação
                       não pode ser desfeita.

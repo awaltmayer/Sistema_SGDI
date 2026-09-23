@@ -3,7 +3,7 @@ import { Button as ShadcnButton, type ButtonProps as ShadcnButtonProps } from "@
 import { cn } from "@/lib/utilitarios";
 import "./botao.css";
 
-export interface PropsBotao extends ShadcnButtonProps {}
+export type PropsBotao = ShadcnButtonProps;
 export type ButtonProps = PropsBotao;
 
 const Button = React.forwardRef<HTMLButtonElement, PropsBotao>(

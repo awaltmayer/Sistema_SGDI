@@ -114,7 +114,7 @@ export function MenuRapidoCartao({
       <AlertDialog open={dialogoExclusaoAberto} onOpenChange={setDialogoExclusaoAberto}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir #{itemCartao.id} &ldquo;{itemCartao.title}&rdquo;?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir #{itemCartao.id} &ldquo;{itemCartao.titulo ?? itemCartao.title}&rdquo;?</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza de que deseja excluir este cartão? Esta ação é definitiva e removerá todos os checklists e comentários associados.
             </AlertDialogDescription>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { IconUser, IconChevronDown, IconCheck, IconUsers, IconUserX } from '@tabler/icons-react';
 import {
   Popover,
@@ -30,18 +30,92 @@ export function SeletorFiltroResponsavel({
   className,
 }: PropsSeletorFiltroResponsavel) {
   const [aberto, setAberto] = useState(false);
-  const { useTeamMembers } = useDataProvider();
+  const { useTeamMembers, useCards } = useDataProvider();
   const { data: membros = [] } = useTeamMembers();
+  const { data: cartoes = [] } = useCards();
+
+  // Coleta IDs de responsáveis com tarefas associadas e verifica se há tarefas sem responsável
+  const { idsResponsaveisComTarefas, temNaoAtribuido } = useMemo(() => {
+    const ids = new Set<string>();
+    let semResp = false;
+    for (const c of cartoes) {
+      const respId = c.id_responsavel ?? c.assignee_id;
+      if (respId) {
+        ids.add(String(respId));
+      } else {
+        semResp = true;
+      }
+    }
+    return { idsResponsaveisComTarefas: ids, temNaoAtribuido: semResp };
+  }, [cartoes]);
+
+  // Lista exclusivamente os usuários que realmente possuem cartões atribuídos a eles
+  const responsaveisAtivos = useMemo(() => {
+    const mapa = new Map<string, {
+      id: string;
+      nome_completo: string;
+      iniciais: string;
+      email?: string;
+      url_avatar?: string | null;
+    }>();
+
+    for (const m of membros) {
+      const idStr = String(m.id);
+      const idUser = m.id_usuario ? String(m.id_usuario) : null;
+      const idMemberUser = m.id_usuario_membro ? String(m.id_usuario_membro) : null;
+
+      const coincideComCartao =
+        idsResponsaveisComTarefas.has(idStr) ||
+        (idUser && idsResponsaveisComTarefas.has(idUser)) ||
+        (idMemberUser && idsResponsaveisComTarefas.has(idMemberUser));
+
+      if (coincideComCartao) {
+        const chave = idsResponsaveisComTarefas.has(idStr)
+          ? idStr
+          : (idUser && idsResponsaveisComTarefas.has(idUser) ? idUser : idMemberUser!);
+
+        mapa.set(chave, {
+          id: chave,
+          nome_completo: m.nome_completo || m.full_name || 'Responsável',
+          iniciais: m.iniciais || m.initials || 'R',
+          email: m.email,
+          url_avatar: m.url_avatar || m.avatar_url,
+        });
+      }
+    }
+
+    // Se houver algum responsável presente no cartão mas ausente na lista de membros
+    for (const c of cartoes) {
+      const respId = c.id_responsavel ?? c.assignee_id;
+      if (respId && !mapa.has(String(respId))) {
+        const respObj = c.responsavel ?? c.assignee;
+        mapa.set(String(respId), {
+          id: String(respId),
+          nome_completo: respObj?.full_name || respObj?.nome_completo || `Usuário (${String(respId).slice(0, 6)})`,
+          iniciais: respObj?.initials || respObj?.iniciais || 'R',
+          email: '',
+          url_avatar: respObj?.avatar_url || respObj?.url_avatar,
+        });
+      }
+    }
+
+    return Array.from(mapa.values()).sort((a, b) =>
+      a.nome_completo.localeCompare(b.nome_completo, 'pt-BR')
+    );
+  }, [membros, cartoes, idsResponsaveisComTarefas]);
 
   const membroAtivo =
     responsavelSelecionadoId !== 'all' && responsavelSelecionadoId !== 'unassigned'
-      ? membros.find((m) => m.id === responsavelSelecionadoId)
+      ? responsaveisAtivos.find((m) => m.id === responsavelSelecionadoId) ||
+        membros.find((m) => String(m.id) === String(responsavelSelecionadoId))
       : null;
 
   const obterTextoExibicao = () => {
     if (responsavelSelecionadoId === 'all') return 'Responsável';
     if (responsavelSelecionadoId === 'unassigned') return 'Sem responsável';
-    return membroAtivo ? (membroAtivo.full_name || membroAtivo.nome_completo) : 'Responsável';
+    return membroAtivo
+      ? (membroAtivo.nome_completo || membroAtivo.full_name || 'Responsável')
+      : 'Responsável';
   };
 
   return (
@@ -89,59 +163,63 @@ export function SeletorFiltroResponsavel({
                 )}
               </CommandItem>
 
-              <CommandItem
-                value="unassigned nao atribuido sem responsavel nenhum"
-                onSelect={() => {
-                  aoMudarResponsavel?.('unassigned');
-                  setAberto(false);
-                }}
-                className="gap-2 text-xs cursor-pointer"
-              >
-                <div className="flex size-5 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <IconUserX className="size-3" />
-                </div>
-                <span>Não atribuído</span>
-                {responsavelSelecionadoId === 'unassigned' && (
-                  <IconCheck className="ml-auto size-3.5 text-primary" />
-                )}
-              </CommandItem>
+              {temNaoAtribuido && (
+                <CommandItem
+                  value="unassigned nao atribuido sem responsavel nenhum"
+                  onSelect={() => {
+                    aoMudarResponsavel?.('unassigned');
+                    setAberto(false);
+                  }}
+                  className="gap-2 text-xs cursor-pointer"
+                >
+                  <div className="flex size-5 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                    <IconUserX className="size-3" />
+                  </div>
+                  <span>Não atribuído</span>
+                  {responsavelSelecionadoId === 'unassigned' && (
+                    <IconCheck className="ml-auto size-3.5 text-primary" />
+                  )}
+                </CommandItem>
+              )}
             </CommandGroup>
 
-            <CommandSeparator />
+            {responsaveisAtivos.length > 0 && <CommandSeparator />}
 
-            <CommandGroup heading="Membros da Equipe">
-              {(membros ?? []).map((m) => {
-                const estaSelecionado = responsavelSelecionadoId === m.id;
-                const nomeExibicao = m.full_name || m.nome_completo;
-                return (
-                  <CommandItem
-                    key={m.id}
-                    value={`${nomeExibicao} ${m.email || ''}`}
-                    onSelect={() => {
-                      aoMudarResponsavel?.(m.id);
-                      setAberto(false);
-                    }}
-                    className="gap-2 text-xs cursor-pointer"
-                  >
-                    <Avatar className="size-5 shrink-0">
-                      {m.avatar_url && <AvatarImage src={m.avatar_url} alt={nomeExibicao} />}
-                      <AvatarFallback className="text-[9px]">{m.initials || m.iniciais}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="truncate font-medium">{nomeExibicao}</span>
-                      {m.email && (
-                        <span className="truncate text-[10px] text-muted-foreground">
-                          {m.email}
-                        </span>
+            {responsaveisAtivos.length > 0 && (
+              <CommandGroup heading="Responsáveis">
+                {responsaveisAtivos.map((m) => {
+                  const estaSelecionado = responsavelSelecionadoId === m.id;
+                  const nomeExibicao = m.nome_completo;
+                  return (
+                    <CommandItem
+                      key={m.id}
+                      value={`${nomeExibicao} ${m.email || ''}`}
+                      onSelect={() => {
+                        aoMudarResponsavel?.(m.id);
+                        setAberto(false);
+                      }}
+                      className="gap-2 text-xs cursor-pointer"
+                    >
+                      <Avatar className="size-5 shrink-0">
+                        {m.url_avatar && <AvatarImage src={m.url_avatar} alt={nomeExibicao} />}
+                        <AvatarFallback className="text-[9px]">{m.iniciais}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="truncate font-medium">{nomeExibicao}</span>
+                        {m.email && (
+                          <span className="truncate text-[10px] text-muted-foreground">
+                            {m.email}
+                          </span>
+                        )}
+                      </div>
+                      {estaSelecionado && (
+                        <IconCheck className="ml-auto size-3.5 shrink-0 text-primary" />
                       )}
-                    </div>
-                    {estaSelecionado && (
-                      <IconCheck className="ml-auto size-3.5 shrink-0 text-primary" />
-                    )}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

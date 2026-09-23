@@ -126,10 +126,12 @@ export function ColunasQuadro({
 
   const cartoesFiltrados = useMemo(() => {
     return (cartoes ?? []).filter((c) => {
-      if (termoBusca && !c.title.toLowerCase().includes(termoBusca)) {
+      const tit = (c.titulo ?? c.title ?? '').toLowerCase();
+      if (termoBusca && !tit.includes(termoBusca)) {
         return false;
       }
-      if (prioridadeFiltro !== 'all' && c.priority !== prioridadeFiltro) {
+      const prio = c.prioridade ?? c.priority;
+      if (prioridadeFiltro !== 'all' && prio !== prioridadeFiltro) {
         return false;
       }
       if (solicitanteFiltro !== 'all') {
@@ -156,7 +158,10 @@ export function ColunasQuadro({
       'in-progress': [],
       'done': [],
     };
-    for (const item of (cartoesFiltrados ?? [])) agrupados[item.column as IdColuna]?.push(item);
+    for (const item of (cartoesFiltrados ?? [])) {
+      const col = (item.coluna ?? item.column) as IdColuna;
+      agrupados[col]?.push(item);
+    }
     for (const col of Object.keys(agrupados) as IdColuna[]) {
       agrupados[col] = sortCards(agrupados[col] ?? [], ordenar);
     }
@@ -232,11 +237,11 @@ export function ColunasQuadro({
     }
 
     let cartoesFinais = cartoesLocais.map((c) =>
-      c.id === activeId ? { ...c, column: colSobre } : c
+      c.id === activeId ? { ...c, coluna: colSobre, column: colSobre } : c
     );
     const cartoesDaCol = cartoesFinais
-      .filter((c) => c.column === colSobre)
-      .sort((a, b) => a.position - b.position);
+      .filter((c) => (c.coluna ?? c.column) === colSobre)
+      .sort((a, b) => (a.posicao ?? a.position ?? 0) - (b.posicao ?? b.position ?? 0));
     const indiceAtivo = cartoesDaCol.findIndex((c) => c.id === activeId);
     const indiceSobre = cartoesDaCol.findIndex((c) => c.id === overId);
     if (indiceAtivo !== -1 && indiceSobre !== -1 && indiceAtivo !== indiceSobre) {
@@ -244,17 +249,18 @@ export function ColunasQuadro({
       const ids = new Set(reordenados.map((c) => c.id));
       cartoesFinais = [
         ...cartoesFinais.filter((c) => !ids.has(c.id)),
-        ...reordenados.map((c, i) => ({ ...c, position: i })),
+        ...reordenados.map((c, i) => ({ ...c, posicao: i, position: i })),
       ];
     } else {
       for (const colId of ['todo', 'in-progress', 'done'] as IdColuna[]) {
         const ordenados = cartoesFinais
-          .filter((c) => c.column === colId)
-          .sort((a, b) => a.position - b.position);
+          .filter((c) => (c.coluna ?? c.column) === colId)
+          .sort((a, b) => (a.posicao ?? a.position ?? 0) - (b.posicao ?? b.position ?? 0));
         cartoesFinais = cartoesFinais.map((c) => {
-          if (c.column === colId) {
+          if ((c.coluna ?? c.column) === colId) {
             const idx = ordenados.findIndex((s) => s.id === c.id);
-            return { ...c, position: idx >= 0 ? idx : c.position };
+            const novaPos = idx >= 0 ? idx : (c.posicao ?? c.position ?? 0);
+            return { ...c, posicao: novaPos, position: novaPos };
           }
           return c;
         });
@@ -264,8 +270,12 @@ export function ColunasQuadro({
     const alterados: ReorderInput[] = [];
     for (const card of cartoesFinais) {
       const original = todosCartoes.find((c) => c.id === card.id);
-      if (original && (original.column !== card.column || original.position !== card.position)) {
-        alterados.push({ id: card.id, column: card.column, position: card.position });
+      const cardCol = card.coluna ?? card.column;
+      const origCol = original?.coluna ?? original?.column;
+      const cardPos = card.posicao ?? card.position;
+      const origPos = original?.posicao ?? original?.position;
+      if (original && (origCol !== cardCol || origPos !== cardPos)) {
+        alterados.push({ id: card.id, coluna: cardCol, column: cardCol, posicao: cardPos, position: cardPos });
       }
     }
     if (alterados.length > 0) reorderCards(alterados);
@@ -318,7 +328,7 @@ export function ColunasQuadro({
           {cartaoAtivo ? (
             <Card className="sgdi-drag-overlay-card">
               <p className="text-sm font-semibold text-foreground line-clamp-2">
-                {cartaoAtivo.title}
+                {cartaoAtivo.titulo ?? cartaoAtivo.title}
               </p>
             </Card>
           ) : null}
@@ -462,7 +472,7 @@ function EstadoVazio({ onAddFirst }: { onAddFirst: () => void }) {
 
 function encontrarColunaDoLocal(cards: CardWithAssignee[], id: string): IdColuna | null {
   const card = cards.find((c) => c.id === id);
-  return card ? (card.column as IdColuna) : null;
+  return card ? ((card.coluna ?? card.column) as IdColuna) : null;
 }
 
 export const BoardColumns = ColunasQuadro;

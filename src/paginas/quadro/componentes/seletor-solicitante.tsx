@@ -46,63 +46,74 @@ export function SeletorSolicitante({
   const { data: cartoes = [] } = useCards();
 
   const solicitantes = useMemo(() => {
+    // 1. Identifica IDs de solicitantes que possuem de fato cartões no quadro
+    const idsCriadoresComCartoes = new Set<string>();
+    for (const c of cartoes) {
+      const idCriador = c.id_usuario ?? c.user_id;
+      if (idCriador) {
+        idsCriadoresComCartoes.add(String(idCriador));
+      }
+    }
+
+    if (idsCriadoresComCartoes.size === 0) {
+      return [];
+    }
+
     const mapa = new Map<string, SolicitanteOpcao>();
 
-    // 1. Adiciona perfis de banco
-    for (const p of perfis) {
-      if (p.id) {
-        mapa.set(p.id, {
-          id: p.id,
-          nome_completo: p.nome_completo || p.email || 'Usuário',
-          iniciais: p.iniciais || p.nome_completo?.slice(0, 2).toUpperCase() || 'U',
-          email: p.email,
-          url_avatar: p.url_avatar,
-        });
-      }
-    }
-
-    // 2. Adiciona usuário logado atual se não estiver presente
-    if (usuarioAtual?.id && !mapa.has(usuarioAtual.id)) {
-      mapa.set(usuarioAtual.id, {
-        id: usuarioAtual.id,
-        nome_completo: usuarioAtual.nome_completo || usuarioAtual.email || 'Você',
-        iniciais: usuarioAtual.iniciais || 'EU',
-        email: usuarioAtual.email,
-        url_avatar: usuarioAtual.url_avatar,
-      });
-    }
-
-    // 3. Adiciona membros da equipe por id_usuario_membro ou id
-    for (const m of membros) {
-      const idChave = m.id_usuario_membro || m.id;
-      if (idChave && !mapa.has(idChave)) {
-        mapa.set(idChave, {
-          id: idChave,
-          nome_completo: m.nome_completo || m.email || 'Membro',
-          iniciais: m.iniciais || m.nome_completo?.slice(0, 2).toUpperCase() || 'MB',
-          email: m.email,
-          url_avatar: m.url_avatar,
-        });
-      }
-    }
-
-    // 4. Mapeia IDs de criadores existentes nos cartões
-    for (const c of cartoes) {
-      const idCriador = c.id_usuario || c.user_id;
-      if (idCriador && !mapa.has(idCriador)) {
-        // Tenta encontrar nome por correspondência de membro
-        const membroRelacionado = membros.find(
-          (m) => m.id === idCriador || m.id_usuario === idCriador || m.id_usuario_membro === idCriador
-        );
-
+    // 2. Preenche os dados dos solicitantes que possuem cartões
+    for (const idCriador of idsCriadoresComCartoes) {
+      // Tenta encontrar em perfis
+      const perfil = perfis.find((p) => String(p.id) === idCriador);
+      if (perfil) {
         mapa.set(idCriador, {
           id: idCriador,
-          nome_completo: membroRelacionado?.nome_completo || `Usuário (${idCriador.slice(0, 6)})`,
-          iniciais: membroRelacionado?.iniciais || 'US',
-          email: membroRelacionado?.email,
-          url_avatar: membroRelacionado?.url_avatar,
+          nome_completo: perfil.nome_completo || perfil.email || 'Usuário',
+          iniciais: perfil.iniciais || perfil.nome_completo?.slice(0, 2).toUpperCase() || 'U',
+          email: perfil.email,
+          url_avatar: perfil.url_avatar,
         });
+        continue;
       }
+
+      // Tenta verificar se é o usuário atual logado
+      if (usuarioAtual?.id && String(usuarioAtual.id) === idCriador) {
+        mapa.set(idCriador, {
+          id: idCriador,
+          nome_completo: usuarioAtual.nome_completo || usuarioAtual.email || 'Você',
+          iniciais: usuarioAtual.iniciais || 'EU',
+          email: usuarioAtual.email,
+          url_avatar: usuarioAtual.url_avatar,
+        });
+        continue;
+      }
+
+      // Tenta encontrar em membros/usuários
+      const membro = membros.find(
+        (m) =>
+          String(m.id) === idCriador ||
+          (m.id_usuario && String(m.id_usuario) === idCriador) ||
+          (m.id_usuario_membro && String(m.id_usuario_membro) === idCriador)
+      );
+      if (membro) {
+        mapa.set(idCriador, {
+          id: idCriador,
+          nome_completo: membro.nome_completo || membro.email || 'Usuário',
+          iniciais: membro.iniciais || membro.nome_completo?.slice(0, 2).toUpperCase() || 'US',
+          email: membro.email,
+          url_avatar: membro.url_avatar,
+        });
+        continue;
+      }
+
+      // Fallback para criador sem perfil carregado
+      mapa.set(idCriador, {
+        id: idCriador,
+        nome_completo: `Usuário (${idCriador.slice(0, 6)})`,
+        iniciais: 'US',
+        email: undefined,
+        url_avatar: null,
+      });
     }
 
     return Array.from(mapa.values()).sort((a, b) =>
@@ -163,40 +174,42 @@ export function SeletorSolicitante({
               </CommandItem>
             </CommandGroup>
 
-            <CommandSeparator />
+            {solicitantes.length > 0 && <CommandSeparator />}
 
-            <CommandGroup heading="Solicitantes">
-              {solicitantes.map((s) => {
-                const estaSelecionado = solicitanteSelecionadoId === s.id;
-                return (
-                  <CommandItem
-                    key={s.id}
-                    value={`${s.nome_completo} ${s.email ?? ''}`}
-                    onSelect={() => {
-                      aoMudarSolicitante?.(s.id);
-                      setAberto(false);
-                    }}
-                    className="gap-2 text-xs cursor-pointer"
-                  >
-                    <Avatar className="size-5 shrink-0">
-                      {s.url_avatar && <AvatarImage src={s.url_avatar} alt={s.nome_completo} />}
-                      <AvatarFallback className="text-[9px]">{s.iniciais}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="truncate font-medium">{s.nome_completo}</span>
-                      {s.email && (
-                        <span className="truncate text-[10px] text-muted-foreground">
-                          {s.email}
-                        </span>
+            {solicitantes.length > 0 && (
+              <CommandGroup heading="Solicitantes">
+                {solicitantes.map((s) => {
+                  const estaSelecionado = solicitanteSelecionadoId === s.id;
+                  return (
+                    <CommandItem
+                      key={s.id}
+                      value={`${s.nome_completo} ${s.email ?? ''}`}
+                      onSelect={() => {
+                        aoMudarSolicitante?.(s.id);
+                        setAberto(false);
+                      }}
+                      className="gap-2 text-xs cursor-pointer"
+                    >
+                      <Avatar className="size-5 shrink-0">
+                        {s.url_avatar && <AvatarImage src={s.url_avatar} alt={s.nome_completo} />}
+                        <AvatarFallback className="text-[9px]">{s.iniciais}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="truncate font-medium">{s.nome_completo}</span>
+                        {s.email && (
+                          <span className="truncate text-[10px] text-muted-foreground">
+                            {s.email}
+                          </span>
+                        )}
+                      </div>
+                      {estaSelecionado && (
+                        <IconCheck className="ml-auto size-3.5 shrink-0 text-primary" />
                       )}
-                    </div>
-                    {estaSelecionado && (
-                      <IconCheck className="ml-auto size-3.5 shrink-0 text-primary" />
-                    )}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

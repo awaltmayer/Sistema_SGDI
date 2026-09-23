@@ -72,17 +72,17 @@ export function DialogoNovaDemanda({
       return;
     }
 
-    const cartoesDaColuna = cartoes.filter((c) => c.column === coluna);
+    const cartoesDaColuna = cartoes.filter((c) => (c.coluna ?? c.column) === coluna);
     const proximaPosicao = cartoesDaColuna.length;
 
     createCard({
-      title: tituloLimpo,
-      column: coluna,
-      nextPosition: proximaPosicao,
-      description: descricao.trim() || '',
-      priority: prioridade,
-      assignee_id: idResponsavel !== 'none' ? idResponsavel : null,
-      due_date: dataVencimento ? new Date(dataVencimento).toISOString() : null,
+      titulo: tituloLimpo,
+      coluna,
+      posicao: proximaPosicao,
+      descricao: descricao.trim() || '',
+      prioridade,
+      id_responsavel: idResponsavel !== 'none' ? idResponsavel : null,
+      data_vencimento: dataVencimento ? new Date(dataVencimento).toISOString() : null,
     });
 
     toast.success('Demanda criada com sucesso!');
@@ -194,10 +194,10 @@ export function DialogoNovaDemanda({
                       <SelectItem key={m.id} value={m.id} className="text-xs">
                         <div className="sgdi-dialogo-responsavel-item">
                           <Avatar className="size-4">
-                            {m.avatar_url && <AvatarImage src={m.avatar_url} />}
-                            <AvatarFallback className="text-[9px]">{m.initials}</AvatarFallback>
+                            {(m.url_avatar || m.avatar_url) && <AvatarImage src={m.url_avatar || m.avatar_url!} alt={m.nome_completo || m.full_name} />}
+                            <AvatarFallback className="text-[9px]">{m.iniciais || m.initials}</AvatarFallback>
                           </Avatar>
-                          <span>{m.full_name}</span>
+                          <span>{m.nome_completo || m.full_name}</span>
                         </div>
                       </SelectItem>
                     ))}

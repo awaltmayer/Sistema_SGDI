@@ -57,11 +57,11 @@ export function SeletorResponsavel({
           {children ?? (
             responsavelAtual ? (
               <Avatar className="size-6">
-                {responsavelAtual.avatar_url && (
-                  <AvatarImage src={responsavelAtual.avatar_url} alt={responsavelAtual.full_name} />
+                {(responsavelAtual.url_avatar || responsavelAtual.avatar_url) && (
+                  <AvatarImage src={responsavelAtual.url_avatar || responsavelAtual.avatar_url!} alt={responsavelAtual.nome_completo || responsavelAtual.full_name} />
                 )}
                 <AvatarFallback className="text-[10px]">
-                  {responsavelAtual.initials}
+                  {responsavelAtual.iniciais || responsavelAtual.initials}
                 </AvatarFallback>
               </Avatar>
             ) : (
@@ -82,18 +82,19 @@ export function SeletorResponsavel({
         onMouseDown={(e) => e.stopPropagation()}
       >
         <Command>
-          <CommandInput placeholder="Buscar membro da equipe…" className="h-8 text-xs" />
+          <CommandInput placeholder="Buscar responsável…" className="h-8 text-xs" />
           <CommandList className="max-h-60 overflow-y-auto">
             <CommandEmpty className="py-2.5 text-center text-xs text-muted-foreground">
-              Nenhum membro encontrado.
+              Nenhum responsável encontrado.
             </CommandEmpty>
             <CommandGroup heading="Responsável">
               {(membros ?? []).map((member) => {
                 const estaSelecionado = responsavelAtual?.id === member.id;
+                const nomeMembro = member.nome_completo || member.full_name || 'Responsável';
                 return (
                   <CommandItem
                     key={member.id}
-                    value={`${member.full_name || member.nome_completo} ${member.email || ''}`}
+                    value={`${nomeMembro} ${member.email || ''}`}
                     onSelect={() => {
                       selecionar(member.id);
                       setAberto(false);
@@ -106,14 +107,14 @@ export function SeletorResponsavel({
                     className="cursor-pointer gap-2 text-xs"
                   >
                     <Avatar className="size-5 shrink-0">
-                      {member.avatar_url && (
-                        <AvatarImage src={member.avatar_url} alt={member.full_name} />
+                      {(member.url_avatar || member.avatar_url) && (
+                        <AvatarImage src={member.url_avatar || member.avatar_url!} alt={nomeMembro} />
                       )}
                       <AvatarFallback className="text-[9px]">
-                        {member.initials}
+                        {member.iniciais || member.initials}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="truncate flex-1">{member.full_name}</span>
+                    <span className="truncate flex-1">{nomeMembro}</span>
                     {estaSelecionado && (
                       <IconCheck className="ml-auto size-3.5 shrink-0 text-primary" />
                     )}

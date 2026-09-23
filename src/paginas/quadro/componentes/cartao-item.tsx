@@ -83,23 +83,31 @@ export function CartaoItem({
   };
 
   const selecionarPrioridade = (prioridade: Prioridade) =>
-    updateCard(itemCartao.id, { priority: prioridade });
+    updateCard(itemCartao.id, { prioridade });
 
   const selecionarResponsavel = (idResponsavel: string | null) =>
-    updateCard(itemCartao.id, { id_responsavel: idResponsavel, assignee_id: idResponsavel });
+    updateCard(itemCartao.id, { id_responsavel: idResponsavel });
 
   const selecionarDataVencimento = (data: string | null) =>
-    updateCard(itemCartao.id, { due_date: data });
+    updateCard(itemCartao.id, { data_vencimento: data });
+
+  const dataVenc = itemCartao.data_vencimento ?? itemCartao.due_date;
+  const colCartao = itemCartao.coluna ?? itemCartao.column;
+  const titCartao = itemCartao.titulo ?? itemCartao.title;
+  const prioCartao = itemCartao.prioridade ?? itemCartao.priority;
+  const respCartao = itemCartao.responsavel ?? itemCartao.assignee;
+  const listasCartao = itemCartao.listas_verificacao ?? itemCartao.checklists ?? [];
+  const rastreadorCartao = itemCartao.rastreador_tempo ?? itemCartao.time_tracker;
 
   // Checagem de prazo de vencimento
-  const diferencaDias = itemCartao.due_date ? differenceInDays(parseISO(itemCartao.due_date), new Date()) : null;
-  const estaAtrasado = diferencaDias !== null && diferencaDias < 0 && itemCartao.column !== 'done';
-  const venceHoje = diferencaDias !== null && diferencaDias === 0 && itemCartao.column !== 'done';
-  const relativoVencimento = itemCartao.due_date ? vencimentoRelativo(itemCartao.due_date) : null;
+  const diferencaDias = dataVenc ? differenceInDays(parseISO(dataVenc), new Date()) : null;
+  const estaAtrasado = diferencaDias !== null && diferencaDias < 0 && colCartao !== 'done';
+  const venceHoje = diferencaDias !== null && diferencaDias === 0 && colCartao !== 'done';
+  const relativoVencimento = dataVenc ? vencimentoRelativo(dataVenc) : null;
 
-  const todosItens = (itemCartao.checklists ?? []).flatMap((c) => c.items);
+  const todosItens = listasCartao.flatMap((c) => c.itens ?? c.items ?? []);
   const totalItensLista = todosItens.length;
-  const itensListaConcluidos = todosItens.filter((i) => i.is_completed).length;
+  const itensListaConcluidos = todosItens.filter((i) => i.esta_concluido ?? i.is_completed).length;
   const temListas = totalItensLista > 0;
   const listaCompleta =
     totalItensLista > 0 && itensListaConcluidos === totalItensLista;
@@ -138,7 +146,7 @@ export function CartaoItem({
           <span className="mr-1.5 text-xs font-mono font-bold text-muted-foreground">
             #{itemCartao.id}
           </span>
-          {itemCartao.title}
+          {titCartao}
         </p>
         <div className="sgdi-cartao-acoes-cabecalho">
           <CardQuickMenu
@@ -183,8 +191,8 @@ export function CartaoItem({
           </div>
           <CardTimerWidget
             cardId={itemCartao.id}
-            cardTitle={itemCartao.title}
-            timeTracker={itemCartao.time_tracker}
+            cardTitle={titCartao}
+            timeTracker={rastreadorCartao}
             compact
           />
         </div>
@@ -196,28 +204,28 @@ export function CartaoItem({
             <div>
               <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Prioridade</span>
               <SeletorPrioridade
-                prioridade={itemCartao.priority}
+                prioridade={prioCartao}
                 aoSelecionar={selecionarPrioridade}
               />
             </div>
             <div>
               <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Responsável</span>
               <SeletorResponsavel
-                responsavel={itemCartao.assignee ?? null}
+                responsavel={respCartao ?? null}
                 aoSelecionar={selecionarResponsavel}
               >
                 <span className="flex items-center gap-1.5 rounded px-1 py-0.5 text-muted-foreground hover:text-foreground hover:bg-accent">
-                  {itemCartao.assignee ? (
+                  {respCartao ? (
                     <>
                       <Avatar className="size-4">
-                        {itemCartao.assignee.avatar_url && (
-                          <AvatarImage src={itemCartao.assignee.avatar_url} alt={itemCartao.assignee.full_name} />
+                        {(respCartao.url_avatar || respCartao.avatar_url) && (
+                          <AvatarImage src={respCartao.url_avatar || respCartao.avatar_url!} alt={respCartao.nome_completo || respCartao.full_name} />
                         )}
                         <AvatarFallback className="text-[9px]">
-                          {itemCartao.assignee.initials}
+                          {respCartao.iniciais || respCartao.initials}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="truncate text-foreground">{itemCartao.assignee.full_name}</span>
+                      <span className="truncate text-foreground">{respCartao.nome_completo || respCartao.full_name}</span>
                     </>
                   ) : (
                     <span className="text-muted-foreground">Não atribuído</span>
@@ -228,7 +236,7 @@ export function CartaoItem({
             <div>
               <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Vencimento</span>
               <SeletorDataVencimento
-                dataVencimento={itemCartao.due_date}
+                dataVencimento={dataVenc}
                 aoSelecionar={selecionarDataVencimento}
               >
                 <span className={cn(
@@ -240,8 +248,8 @@ export function CartaoItem({
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}>
                   <IconCalendar className="size-3.5" />
-                  {itemCartao.due_date
-                    ? format(parseISO(itemCartao.due_date), 'dd/MM/yyyy')
+                  {dataVenc
+                    ? format(parseISO(dataVenc), 'dd/MM/yyyy')
                     : <span className="text-muted-foreground">Sem data</span>}
                 </span>
               </SeletorDataVencimento>
@@ -273,8 +281,8 @@ export function CartaoItem({
             <div className="sgdi-cartao-rodape-direita">
               <CardTimerWidget
                 cardId={itemCartao.id}
-                cardTitle={itemCartao.title}
-                timeTracker={itemCartao.time_tracker}
+                cardTitle={titCartao}
+                timeTracker={rastreadorCartao}
                 compact
               />
               {relativoVencimento && (

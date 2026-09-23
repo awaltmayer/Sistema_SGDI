@@ -12,21 +12,23 @@ export function FormularioPerfil() {
   const { data: usuarioAtual } = useCurrentUser();
   const { mutate: atualizarPerfil, isPending: estaPendente } = useUpdateProfile();
 
-  const [nome, setNome] = useState(usuarioAtual?.full_name ?? '');
+  const [nome, setNome] = useState(usuarioAtual?.nome_completo ?? usuarioAtual?.full_name ?? '');
   const [previaAvatar, setPreviaAvatar] = useState<string | null>(null);
   const refInputArquivo = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (usuarioAtual?.full_name) setNome(usuarioAtual.full_name);
-  }, [usuarioAtual?.full_name]);
+  const nomeAtual = usuarioAtual?.nome_completo ?? usuarioAtual?.full_name ?? '';
 
-  const iniciais = usuarioAtual?.initials ?? '';
+  useEffect(() => {
+    if (nomeAtual) setNome(nomeAtual);
+  }, [nomeAtual]);
+
+  const iniciais = usuarioAtual?.iniciais ?? usuarioAtual?.initials ?? '';
   const email = usuarioAtual?.email ?? '';
 
   const houveAlteracao = useMemo(() => {
     if (!usuarioAtual) return false;
-    return nome !== usuarioAtual.full_name || previaAvatar !== null;
-  }, [nome, previaAvatar, usuarioAtual]);
+    return nome !== nomeAtual || previaAvatar !== null;
+  }, [nome, nomeAtual, previaAvatar, usuarioAtual]);
 
   const salvarPerfil = () => {
     if (!usuarioAtual) return;
@@ -37,7 +39,9 @@ export function FormularioPerfil() {
         : nome.trim().slice(0, 2).toUpperCase();
 
     atualizarPerfil({
+      nomeCompleto: nome.trim(),
       fullName: nome.trim(),
+      iniciais: novasIniciais,
       initials: novasIniciais,
       email: usuarioAtual.email,
     });
@@ -60,6 +64,9 @@ export function FormularioPerfil() {
     if (refInputArquivo.current) refInputArquivo.current.value = '';
   };
 
+  const avatarUrl = previaAvatar ?? usuarioAtual?.url_avatar ?? usuarioAtual?.avatar_url ?? undefined;
+  const nomeDisplay = usuarioAtual?.nome_completo ?? usuarioAtual?.full_name ?? 'Avatar do perfil';
+
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-foreground">Perfil</h2>
@@ -68,10 +75,10 @@ export function FormularioPerfil() {
         <Label className="text-sm text-muted-foreground">Avatar</Label>
         <div className="flex items-center gap-4">
           <Avatar className="size-12">
-            {(previaAvatar || usuarioAtual?.avatar_url) && (
+            {avatarUrl && (
               <AvatarImage
-                src={previaAvatar ?? usuarioAtual?.avatar_url ?? undefined}
-                alt={usuarioAtual?.full_name ?? 'Avatar do perfil'}
+                src={avatarUrl}
+                alt={nomeDisplay}
               />
             )}
             <AvatarFallback>{iniciais}</AvatarFallback>

@@ -182,6 +182,62 @@ describe("SGDI Dashboard - Suíte de Testes", () => {
       expect(checklistsMap["1"]).toBeDefined();
     });
   });
+
+  describe("Regra de Negócio: Listagem Restrita nos Filtros de Usuários", () => {
+    const todosUsuarios = [
+      { id: "user-1", nome: "Ana" },
+      { id: "user-2", nome: "Bruno" },
+      { id: "user-3", nome: "Carlos (sem tarefas)" },
+    ];
+
+    const cartoes = [
+      { id: "card-1", id_usuario: "user-1", id_responsavel: "user-2" },
+      { id: "card-2", id_usuario: "user-1", id_responsavel: null },
+    ];
+
+    it("deve listar no filtro de solicitante apenas usuários que realmente criaram cartões", () => {
+      const idsSolicitantesComCartao = new Set(
+        cartoes.map((c) => c.id_usuario).filter(Boolean)
+      );
+
+      const solicitantesNoFiltro = todosUsuarios.filter((u) =>
+        idsSolicitantesComCartao.has(u.id)
+      );
+
+      expect(solicitantesNoFiltro).toHaveLength(1);
+      expect(solicitantesNoFiltro[0].id).toBe("user-1");
+      // user-2 e user-3 não criaram cartões, não devem constar no filtro de solicitante
+      expect(solicitantesNoFiltro.some((u) => u.id === "user-2")).toBe(false);
+      expect(solicitantesNoFiltro.some((u) => u.id === "user-3")).toBe(false);
+    });
+
+    it("deve listar no filtro de responsável apenas usuários que possuem cartões atribuídos", () => {
+      const idsResponsaveisComCartao = new Set(
+        cartoes.map((c) => c.id_responsavel).filter(Boolean)
+      );
+
+      const responsaveisNoFiltro = todosUsuarios.filter((u) =>
+        idsResponsaveisComCartao.has(u.id)
+      );
+
+      expect(responsaveisNoFiltro).toHaveLength(1);
+      expect(responsaveisNoFiltro[0].id).toBe("user-2");
+      // user-1 e user-3 não são responsáveis por nenhum cartão, não devem constar no filtro
+      expect(responsaveisNoFiltro.some((u) => u.id === "user-1")).toBe(false);
+      expect(responsaveisNoFiltro.some((u) => u.id === "user-3")).toBe(false);
+    });
+
+    it("deve detectar se há opção 'Não atribuído' com base na presença de cartões sem responsável", () => {
+      const temNaoAtribuido = cartoes.some((c) => !c.id_responsavel);
+      expect(temNaoAtribuido).toBe(true);
+
+      const cartoesCompletos = [
+        { id: "card-1", id_responsavel: "user-2" },
+      ];
+      const temNaoAtribuidoVazio = cartoesCompletos.some((c) => !c.id_responsavel);
+      expect(temNaoAtribuidoVazio).toBe(false);
+    });
+  });
 });
 
 

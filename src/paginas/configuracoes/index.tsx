@@ -10,7 +10,7 @@ export default function PaginaConfiguracoes() {
         <div className="sgdi-configuracoes-cabecalho">
           <h1 className="sgdi-configuracoes-titulo">Configurações</h1>
           <p className="sgdi-configuracoes-subtitulo">
-            Gerencie seu perfil, equipe e preferências.
+            Gerencie seu perfil e preferências.
           </p>
         </div>
         <SettingsTabs />

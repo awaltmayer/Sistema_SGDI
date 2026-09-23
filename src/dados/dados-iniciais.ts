@@ -269,10 +269,6 @@ export const membrosEquipe: MembroEquipe[] = [
     funcao: 'owner',
     status: 'active',
     url_avatar: null,
-    full_name: 'Enio Muliterno Neto',
-    initials: 'EN',
-    role: 'owner',
-    avatar_url: null,
   },
   {
     id: '2',
@@ -282,10 +278,6 @@ export const membrosEquipe: MembroEquipe[] = [
     funcao: 'member',
     status: 'active',
     url_avatar: null,
-    full_name: 'Augusto Wolfart Altmayer',
-    initials: 'AA',
-    role: 'member',
-    avatar_url: null,
   },
   {
     id: '3',
@@ -295,10 +287,6 @@ export const membrosEquipe: MembroEquipe[] = [
     funcao: 'member',
     status: 'active',
     url_avatar: null,
-    full_name: 'Ricardo Pereira Drews',
-    initials: 'RD',
-    role: 'member',
-    avatar_url: null,
   },
   {
     id: '4',
@@ -308,10 +296,6 @@ export const membrosEquipe: MembroEquipe[] = [
     funcao: 'member',
     status: 'active',
     url_avatar: null,
-    full_name: 'Luiz Henrique Appelt Weller',
-    initials: 'LW',
-    role: 'member',
-    avatar_url: null,
   },
 ];
 
@@ -322,10 +306,6 @@ export const usuarioAtual: PerfilUsuario = {
   email: '1138165@atitus.edu.br',
   tema: 'system',
   url_avatar: null,
-  full_name: 'Enio Muliterno Neto',
-  initials: 'EN',
-  theme: 'system',
-  avatar_url: null,
 };
 
 export const cartoes: CartaoTarefa[] = [
@@ -346,22 +326,11 @@ export const cartoes: CartaoTarefa[] = [
       tempo_total_segundos: 5400,
       pausas: [{ id: 'pause-1', pausado_em: '2026-06-29T10:00:00Z', retomado_em: '2026-06-29T10:30:00Z', duracao_segundos: 1800, motivo: 'Reunião de alinhamento' }],
     },
-    // Compatibilidade
-    title: 'Auditoria do sistema de design',
-    description: 'Audite os tokens e a biblioteca de componentes atuais. Documente as lacunas e proponha atualizações antes do kickoff do sprint do Q2.',
-    column: 'todo',
-    priority: 'high',
-    complexity: 'high',
-    assignee_id: '1',
-    due_date: '2026-07-08',
-    position: 0,
-    created_at: '2026-06-28T09:00:00Z',
-    color: 'blue',
   },
   {
     id: '2',
     titulo: 'Escrever documentação de onboarding',
-    descricao: 'Crie um guia passo a passo para novos membros da equipe.',
+    descricao: 'Crie um guia passo a passo para novos membros.',
     coluna: 'todo',
     prioridade: 'low',
     complexidade: 'low',
@@ -370,16 +339,6 @@ export const cartoes: CartaoTarefa[] = [
     posicao: 1,
     criado_em: '2026-07-01T10:00:00Z',
     rastreador_tempo: { em_execucao: false, tempo_total_segundos: 3600, pausas: [] },
-    // Compatibilidade
-    title: 'Escrever documentação de onboarding',
-    description: 'Crie um guia passo a passo para novos membros da equipe.',
-    column: 'todo',
-    priority: 'low',
-    complexity: 'low',
-    assignee_id: '4',
-    due_date: '2026-07-12',
-    position: 1,
-    created_at: '2026-07-01T10:00:00Z',
   },
   {
     id: '3',
@@ -393,16 +352,6 @@ export const cartoes: CartaoTarefa[] = [
     posicao: 2,
     criado_em: '2026-07-02T11:00:00Z',
     rastreador_tempo: { em_execucao: false, tempo_total_segundos: 7200, pausas: [] },
-    // Compatibilidade
-    title: 'Atualizar página de preços',
-    description: 'Revise o texto e o layout da página de preços.',
-    column: 'todo',
-    priority: 'medium',
-    complexity: 'medium',
-    assignee_id: '2',
-    due_date: '2026-07-15',
-    position: 2,
-    created_at: '2026-07-02T11:00:00Z',
   },
   {
     id: '4',
@@ -428,16 +377,6 @@ export const cartoes: CartaoTarefa[] = [
         },
       ],
     },
-    // Compatibilidade
-    title: 'Auditoria de acessibilidade',
-    description: 'Execute uma auditoria de acessibilidade em todas as páginas públicas e produza um relatório de conformidade WCAG 2.1 AA.',
-    column: 'todo',
-    priority: 'high',
-    complexity: 'very-high',
-    assignee_id: '3',
-    due_date: '2026-07-20',
-    position: 3,
-    created_at: '2026-07-03T09:30:00Z',
   },
 ];
 
@@ -448,10 +387,6 @@ export const comentarios: Comentario[] = [
     id_autor: '1',
     conteudo: 'Arquivo de tokens atualizado — precisa de revisão por pares.',
     criado_em: '2026-07-06T10:00:00Z',
-    card_id: '1',
-    author_id: '1',
-    body: 'Arquivo de tokens atualizado — precisa de revisão por pares.',
-    created_at: '2026-07-06T10:00:00Z',
   },
   {
     id: '2',
@@ -459,9 +394,5 @@ export const comentarios: Comentario[] = [
     id_autor: '2',
     conteudo: 'Claro — vou revisar até o fim do dia.',
     criado_em: '2026-07-07T14:30:00Z',
-    card_id: '1',
-    author_id: '2',
-    body: 'Claro — vou revisar até o fim do dia.',
-    created_at: '2026-07-07T14:30:00Z',
   },
 ];

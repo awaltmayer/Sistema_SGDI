@@ -149,11 +149,11 @@ export function BarraSuperiorQuadro() {
                   className="sgdi-avatar-trigger"
                 >
                   <Avatar className="sgdi-avatar-usuario">
-                    {usuarioAtual.avatar_url && (
-                      <AvatarImage src={usuarioAtual.avatar_url} alt={usuarioAtual.full_name} />
+                    {(usuarioAtual.url_avatar || usuarioAtual.avatar_url) && (
+                      <AvatarImage src={usuarioAtual.url_avatar || usuarioAtual.avatar_url!} alt={usuarioAtual.nome_completo || usuarioAtual.full_name} />
                     )}
                     <AvatarFallback className="sgdi-avatar-fallback-custom">
-                      {usuarioAtual.initials}
+                      {usuarioAtual.iniciais || usuarioAtual.initials}
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -162,7 +162,7 @@ export function BarraSuperiorQuadro() {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-medium text-foreground">
-                      {usuarioAtual.full_name}
+                      {usuarioAtual.nome_completo || usuarioAtual.full_name}
                     </span>
                     <span className="text-xs text-muted-foreground truncate">
                       {usuarioAtual.email}

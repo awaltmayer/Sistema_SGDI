@@ -31,13 +31,16 @@ export function ItemListaVerificacaoLinha({
   onUpdateTitle: _onUpdateTitle,
   onDelete: _onDelete,
 }: PropsItemListaVerificacaoLinha) {
+  const titItem = item.titulo ?? item.title ?? "";
+  const estaItemConcluido = item.esta_concluido ?? item.is_completed ?? false;
+
   const [estaEditando, setEstaEditando] = useState(false);
-  const [textoEdicao, setTextoEdicao] = useState(item.title);
+  const [textoEdicao, setTextoEdicao] = useState(titItem);
   const refInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setTextoEdicao(item.title);
-  }, [item.title]);
+    setTextoEdicao(titItem);
+  }, [titItem]);
 
   useEffect(() => {
     if (estaEditando) {
@@ -57,7 +60,7 @@ export function ItemListaVerificacaoLinha({
       salvarEdicao();
     } else if (e.key === "Escape") {
       e.preventDefault();
-      setTextoEdicao(item.title);
+      setTextoEdicao(titItem);
       setEstaEditando(false);
     }
   };
@@ -87,7 +90,7 @@ export function ItemListaVerificacaoLinha({
           variant="ghost"
           type="button"
           onClick={() => {
-            setTextoEdicao(item.title);
+            setTextoEdicao(titItem);
             setEstaEditando(false);
           }}
           className="h-8 px-2 text-muted-foreground"
@@ -103,7 +106,7 @@ export function ItemListaVerificacaoLinha({
       <div className="pt-0.5">
         <Checkbox
           id={`chk-item-${item.id}`}
-          checked={item.is_completed}
+          checked={estaItemConcluido}
           onCheckedChange={() => {
             // TODO: alternar item
           }}
@@ -121,12 +124,12 @@ export function ItemListaVerificacaoLinha({
           }
         }}
         className={`flex-1 text-sm select-none leading-relaxed cursor-pointer transition-all ${
-          item.is_completed
+          estaItemConcluido
             ? "line-through text-muted-foreground/80 opacity-80"
             : "text-foreground"
         }`}
       >
-        {item.title}
+        {titItem}
       </label>
 
       <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover/item:opacity-100">

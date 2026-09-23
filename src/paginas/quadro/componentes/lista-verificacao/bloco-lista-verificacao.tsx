@@ -55,9 +55,12 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
   const { mutate: deleteItem } = useDeleteChecklistItem();
   const { mutate: toggleItem } = useToggleChecklistItem();
 
+  const titLista = lista.titulo ?? lista.title ?? '';
+  const itensLista = lista.itens ?? lista.items ?? [];
+
   // Estado de edição do título
   const [estaEditandoTitulo, setEstaEditandoTitulo] = useState(false);
-  const [valorTitulo, setValorTitulo] = useState(lista.title);
+  const [valorTitulo, setValorTitulo] = useState(titLista);
   const refInputTitulo = useRef<HTMLInputElement>(null);
 
   // Estado do formulário de novo item
@@ -66,8 +69,8 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
   const refInputItem = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setValorTitulo(lista.title);
-  }, [lista.title]);
+    setValorTitulo(titLista);
+  }, [titLista]);
 
   useEffect(() => {
     if (estaEditandoTitulo) {
@@ -83,8 +86,8 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
   }, [estaAdicionandoItem]);
 
   // Cálculos de progresso
-  const totalItens = lista.items.length;
-  const itensConcluidos = lista.items.filter((i) => i.is_completed).length;
+  const totalItens = itensLista.length;
+  const itensConcluidos = itensLista.filter((i) => i.esta_concluido ?? i.is_completed).length;
   const porcentagemProgresso =
     totalItens === 0 ? 0 : Math.round((itensConcluidos / totalItens) * 100);
   const todosConcluidos = totalItens > 0 && itensConcluidos === totalItens;
@@ -100,7 +103,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
       salvarTitulo();
     } else if (e.key === "Escape") {
       e.preventDefault();
-      setValorTitulo(lista.title);
+      setValorTitulo(titLista);
       setEstaEditandoTitulo(false);
     }
   };
@@ -161,7 +164,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
                 variant="ghost"
                 type="button"
                 onClick={() => {
-                  setValorTitulo(lista.title);
+                  setValorTitulo(titLista);
                   setEstaEditandoTitulo(false);
                 }}
                 className="h-8 px-2 text-muted-foreground"
@@ -176,7 +179,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
               title="Clique para renomear checklist"
             >
               <h3 className="font-semibold text-base text-foreground truncate">
-                {lista.title}
+                {titLista}
               </h3>
               <IconPencil className="size-3.5 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
             </div>
@@ -197,7 +200,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Excluir {lista.title}?</AlertDialogTitle>
+              <AlertDialogTitle>Excluir {titLista}?</AlertDialogTitle>
               <AlertDialogDescription>
                 A exclusão de um checklist é permanente e removerá todos os seus
                 itens associados.
@@ -248,7 +251,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
 
       {/* Lista de Itens do Checklist */}
       <div className="space-y-1 pt-1">
-        {lista.items.map((item) => (
+        {itensLista.map((item) => (
           <ChecklistItemRow
             key={item.id}
             cardId={cardId}

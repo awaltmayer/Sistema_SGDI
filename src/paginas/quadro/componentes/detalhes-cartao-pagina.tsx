@@ -94,13 +94,13 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
   const lidarComMudancaStatus = (novaCol: IdColuna) => {
     if (!cartao) return;
-    updateCard(cartao.id, { column: novaCol });
+    updateCard(cartao.id, { coluna: novaCol, column: novaCol });
   };
 
   useEffect(() => {
     if (cartao && cartao.id !== refInicial.current) {
-      setTitulo(cartao.title);
-      setDescricao(cartao.description);
+      setTitulo(cartao.titulo ?? cartao.title ?? '');
+      setDescricao(cartao.descricao ?? cartao.description ?? '');
       refInicial.current = cartao.id;
     }
   }, [cartao]);
@@ -173,12 +173,14 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
   }
 
   const salvarTitulo = () => {
-    if (titulo !== cartao.title) updateCard(cartao.id, { title: titulo });
+    const atual = cartao.titulo ?? cartao.title;
+    if (titulo !== atual) updateCard(cartao.id, { titulo, title: titulo });
   };
 
   const salvarDescricao = () => {
-    if (cartao && descricao !== cartao.description) {
-      updateCard(cartao.id, { description: descricao });
+    const atual = cartao.descricao ?? cartao.description;
+    if (cartao && descricao !== atual) {
+      updateCard(cartao.id, { descricao, description: descricao });
     }
   };
 
@@ -192,8 +194,15 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
     setTextoComentario('');
   };
 
-  const responsavel = cartao.assignee ?? encontrarMembro(membros, cartao.assignee_id);
-  const colunaAtual = colunas.find((c) => c.id === cartao.column);
+  const tituloCartao = cartao.titulo ?? cartao.title;
+  const colCartao = cartao.coluna ?? cartao.column;
+  const prioCartao = cartao.prioridade ?? cartao.priority;
+  const respIdCartao = cartao.id_responsavel ?? cartao.assignee_id;
+  const respCartao = cartao.responsavel ?? cartao.assignee ?? encontrarMembro(membros, respIdCartao);
+  const dataVencCartao = cartao.data_vencimento ?? cartao.due_date;
+  const listasCartao = cartao.listas_verificacao ?? cartao.checklists ?? [];
+  const rastreadorCartao = cartao.rastreador_tempo ?? cartao.time_tracker;
+  const colunaAtual = colunas.find((c) => c.id === colCartao);
   const eu =
     (usuarioAtual && membros.find((m) => m.email === usuarioAtual.email)) ||
     membros.find((m) => m.role === 'owner') ||
@@ -215,7 +224,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
               <BreadcrumbItem>
                 <BreadcrumbPage className="max-w-[40ch] truncate">
                   <span className="font-mono font-semibold text-muted-foreground mr-1">#{cartao.id}</span>
-                  {cartao.title}
+                  {tituloCartao}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -248,7 +257,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
               <Separator />
 
-              <CardChecklistsContainer cardId={cartao.id} checklists={cartao.checklists ?? []} />
+              <CardChecklistsContainer cardId={cartao.id} checklists={listasCartao} />
 
               <Separator />
 
@@ -265,10 +274,11 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   </p>
                 )}
                 {(comentarios ?? []).map((comment) => {
-                  const autor = encontrarMembro(membros, comment.author_id);
+                  const autor = encontrarMembro(membros, comment.id_autor || comment.author_id);
                   let dataFormatada = '';
                   try {
-                    const d = parseISO(comment.created_at);
+                    const dataStr = comment.criado_em || comment.created_at || '';
+                    const d = parseISO(dataStr);
                     dataFormatada = isNaN(d.getTime()) ? '' : format(d, 'MMM d');
                   } catch {
                     dataFormatada = '';
@@ -276,17 +286,17 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   return (
                     <div key={comment.id} className="flex gap-3">
                       <Avatar className="size-7 shrink-0">
-                        {autor?.avatar_url && (
-                          <AvatarImage src={autor.avatar_url} alt={autor.full_name} />
+                        {(autor?.url_avatar || autor?.avatar_url) && (
+                          <AvatarImage src={autor.url_avatar || autor.avatar_url!} alt={autor.nome_completo || autor.full_name} />
                         )}
                         <AvatarFallback className="text-xs">
-                          {autor?.initials ?? '?'}
+                          {autor?.iniciais ?? autor?.initials ?? '?'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">
-                            {autor?.full_name ?? 'Desconhecido'}
+                            {autor?.nome_completo ?? autor?.full_name ?? 'Desconhecido'}
                           </span>
                           {dataFormatada && (
                             <span className="text-xs text-muted-foreground tabular-nums">
@@ -294,7 +304,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-foreground text-pretty">{comment.body}</p>
+                        <p className="text-sm text-foreground text-pretty">{comment.conteudo || comment.body}</p>
                       </div>
                     </div>
                   );
@@ -302,8 +312,10 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
                 <div className="flex gap-3 pt-2">
                   <Avatar className="size-7 shrink-0">
-                    {eu?.avatar_url && <AvatarImage src={eu.avatar_url} alt={eu.full_name} />}
-                    <AvatarFallback className="text-xs">{eu?.initials ?? '?'}</AvatarFallback>
+                    {(eu?.url_avatar || eu?.avatar_url) && (
+                      <AvatarImage src={eu.url_avatar || eu.avatar_url!} alt={eu.nome_completo || eu.full_name} />
+                    )}
+                    <AvatarFallback className="text-xs">{eu?.iniciais ?? eu?.initials ?? '?'}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-2">
                     <Textarea
@@ -338,13 +350,13 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
             <aside className="space-y-6 text-sm">
               <CardTimerWidget
                 cardId={cartao.id}
-                cardTitle={cartao.title}
-                timeTracker={cartao.time_tracker}
+                cardTitle={tituloCartao}
+                timeTracker={rastreadorCartao}
               />
 
               <LinhaCampo icon={IconColumns} label="Status">
                 <Select
-                  value={cartao.column}
+                  value={colCartao}
                   onValueChange={(v) => lidarComMudancaStatus(v as IdColuna)}
                 >
                   <SelectTrigger className="w-full text-xs">
@@ -368,8 +380,8 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
               <LinhaCampo icon={IconFlag} label="Prioridade">
                 <Select
-                  value={cartao.priority}
-                  onValueChange={(v) => updateCard(cartao.id, { priority: v as Prioridade })}
+                  value={prioCartao}
+                  onValueChange={(v) => updateCard(cartao.id, { prioridade: v as Prioridade, priority: v as Prioridade })}
                 >
                   <SelectTrigger className="w-full text-xs">
                     <SelectValue />
@@ -389,7 +401,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
               <LinhaCampo icon={IconUser} label="Responsável">
                 <Select
-                  value={cartao.assignee_id ?? 'unassigned'}
+                  value={respIdCartao ?? 'unassigned'}
                   onValueChange={(val) => {
                     const novoId = val === 'unassigned' ? null : val;
                     updateCard(cartao.id, { id_responsavel: novoId, assignee_id: novoId });
@@ -397,17 +409,17 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                 >
                   <SelectTrigger className="h-8">
                     <SelectValue>
-                      {responsavel ? (
+                      {respCartao ? (
                         <span className="flex items-center gap-2">
                           <Avatar className="size-4">
-                            {responsavel.avatar_url && (
-                              <AvatarImage src={responsavel.avatar_url} alt={responsavel.full_name} />
+                            {(respCartao.url_avatar || respCartao.avatar_url) && (
+                              <AvatarImage src={respCartao.url_avatar || respCartao.avatar_url!} alt={respCartao.nome_completo || respCartao.full_name} />
                             )}
                             <AvatarFallback className="text-[10px]">
-                              {responsavel.initials}
+                              {respCartao.iniciais || respCartao.initials}
                             </AvatarFallback>
                           </Avatar>
-                          {responsavel.full_name}
+                          {respCartao.nome_completo || respCartao.full_name}
                         </span>
                       ) : (
                         'Não atribuído'
@@ -419,14 +431,14 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                       <SelectItem key={m.id} value={m.id}>
                         <span className="flex items-center gap-2">
                           <Avatar className="size-4">
-                            {m.avatar_url && (
-                              <AvatarImage src={m.avatar_url} alt={m.full_name} />
+                            {(m.url_avatar || m.avatar_url) && (
+                              <AvatarImage src={m.url_avatar || m.avatar_url!} alt={m.nome_completo || m.full_name} />
                             )}
                             <AvatarFallback className="text-[10px]">
-                              {m.initials}
+                              {m.iniciais || m.initials}
                             </AvatarFallback>
                           </Avatar>
-                          {m.full_name}
+                          {m.nome_completo || m.full_name}
                         </span>
                       </SelectItem>
                     ))}
@@ -441,15 +453,15 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`h-8 w-full justify-start ${cartao.due_date ? '' : 'text-muted-foreground'}`}
+                      className={`h-8 w-full justify-start ${dataVencCartao ? '' : 'text-muted-foreground'}`}
                     >
-                      {cartao.due_date
+                      {dataVencCartao
                         ? (() => {
                             try {
-                              const d = parseISO(cartao.due_date);
+                              const d = parseISO(dataVencCartao);
                               return isNaN(d.getTime()) ? 'Data inválida' : format(d, 'MMM d, yyyy');
                             } catch {
-                              return cartao.due_date;
+                              return dataVencCartao;
                             }
                           })()
                         : 'Definir vencimento…'}
@@ -458,9 +470,9 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={cartao.due_date ? (() => {
+                      selected={dataVencCartao ? (() => {
                         try {
-                          const d = parseISO(cartao.due_date);
+                          const d = parseISO(dataVencCartao);
                           return isNaN(d.getTime()) ? undefined : d;
                         } catch {
                           return undefined;
@@ -468,9 +480,9 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                       })() : undefined}
                       onSelect={(_d) => {
                       }}
-                      defaultMonth={cartao.due_date ? (() => {
+                      defaultMonth={dataVencCartao ? (() => {
                         try {
-                          const d = parseISO(cartao.due_date);
+                          const d = parseISO(dataVencCartao);
                           return isNaN(d.getTime()) ? undefined : d;
                         } catch {
                           return undefined;
@@ -484,7 +496,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
               <LinhaCampo icon={IconSquareCheck} label="Checklists">
                 <AddChecklistPopover
                   cardId={cartao.id}
-                  checklists={cartao.checklists ?? []}
+                  checklists={listasCartao}
                   align="start"
                   trigger={
                     <Button
@@ -497,7 +509,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                         <span>Adicionar checklist</span>
                       </span>
                       <span className="text-xs text-muted-foreground tabular-nums">
-                        {(cartao.checklists ?? []).length}/5
+                        {listasCartao.length}/5
                       </span>
                     </Button>
                   }
@@ -517,7 +529,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   <AlertDialogHeader>
                     <AlertDialogTitle>Excluir cartão #{cartao.id}?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Tem certeza de que deseja excluir &ldquo;{cartao.title}&rdquo;? Esta ação
+                      Tem certeza de que deseja excluir &ldquo;{tituloCartao}&rdquo;? Esta ação
                       não pode ser desfeita.
                     </AlertDialogDescription>
                   </AlertDialogHeader>

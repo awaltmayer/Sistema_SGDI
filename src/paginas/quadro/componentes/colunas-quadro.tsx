@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
@@ -24,6 +24,7 @@ import { Button } from '@/componentes/base/botao';
 import {
   IconChevronDown,
   IconChevronRight,
+  IconChevronLeft,
 } from '@tabler/icons-react';
 import {
   useDataProvider,
@@ -386,8 +387,27 @@ function ColunaQuadro({
   onSelectColor,
 }: PropsColunaQuadro) {
   const { setNodeRef } = useDroppable({ id: columnId });
-  const idsCartoes = (cards ?? []).map((c) => c.id);
   const estiloCor = getColumnColorStyle(colorId);
+
+  // Paginação da coluna a cada 10 tarefas
+  const ITENS_POR_PAGINA = 10;
+  const totalCartoes = (cards ?? []).length;
+  const totalPaginas = Math.max(1, Math.ceil(totalCartoes / ITENS_POR_PAGINA));
+
+  const [pagina, setPagina] = useState(1);
+  const paginaAtual = Math.min(Math.max(1, pagina), totalPaginas);
+
+  // Ajusta a página atual se a lista for reduzida (por filtros ou exclusão)
+  useEffect(() => {
+    if (pagina > totalPaginas) {
+      setPagina(totalPaginas);
+    }
+  }, [totalPaginas, pagina]);
+
+  const indiceInicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const indiceFim = Math.min(indiceInicio + ITENS_POR_PAGINA, totalCartoes);
+  const cartoesPaginados = (cards ?? []).slice(indiceInicio, indiceFim);
+  const idsCartoesPaginados = cartoesPaginados.map((c) => c.id);
 
   return (
     <div className="sgdi-coluna-container">
@@ -433,11 +453,11 @@ function ColunaQuadro({
         />
         <SortableContext
           id={columnId}
-          items={idsCartoes}
+          items={idsCartoesPaginados}
           strategy={verticalListSortingStrategy}
         >
           <div ref={setNodeRef} className="sgdi-coluna-cards-area">
-            {(cards ?? []).map((card) => (
+            {(cartoesPaginados ?? []).map((card) => (
               <CartaoItem
                 key={card.id}
                 cartao={card}
@@ -450,6 +470,76 @@ function ColunaQuadro({
             ))}
           </div>
         </SortableContext>
+
+        {/* Seção de Paginação da Coluna (quando atinge 10 tarefas ou mais) */}
+        {totalCartoes >= 10 && (
+          <div className="sgdi-coluna-paginacao border-t border-border/50 p-2 px-2.5 bg-muted/20 flex items-center justify-between gap-1 text-xs select-none">
+            <span className="text-[11px] text-muted-foreground font-medium truncate">
+              {indiceInicio + 1}–{indiceFim} de {totalCartoes}
+            </span>
+
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                disabled={paginaAtual <= 1}
+                aria-label="Página anterior"
+                className="size-6 rounded flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                title="Página anterior"
+              >
+                <IconChevronLeft className="size-3.5" />
+              </button>
+
+              <div className="flex items-center gap-0.5">
+                {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((numPagina) => {
+                  if (
+                    totalPaginas > 5 &&
+                    numPagina !== 1 &&
+                    numPagina !== totalPaginas &&
+                    Math.abs(numPagina - paginaAtual) > 1
+                  ) {
+                    if (numPagina === 2 || numPagina === totalPaginas - 1) {
+                      return (
+                        <span key={numPagina} className="text-muted-foreground px-0.5 text-[10px]">
+                          …
+                        </span>
+                      );
+                    }
+                    return null;
+                  }
+
+                  const ativa = numPagina === paginaAtual;
+                  return (
+                    <button
+                      key={numPagina}
+                      type="button"
+                      onClick={() => setPagina(numPagina)}
+                      className={cn(
+                        'size-6 rounded text-[11px] font-medium transition-colors flex items-center justify-center cursor-pointer',
+                        ativa
+                          ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                      )}
+                    >
+                      {numPagina}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaAtual >= totalPaginas}
+                aria-label="Próxima página"
+                className="size-6 rounded flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                title="Próxima página"
+              >
+                <IconChevronRight className="size-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

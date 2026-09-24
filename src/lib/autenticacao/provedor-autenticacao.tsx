@@ -20,6 +20,50 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
   const [sessao, setSessao] = useState<Session | null>(null);
   const [carregando, setCarregando] = useState(true);
 
+  const sincronizarUsuario = async (u: User) => {
+    if (!u.email) return;
+    const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
+    const avatar =
+      (meta.avatar_url as string | undefined) ?? (meta.picture as string | undefined) ?? null;
+    const nomeCompleto =
+      (meta.full_name as string | undefined) ??
+      (meta.name as string | undefined) ??
+      u.email.split('@')[0];
+    const iniciais = nomeCompleto.slice(0, 2).toUpperCase() || 'U';
+
+    try {
+      const { data } = await supabase
+        .from('usuarios')
+        .select('id, id_usuario, url_avatar, nome_completo, email')
+        .or(`id_usuario.eq.${u.id},email.eq.${u.email}`)
+        .maybeSingle();
+
+      if (!data) {
+        // Cria automaticamente se ainda não existir
+        await supabase.from('usuarios').insert({
+          id_usuario: u.id,
+          nome_completo: nomeCompleto,
+          iniciais,
+          email: u.email,
+          url_avatar: avatar,
+          funcao: 'Membro',
+          status: 'active',
+          tema: 'dark',
+        });
+      } else {
+        const patch: Record<string, any> = {};
+        if (!data.id_usuario) patch.id_usuario = u.id;
+        if (avatar && !data.url_avatar) patch.url_avatar = avatar;
+        if (nomeCompleto && !data.nome_completo) patch.nome_completo = nomeCompleto;
+        if (Object.keys(patch).length > 0) {
+          await supabase.from('usuarios').update(patch).eq('id', data.id);
+        }
+      }
+    } catch (err) {
+      console.warn('Aviso ao sincronizar usuário com banco:', err);
+    }
+  };
+
   useEffect(() => {
     const {
       data: { subscription },
@@ -28,31 +72,8 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
       setUsuario(sessaoAtual?.user ?? null);
       setCarregando(false);
 
-      if (evento === 'SIGNED_IN' && sessaoAtual?.user) {
-        const u = sessaoAtual.user;
-        const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
-        const avatar =
-          (meta.avatar_url as string | undefined) ?? (meta.picture as string | undefined) ?? null;
-        const nomeCompleto =
-          (meta.full_name as string | undefined) ?? (meta.name as string | undefined) ?? null;
-        if (avatar || nomeCompleto || u.email) {
-          setTimeout(() => {
-            supabase
-              .from('usuarios')
-              .select('id, id_usuario, url_avatar, nome_completo, email')
-              .or(`id_usuario.eq.${u.id},email.eq.${u.email}`)
-              .maybeSingle()
-              .then(({ data }) => {
-                const patch: { url_avatar?: string; nome_completo?: string; id_usuario?: string } = {};
-                if (!data?.id_usuario) patch.id_usuario = u.id;
-                if (avatar && !data?.url_avatar) patch.url_avatar = avatar;
-                if (nomeCompleto && !data?.nome_completo) patch.nome_completo = nomeCompleto;
-                if (Object.keys(patch).length > 0 && data?.id) {
-                  void supabase.from('usuarios').update(patch).eq('id', data.id);
-                }
-              });
-          }, 0);
-        }
+      if ((evento === 'SIGNED_IN' || evento === 'TOKEN_REFRESHED' || evento === 'INITIAL_SESSION') && sessaoAtual?.user) {
+        void sincronizarUsuario(sessaoAtual.user);
       }
     });
 
@@ -60,13 +81,22 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
       setSessao(sessaoAtual);
       setUsuario(sessaoAtual?.user ?? null);
       setCarregando(false);
+
+      if (sessaoAtual?.user) {
+        void sincronizarUsuario(sessaoAtual.user);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const desconectar = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      setUsuario(null);
+      setSessao(null);
+    }
   };
 
   const valorContexto: ContextoAutenticacao = {

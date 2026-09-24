@@ -124,9 +124,19 @@ export function ColunasQuadro({
 
   const cartoesFiltrados = useMemo(() => {
     return (cartoes ?? []).filter((c) => {
-      const tit = (c.titulo ?? c.title ?? '').toLowerCase();
-      if (termoBusca && !tit.includes(termoBusca)) {
-        return false;
+      if (termoBusca) {
+        const idLimpo = termoBusca.startsWith('#') ? termoBusca.slice(1).trim() : termoBusca;
+        const idStr = String(c.id).toLowerCase();
+        const idComHash = `#${c.id}`.toLowerCase();
+        const tit = (c.titulo ?? c.title ?? '').toLowerCase();
+        const desc = (c.descricao ?? c.description ?? '').toLowerCase();
+
+        const matchId = (idLimpo && idStr === idLimpo) || idComHash === termoBusca || (idLimpo && idStr.includes(idLimpo));
+        const matchTexto = tit.includes(termoBusca) || desc.includes(termoBusca);
+
+        if (!matchId && !matchTexto) {
+          return false;
+        }
       }
       const prio = c.prioridade ?? c.priority;
       if (prioridadeFiltro !== 'all' && prio !== prioridadeFiltro) {

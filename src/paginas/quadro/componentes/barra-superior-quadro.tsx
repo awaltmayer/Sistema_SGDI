@@ -47,9 +47,12 @@ export function BarraSuperiorQuadro() {
   const temaAtual: Tema = usuarioAtual?.theme ?? 'system';
 
   const lidarComDesconectar = async () => {
-    await signOut();
-    clienteConsulta.clear();
-    window.location.href = '/auth';
+    try {
+      await signOut();
+    } finally {
+      clienteConsulta.clear();
+      window.location.href = '/auth';
+    }
   };
 
   const lidarComMudancaTema = (t: Tema) => {

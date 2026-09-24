@@ -26,15 +26,47 @@ export function FormularioLogin({ aoAlternarAba }: PropsFormularioLogin) {
     setErro(null);
     setEnviando(true);
 
-    const { error: erroAuth } = await supabase.auth.signInWithPassword({
+    const { data, error: erroAuth } = await supabase.auth.signInWithPassword({
       email,
       password: senha,
     });
 
     if (erroAuth) {
-      setErro(erroAuth.message);
+      if (erroAuth.message.includes('Invalid login credentials')) {
+        setErro('E-mail ou senha incorretos, ou usuário ainda não cadastrado.');
+      } else if (erroAuth.message.includes('Email not confirmed')) {
+        setErro('E-mail ainda não confirmado. Verifique sua caixa de entrada.');
+      } else {
+        setErro(erroAuth.message);
+      }
       setEnviando(false);
       return;
+    }
+
+    if (data?.user) {
+      const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+      const nomeCompleto =
+        (meta.full_name as string | undefined) ??
+        (meta.name as string | undefined) ??
+        email.split('@')[0];
+      const iniciais = nomeCompleto.slice(0, 2).toUpperCase() || 'U';
+
+      try {
+        await supabase.from('usuarios').upsert(
+          {
+            id_usuario: data.user.id,
+            nome_completo: nomeCompleto,
+            iniciais,
+            email: email.trim().toLowerCase(),
+            funcao: 'Membro',
+            status: 'active',
+            tema: 'dark',
+          },
+          { onConflict: 'email' }
+        );
+      } catch (err) {
+        console.warn('Aviso ao sincronizar usuário no login:', err);
+      }
     }
 
     navigate(rotaOrigem, { replace: true });

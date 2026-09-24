@@ -41,6 +41,26 @@ export function FormularioCadastro({ aoAlternarAba }: PropsFormularioCadastro) {
       return;
     }
 
+    if (data?.user) {
+      const iniciais = (nomeCompleto || email).slice(0, 2).toUpperCase() || 'U';
+      try {
+        await supabase.from('usuarios').upsert(
+          {
+            id_usuario: data.user.id,
+            nome_completo: nomeCompleto.trim() || email.split('@')[0],
+            iniciais,
+            email: email.trim().toLowerCase(),
+            funcao: 'Membro',
+            status: 'active',
+            tema: 'dark',
+          },
+          { onConflict: 'email' }
+        );
+      } catch (err) {
+        console.warn('Aviso ao persistir usuário na tabela public.usuarios:', err);
+      }
+    }
+
     if (data.session) {
       navigate('/board', { replace: true });
       return;

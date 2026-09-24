@@ -19,8 +19,6 @@ import {
 } from '@dnd-kit/sortable';
 import { Card, CardHeader, CardTitle } from '@/componentes/ui/cartao';
 import { Badge } from '@/componentes/ui/emblema';
-import { Skeleton } from '@/componentes/ui/esquema-carregamento';
-import { Button } from '@/componentes/base/botao';
 import {
   IconChevronDown,
   IconChevronRight,
@@ -106,7 +104,6 @@ export function ColunasQuadro({
   const [cartaoAtivo, setCartaoAtivo] = useState<CardWithAssignee | null>(null);
   const [cartoesLocais, setCartoesLocais] = useState<CardWithAssignee[] | null>(null);
   const [idsColapsados, setIdsColapsados] = useState<Set<string>>(new Set());
-  const [adicionandoEmAFazer, setAdicionandoEmAFazer] = useState(false);
   const [coresColunas, setCoresColunas] = useState<Record<string, string>>(() => carregarCoresColunasSalvas());
 
   const lidarComMudancaCorColuna = (colunaId: string, corId: string) => {
@@ -286,8 +283,6 @@ export function ColunasQuadro({
   const lidarComAbrirDetalhes = (card: CardWithAssignee) =>
     navegar(`${rotaBase}/${card.id}`);
 
-  const estaVazio = todosCartoes.length === 0 && !carregando;
-
   return (
     <>
       <DndContext
@@ -316,8 +311,6 @@ export function ColunasQuadro({
                 onToggleCollapseAll={() => alternarColapsoTodos(col.id)}
                 onOpenDetail={lidarComAbrirDetalhes}
                 dragDisabled={arrastoDesabilitado}
-                forceAdd={col.id === 'todo' ? adicionandoEmAFazer : false}
-                onForceAddDone={() => setAdicionandoEmAFazer(false)}
                 colorId={coresColunas[col.id]}
                 onSelectColor={(cor) => lidarComMudancaCorColuna(col.id, cor)}
               />
@@ -345,8 +338,6 @@ export function ColunasQuadro({
           ) : null}
         </DragOverlay>
       </DndContext>
-
-      {estaVazio && <EstadoVazio onAddFirst={() => setAdicionandoEmAFazer(true)} />}
     </>
   );
 }
@@ -545,30 +536,6 @@ function ColunaQuadro({
   );
 }
 
-function EstadoVazio({ onAddFirst }: { onAddFirst: () => void }) {
-  return (
-    <div className="sgdi-estado-vazio-wrapper">
-      <div className="sgdi-estado-vazio-esqueletos">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="flex w-80 shrink-0 flex-col gap-2">
-            <Skeleton className="h-10 w-full rounded-md" />
-            <Skeleton className="h-20 w-full rounded-md" />
-            <Skeleton className="h-20 w-full rounded-md" />
-          </div>
-        ))}
-      </div>
-      <Card className="sgdi-estado-vazio-card">
-        <h3 className="text-lg font-semibold">Adicione seu primeiro cartão</h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Digite o nome da tarefa e pressione Enter para adicioná-la à coluna A fazer.
-        </p>
-        <Button variant="default" className="mt-4" onClick={onAddFirst}>
-          Adicionar cartão
-        </Button>
-      </Card>
-    </div>
-  );
-}
 
 function encontrarColunaDoLocal(cards: CardWithAssignee[], id: string): IdColuna | null {
   const card = cards.find((c) => c.id === id);

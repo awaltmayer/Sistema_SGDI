@@ -32,7 +32,7 @@ export function criarModuloComentarios() {
               .select(
                 `
                 id, id_usuario, id_cartao, id_autor, conteudo, criado_em,
-                membros_equipe (id, nome_completo, iniciais, url_avatar)
+                usuarios (id, nome_completo, iniciais, url_avatar)
               `
               )
               .eq("id_cartao", idQuery as any)
@@ -44,9 +44,9 @@ export function criarModuloComentarios() {
             }
 
             return (data ?? []).map((row: any) => {
-              const tm = Array.isArray(row.membros_equipe)
-                ? row.membros_equipe[0]
-                : row.membros_equipe;
+              const tm = Array.isArray(row.usuarios)
+                ? row.usuarios[0]
+                : (row.usuarios || (Array.isArray(row.membros_equipe) ? row.membros_equipe[0] : row.membros_equipe));
 
               const autorObj = tm
                 ? {
@@ -127,7 +127,7 @@ export function criarModuloComentarios() {
             .select(
               `
               id, id_usuario, id_cartao, id_autor, conteudo, criado_em,
-              membros_equipe (id, nome_completo, iniciais, url_avatar)
+              usuarios (id, nome_completo, iniciais, url_avatar)
             `
             )
             .single();
@@ -142,7 +142,7 @@ export function criarModuloComentarios() {
               .select(
                 `
                 id, id_usuario, id_cartao, id_autor, conteudo, criado_em,
-                membros_equipe (id, nome_completo, iniciais, url_avatar)
+                usuarios (id, nome_completo, iniciais, url_avatar)
               `
               )
               .single();

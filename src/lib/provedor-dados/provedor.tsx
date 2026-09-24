@@ -58,10 +58,10 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     supabase
-      .from("perfis")
+      .from("usuarios")
       .select("tema")
-      .eq("id", user.id)
-      .single()
+      .eq("id_usuario", user.id)
+      .maybeSingle()
       .then(({ data }) => {
         const tema = (data?.tema ?? "system") as Theme;
         const root = document.documentElement;
@@ -120,17 +120,12 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "membros_equipe" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["team_members"] });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "perfis" },
+        { event: "*", schema: "public", table: "usuarios" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["profile"] });
+          queryClient.invalidateQueries({ queryKey: ["profiles"] });
           queryClient.invalidateQueries({ queryKey: ["team_members"] });
+          queryClient.invalidateQueries({ queryKey: ["users"] });
         }
       )
       .subscribe();

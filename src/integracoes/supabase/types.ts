@@ -15,48 +15,110 @@ export type Database = {
       cartoes: {
         Row: {
           id: number | string
-          id_usuario: string
+          id_usuario: string | null
           titulo: string
           descricao: string
           coluna: string
           prioridade: string
           data_vencimento: string | null
           posicao: number
-          id_responsavel: number | string | null
+          ids_responsaveis: string[]
           criado_em: string
         }
         Insert: {
           id?: number | string
-          id_usuario?: string
+          id_usuario?: string | null
           titulo: string
           descricao?: string
           coluna?: string
           prioridade?: string
           data_vencimento?: string | null
           posicao?: number
-          id_responsavel?: number | string | null
+          ids_responsaveis?: string[]
           criado_em?: string
         }
         Update: {
           id?: number | string
-          id_usuario?: string
+          id_usuario?: string | null
           titulo?: string
           descricao?: string
           coluna?: string
           prioridade?: string
           data_vencimento?: string | null
           posicao?: number
-          id_responsavel?: number | string | null
+          ids_responsaveis?: string[]
+          criado_em?: string
+        }
+        Relationships: []
+      }
+      checklists: {
+        Row: {
+          id: number | string
+          id_usuario: string | null
+          id_cartao: number | string
+          titulo: string
+          posicao: number
+          criado_em: string
+        }
+        Insert: {
+          id?: number | string
+          id_usuario?: string | null
+          id_cartao: number | string
+          titulo: string
+          posicao?: number
+          criado_em?: string
+        }
+        Update: {
+          id?: number | string
+          id_usuario?: string | null
+          id_cartao?: number | string
+          titulo?: string
+          posicao?: number
           criado_em?: string
         }
         Relationships: [
           {
-            foreignKeyName: "cartoes_id_responsavel_fkey"
-            columns: ["id_responsavel"]
+            foreignKeyName: "checklists_id_cartao_fkey"
+            columns: ["id_cartao"]
             isOneToOne: false
-            referencedRelation: "membros_equipe"
+            referencedRelation: "cartoes"
             referencedColumns: ["id"]
-          },
+          }
+        ]
+      }
+      itens_checklist: {
+        Row: {
+          id: number | string
+          id_checklist: number | string
+          titulo: string
+          esta_concluido: boolean
+          posicao: number
+          criado_em: string
+        }
+        Insert: {
+          id?: number | string
+          id_checklist: number | string
+          titulo: string
+          esta_concluido?: boolean
+          posicao?: number
+          criado_em?: string
+        }
+        Update: {
+          id?: number | string
+          id_checklist?: number | string
+          titulo?: string
+          esta_concluido?: boolean
+          posicao?: number
+          criado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itens_checklist_id_checklist_fkey"
+            columns: ["id_checklist"]
+            isOneToOne: false
+            referencedRelation: "checklists"
+            referencedColumns: ["id"]
+          }
         ]
       }
       comentarios: {
@@ -89,7 +151,7 @@ export type Database = {
             foreignKeyName: "comentarios_id_autor_fkey"
             columns: ["id_autor"]
             isOneToOne: false
-            referencedRelation: "membros_equipe"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -101,72 +163,42 @@ export type Database = {
           },
         ]
       }
-      perfis: {
-        Row: {
-          id: string
-          nome_completo: string
-          iniciais: string
-          email: string
-          tema: string
-          url_avatar: string | null
-          criado_em: string
-        }
-        Insert: {
-          id: string
-          nome_completo?: string
-          iniciais?: string
-          email?: string
-          tema?: string
-          url_avatar?: string | null
-          criado_em?: string
-        }
-        Update: {
-          id?: string
-          nome_completo?: string
-          iniciais?: string
-          email?: string
-          tema?: string
-          url_avatar?: string | null
-          criado_em?: string
-        }
-        Relationships: []
-      }
-      membros_equipe: {
+      usuarios: {
         Row: {
           id: number | string
-          id_usuario: string
-          id_usuario_membro: string | null
+          id_usuario: string | null
           nome_completo: string
           iniciais: string
           email: string
           funcao: string
           status: string
+          tema: string
           url_avatar: string | null
           convidado_em: string | null
           criado_em: string
         }
         Insert: {
           id?: number | string
-          id_usuario?: string
-          id_usuario_membro?: string | null
-          nome_completo?: string
+          id_usuario?: string | null
+          nome_completo: string
           iniciais?: string
           email: string
           funcao?: string
           status?: string
+          tema?: string
           url_avatar?: string | null
           convidado_em?: string | null
           criado_em?: string
         }
         Update: {
           id?: number | string
-          id_usuario?: string
-          id_usuario_membro?: string | null
+          id_usuario?: string | null
           nome_completo?: string
           iniciais?: string
           email?: string
           funcao?: string
           status?: string
+          tema?: string
           url_avatar?: string | null
           convidado_em?: string | null
           criado_em?: string

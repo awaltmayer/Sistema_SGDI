@@ -35,29 +35,20 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
           (meta.avatar_url as string | undefined) ?? (meta.picture as string | undefined) ?? null;
         const nomeCompleto =
           (meta.full_name as string | undefined) ?? (meta.name as string | undefined) ?? null;
-        if (avatar || nomeCompleto) {
+        if (avatar || nomeCompleto || u.email) {
           setTimeout(() => {
             supabase
-              .from('perfis')
-              .select('url_avatar, nome_completo')
-              .eq('id', u.id)
+              .from('usuarios')
+              .select('id, id_usuario, url_avatar, nome_completo, email')
+              .or(`id_usuario.eq.${u.id},email.eq.${u.email}`)
               .maybeSingle()
               .then(({ data }) => {
-                const patch: { url_avatar?: string; nome_completo?: string } = {};
+                const patch: { url_avatar?: string; nome_completo?: string; id_usuario?: string } = {};
+                if (!data?.id_usuario) patch.id_usuario = u.id;
                 if (avatar && !data?.url_avatar) patch.url_avatar = avatar;
                 if (nomeCompleto && !data?.nome_completo) patch.nome_completo = nomeCompleto;
-                if (Object.keys(patch).length > 0) {
-                  void supabase.from('perfis').update(patch).eq('id', u.id);
-                }
-                const tmPatch: { url_avatar?: string; nome_completo?: string } = {};
-                if (avatar) tmPatch.url_avatar = avatar;
-                if (nomeCompleto) tmPatch.nome_completo = nomeCompleto;
-                if (Object.keys(tmPatch).length > 0) {
-                  void supabase
-                    .from('membros_equipe')
-                    .update(tmPatch)
-                    .eq('id_usuario', u.id)
-                    .eq('id_usuario_membro', u.id);
+                if (Object.keys(patch).length > 0 && data?.id) {
+                  void supabase.from('usuarios').update(patch).eq('id', data.id);
                 }
               });
           }, 0);

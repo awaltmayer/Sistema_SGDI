@@ -12,24 +12,30 @@ export function criarModuloPerfil() {
       const { data, isLoading } = useQuery({
         queryKey: ["profile", user?.id],
         queryFn: async () => {
+          if (!user) return null;
           const { data, error } = await supabase
-            .from("perfis")
-            .select("id, nome_completo, iniciais, email, tema, url_avatar, criado_em")
-            .eq("id", user!.id)
-            .single();
+            .from("usuarios")
+            .select("id, id_usuario, nome_completo, iniciais, email, tema, url_avatar, funcao, status, criado_em")
+            .or(`id_usuario.eq.${user.id},email.eq.${user.email}`)
+            .maybeSingle();
           if (error) throw error;
+          if (!data) return null;
           return {
-            id: data.id,
+            id: String(data.id),
+            id_usuario: data.id_usuario ?? user.id,
             nome_completo: data.nome_completo,
             iniciais: data.iniciais,
             email: data.email,
-            tema: data.tema as Tema,
+            tema: (data.tema ?? "system") as Tema,
             url_avatar: data.url_avatar,
             criado_em: data.criado_em,
+            funcao: data.funcao,
+            role: data.funcao,
+            status: data.status,
             // Aliases de compatibilidade
             full_name: data.nome_completo,
             initials: data.iniciais,
-            theme: data.tema as Tema,
+            theme: (data.tema ?? "system") as Tema,
             avatar_url: data.url_avatar,
             created_at: data.criado_em,
           } as Profile;
@@ -45,22 +51,27 @@ export function criarModuloPerfil() {
         queryKey: ["profiles"],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("perfis")
-            .select("id, nome_completo, iniciais, email, tema, url_avatar, criado_em")
+            .from("usuarios")
+            .select("id, id_usuario, nome_completo, iniciais, email, tema, url_avatar, funcao, status, criado_em")
+            .neq("status", "removed")
             .order("nome_completo", { ascending: true });
           if (error) return [];
           return (data ?? []).map((row: any) => ({
-            id: row.id,
+            id: String(row.id),
+            id_usuario: row.id_usuario,
             nome_completo: row.nome_completo,
             iniciais: row.iniciais,
             email: row.email,
-            tema: row.tema as Tema,
+            tema: (row.tema ?? "system") as Tema,
             url_avatar: row.url_avatar,
+            funcao: row.funcao,
+            role: row.funcao,
+            status: row.status,
             criado_em: row.criado_em,
             // Aliases de compatibilidade
             full_name: row.nome_completo,
             initials: row.iniciais,
-            theme: row.tema as Tema,
+            theme: (row.tema ?? "system") as Tema,
             avatar_url: row.url_avatar,
             created_at: row.criado_em,
           })) as Profile[];
@@ -77,16 +88,18 @@ export function criarModuloPerfil() {
         mutationFn: async (fields: UpdateProfileInput) => {
           const nome = fields.nomeCompleto ?? fields.fullName ?? "";
           const inic = fields.iniciais ?? fields.initials ?? "";
+          const patch: Record<string, any> = {
+            nome_completo: nome,
+            iniciais: inic,
+          };
+          if (fields.email) patch.email = fields.email;
+
           const { data, error } = await supabase
-            .from("perfis")
-            .update({
-              nome_completo: nome,
-              iniciais: inic,
-              email: fields.email,
-            })
-            .eq("id", user!.id)
+            .from("usuarios")
+            .update(patch)
+            .or(`id_usuario.eq.${user!.id},email.eq.${user!.email}`)
             .select()
-            .single();
+            .maybeSingle();
           if (error) throw error;
           return data;
         },
@@ -118,6 +131,7 @@ export function criarModuloPerfil() {
         },
         onSettled: () => {
           queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+          queryClient.invalidateQueries({ queryKey: ["profiles"] });
           queryClient.invalidateQueries({ queryKey: ["team_members"] });
         },
       });
@@ -154,11 +168,11 @@ export function criarModuloPerfil() {
       const mutation = useMutation({
         mutationFn: async (theme: Theme) => {
           const { data, error } = await supabase
-            .from("perfis")
+            .from("usuarios")
             .update({ tema: theme })
-            .eq("id", user!.id)
+            .or(`id_usuario.eq.${user!.id},email.eq.${user!.email}`)
             .select()
-            .single();
+            .maybeSingle();
           if (error) throw error;
           return data;
         },

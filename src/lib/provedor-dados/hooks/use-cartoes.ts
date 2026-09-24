@@ -92,7 +92,7 @@ export function criarModuloCartoes() {
             /* Fallback seguro para chkMap do storage */
           }
           const { data: allMembersData } = await supabase
-            .from("membros_equipe")
+            .from("usuarios")
             .select("id, nome_completo, iniciais, url_avatar, email");
           const allMembers = allMembersData ?? [];
           const metaMap = loadSupabaseMetadata();
@@ -240,7 +240,7 @@ export function criarModuloCartoes() {
             /* Fallback seguro para chkMap do storage */
           }
           const { data: allMembersData } = await supabase
-            .from("membros_equipe")
+            .from("usuarios")
             .select("id, nome_completo, iniciais, url_avatar, email");
           const allMembers = allMembersData ?? [];
           const metaMap = loadSupabaseMetadata();

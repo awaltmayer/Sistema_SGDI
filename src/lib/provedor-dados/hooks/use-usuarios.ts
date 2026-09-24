@@ -12,8 +12,8 @@ export function criarModuloUsuarios() {
         queryKey: ["team_members"],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from("membros_equipe")
-            .select("id, id_usuario, id_usuario_membro, nome_completo, iniciais, email, funcao, status, url_avatar, convidado_em, criado_em")
+            .from("usuarios")
+            .select("id, id_usuario, nome_completo, iniciais, email, funcao, status, url_avatar, convidado_em, criado_em")
             .neq("status", "removed")
             .order("funcao", { ascending: false })
             .order("nome_completo", { ascending: true });
@@ -21,7 +21,7 @@ export function criarModuloUsuarios() {
           return (data ?? []).map((m: any) => ({
             id: String(m.id),
             id_usuario: m.id_usuario,
-            id_usuario_membro: m.id_usuario_membro,
+            id_usuario_membro: m.id_usuario,
             nome_completo: m.nome_completo,
             iniciais: m.iniciais,
             email: m.email,

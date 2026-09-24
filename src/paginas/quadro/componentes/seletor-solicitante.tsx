@@ -63,8 +63,8 @@ export function SeletorSolicitante({
 
     // 2. Preenche os dados dos solicitantes que possuem cartões
     for (const idCriador of idsCriadoresComCartoes) {
-      // Tenta encontrar em perfis
-      const perfil = perfis.find((p) => String(p.id) === idCriador);
+      // Tenta encontrar em perfis/usuarios
+      const perfil = perfis.find((p: any) => String(p.id) === idCriador || (p.id_usuario && String(p.id_usuario) === idCriador));
       if (perfil) {
         mapa.set(idCriador, {
           id: idCriador,

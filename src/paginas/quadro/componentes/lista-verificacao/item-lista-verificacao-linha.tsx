@@ -3,6 +3,7 @@ import { IconTrash, IconPencil, IconCheck, IconX } from "@tabler/icons-react";
 import { Checkbox } from "@/componentes/ui/caixa-selecao";
 import { Button } from "@/componentes/base/botao";
 import { Input } from "@/componentes/ui/campo-texto";
+import { toast } from "sonner";
 import type { ItemListaVerificacao } from "@/dados/dados-iniciais";
 import "./item-lista-verificacao-linha.css";
 
@@ -10,10 +11,12 @@ export interface PropsItemListaVerificacaoLinha {
   cardId: string;
   checklistId: string;
   item: ItemListaVerificacao;
+  podeEditar?: boolean;
   aoAlternar?: (itemId: string) => void;
   aoAtualizarTitulo?: (itemId: string, titulo: string) => void;
   aoExcluir?: (itemId: string) => void;
   // Aliases compatibilidade
+  canEdit?: boolean;
   onToggle?: (itemId: string) => void;
   onUpdateTitle?: (itemId: string, title: string) => void;
   onDelete?: (itemId: string) => void;
@@ -24,6 +27,8 @@ export function ItemListaVerificacaoLinha({
   cardId: _cardId,
   checklistId: _checklistId,
   item,
+  podeEditar = true,
+  canEdit,
   aoAlternar,
   aoAtualizarTitulo,
   aoExcluir,
@@ -31,6 +36,7 @@ export function ItemListaVerificacaoLinha({
   onUpdateTitle,
   onDelete,
 }: PropsItemListaVerificacaoLinha) {
+  const permissaoEdicao = canEdit !== undefined ? canEdit : podeEditar;
   const alternar = aoAlternar ?? onToggle;
   const atualizarTitulo = aoAtualizarTitulo ?? onUpdateTitle;
   const excluir = aoExcluir ?? onDelete;
@@ -60,12 +66,17 @@ export function ItemListaVerificacaoLinha({
   }, [estaEditando]);
 
   const lidarComAlternancia = () => {
+    if (!permissaoEdicao) {
+      toast.error('Apenas o criador ou responsáveis podem alterar os itens do checklist.');
+      return;
+    }
     const proximoValor = !concluidoLocal;
     setConcluidoLocal(proximoValor); // Resposta visual imediata sem esperar rede
     alternar?.(item.id);
   };
 
   const salvarEdicao = () => {
+    if (!permissaoEdicao) return;
     const t = textoEdicao.trim();
     if (t && t !== titItem) {
       atualizarTitulo?.(item.id, t);
@@ -84,7 +95,7 @@ export function ItemListaVerificacaoLinha({
     }
   };
 
-  if (estaEditando) {
+  if (estaEditando && permissaoEdicao) {
     return (
       <div className="flex items-center gap-2 py-1 pl-7 pr-1">
         <Input
@@ -126,8 +137,11 @@ export function ItemListaVerificacaoLinha({
         <Checkbox
           id={`chk-item-${item.id}`}
           checked={concluidoLocal}
+          disabled={!permissaoEdicao}
           onCheckedChange={lidarComAlternancia}
           className={`size-4 rounded transition-transform active:scale-95 ${
+            !permissaoEdicao ? "cursor-not-allowed opacity-75" : ""
+          } ${
             concluidoLocal
               ? "border-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 data-[state=checked]:text-white"
               : ""
@@ -138,13 +152,20 @@ export function ItemListaVerificacaoLinha({
       <label
         htmlFor={`chk-item-${item.id}`}
         onClick={(e) => {
+          if (!permissaoEdicao) {
+            e.preventDefault();
+            toast.error('Apenas o criador ou responsáveis podem alterar os itens do checklist.');
+            return;
+          }
           // Duplo clique para editar
           if (e.detail === 2) {
             e.preventDefault();
             setEstaEditando(true);
           }
         }}
-        className={`flex-1 text-sm select-none leading-relaxed cursor-pointer transition-all ${
+        className={`flex-1 text-sm select-none leading-relaxed transition-all ${
+          !permissaoEdicao ? "cursor-not-allowed" : "cursor-pointer"
+        } ${
           concluidoLocal
             ? "line-through text-emerald-600 dark:text-emerald-400 font-medium opacity-90"
             : "text-foreground"
@@ -153,26 +174,28 @@ export function ItemListaVerificacaoLinha({
         {titItem}
       </label>
 
-      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover/item:opacity-100">
-        <button
-          type="button"
-          title="Editar item"
-          onClick={() => setEstaEditando(true)}
-          className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <IconPencil className="size-3.5" />
-        </button>
-        <button
-          type="button"
-          title="Excluir item"
-          onClick={() => {
-            excluir?.(item.id);
-          }}
-          className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-        >
-          <IconTrash className="size-3.5" />
-        </button>
-      </div>
+      {permissaoEdicao && (
+        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover/item:opacity-100">
+          <button
+            type="button"
+            title="Editar item"
+            onClick={() => setEstaEditando(true)}
+            className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+          >
+            <IconPencil className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            title="Excluir item"
+            onClick={() => {
+              excluir?.(item.id);
+            }}
+            className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+          >
+            <IconTrash className="size-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

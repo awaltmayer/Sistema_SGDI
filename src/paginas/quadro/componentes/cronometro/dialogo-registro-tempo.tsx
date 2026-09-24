@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +79,16 @@ export function DialogoRegistroTempo({
     0
   );
 
+  // Numeração cronológica: a primeira pausa no tempo é #1, segunda #2, ..., última #N
+  // E inversão para que a última pausa registrada (#N) fique no topo da tabela
+  const pausasOrdenadas = useMemo(() => {
+    const comIndice = pausas.map((p: any, idx: number) => ({
+      ...p,
+      numeroPausa: idx + 1,
+    }));
+    return [...comIndice].reverse();
+  }, [pausas]);
+
   return (
     <Dialog open={estaAberto} onOpenChange={mudarAberto}>
       <DialogContent
@@ -136,7 +147,7 @@ export function DialogoRegistroTempo({
             </div>
           ) : (
             <div className="sgdi-log-timeline">
-              {pausas.map((p: any, idx: number) => {
+              {pausasOrdenadas.map((p: any) => {
                 const pausadoEmStr = p.pausado_em ?? p.paused_at;
                 const pausedDate = pausadoEmStr ? parseISO(pausadoEmStr) : new Date();
                 const retomadoEmStr = p.retomado_em ?? p.resumed_at;
@@ -146,7 +157,7 @@ export function DialogoRegistroTempo({
                 const usuario = p.usuario_nome ?? p.user_name ?? "Usuário";
 
                 return (
-                  <div key={p.id || idx} className="relative group">
+                  <div key={p.id || p.numeroPausa} className="relative group">
                     {/* Indicador no dot */}
                     <div className="sgdi-log-timeline-dot" />
 
@@ -154,7 +165,7 @@ export function DialogoRegistroTempo({
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1">
                           <IconPlayerPause className="size-3.5" />
-                          Pausa #{pausas.length - idx}
+                          Pausa #{p.numeroPausa}
                         </span>
                         {duracao > 0 && (
                           <span className="font-mono text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">

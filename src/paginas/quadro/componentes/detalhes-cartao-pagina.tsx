@@ -6,6 +6,8 @@ import {
   IconColumns,
   IconFlag,
   IconUser,
+  IconUserPlus,
+  IconX,
   IconCalendar,
   IconFileX,
   IconSquareCheck,
@@ -56,6 +58,7 @@ import { AddChecklistPopover } from './lista-verificacao/seletor-adicionar-lista
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
 import { SeletorDataVencimento, calcularStatusPrazo } from './seletor-data-vencimento';
 import { SeletorResponsavel } from './seletor-responsavel';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utilitarios';
 import './detalhes-cartao-pagina.css';
 
@@ -238,15 +241,59 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
   const tituloCartao = cartao.titulo ?? cartao.title;
   const colCartao = cartao.coluna ?? cartao.column;
   const prioCartao = cartao.prioridade ?? cartao.priority;
-  const respIdCartao = cartao.id_responsavel ?? cartao.assignee_id;
-  const respCartao = cartao.responsavel ?? cartao.assignee ?? encontrarMembro(membros, respIdCartao);
-  const responsaveisCartao = (cartao.responsaveis ?? cartao.assignees ?? (respCartao ? [respCartao] : [])) as any[];
-  const idsResponsaveisCartao = (cartao.ids_responsaveis ?? cartao.assignee_ids ?? (respCartao?.id ? [respCartao.id] : [])) as string[];
+  const rawIds = cartao.ids_responsaveis ?? cartao.assignee_ids;
+  const idsResponsaveisCartao: string[] =
+    Array.isArray(rawIds) && rawIds.length > 0
+      ? rawIds.map(String)
+      : cartao.id_responsavel != null
+      ? [String(cartao.id_responsavel)]
+      : cartao.assignee_id != null
+      ? [String(cartao.assignee_id)]
+      : [];
+
+  const responsaveisCartao: MembroEquipe[] = (() => {
+    const resolved: MembroEquipe[] = [];
+    for (const id of idsResponsaveisCartao) {
+      const achado = encontrarMembro(membros, id);
+      if (achado) {
+        resolved.push(achado);
+      }
+    }
+    if (resolved.length === 0 && Array.isArray(cartao.responsaveis) && cartao.responsaveis.length > 0) {
+      return cartao.responsaveis as MembroEquipe[];
+    }
+    return resolved;
+  })();
+
+  const respCartao = responsaveisCartao[0] ?? null;
   const dataVencCartao = cartao.data_vencimento ?? cartao.due_date;
   const infoPrazo = calcularStatusPrazo(dataVencCartao);
   const listasCartao = cartao.listas_verificacao ?? cartao.checklists ?? [];
   const rastreadorCartao = cartao.rastreador_tempo ?? cartao.time_tracker;
   const colunaAtual = colunas.find((c) => c.id === colCartao);
+
+  const podeEditarPrazoEChecklists = (() => {
+    if (!usuarioAtual && !membroAtual) return false;
+    const uId = usuarioAtual?.id ? String(usuarioAtual.id) : null;
+    const mId = membroAtual?.id ? String(membroAtual.id) : null;
+    const criadorId = cartao.id_usuario ?? (cartao as any).user_id;
+    const criadorStr = criadorId ? String(criadorId) : null;
+
+    // É o criador do cartão?
+    if (criadorStr && (criadorStr === uId || criadorStr === mId)) {
+      return true;
+    }
+    // É um dos responsáveis?
+    if (uId && idsResponsaveisCartao.includes(uId)) return true;
+    if (mId && idsResponsaveisCartao.includes(mId)) return true;
+    if (usuarioAtual?.email) {
+      const emailLower = usuarioAtual.email.toLowerCase();
+      if (responsaveisCartao.some((r) => r.email && r.email.toLowerCase() === emailLower)) {
+        return true;
+      }
+    }
+    return false;
+  })();
 
   return (
     <div className="flex h-dvh flex-col">
@@ -297,7 +344,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
               <Separator />
 
-              <CardChecklistsContainer cardId={cartao.id} checklists={listasCartao} />
+              <CardChecklistsContainer cardId={cartao.id} checklists={listasCartao} podeEditar={podeEditarPrazoEChecklists} />
 
               <Separator />
 
@@ -474,25 +521,39 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   value={prioCartao}
                   onValueChange={(v) => updateCard(cartao.id, { prioridade: v as Prioridade, priority: v as Prioridade })}
                 >
-                  <SelectTrigger className="w-full text-xs">
-                    <SelectValue>
-                      {prioCartao && (
-                        <span className={cn('text-xs px-2 py-0.5 text-white font-medium rounded-sm border-0 shadow-none', priorityConfig[prioCartao]?.classeSolida)}>
-                          {priorityConfig[prioCartao]?.label ?? prioCartao}
-                        </span>
-                      )}
-                    </SelectValue>
+                  <SelectTrigger
+                    className={cn(
+                      'h-9 w-full rounded-sm border-0 px-3 text-xs transition-colors cursor-pointer shadow-none font-medium text-white',
+                      prioCartao === 'high'
+                        ? 'bg-red-600 hover:bg-red-700 [&>svg]:text-white'
+                        : prioCartao === 'low'
+                        ? 'bg-slate-500 hover:bg-slate-600 [&>svg]:text-white'
+                        : 'bg-amber-500 hover:bg-amber-600 [&>svg]:text-white'
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconFlag className="size-4 shrink-0 text-white" />
+                      <span>{priorityConfig[prioCartao ?? 'medium']?.label ?? 'Média'}</span>
+                    </div>
                   </SelectTrigger>
                   <SelectContent>
-                    {(['high', 'medium', 'low'] as Prioridade[]).map((p) => (
-                      <SelectItem key={p} value={p}>
-                        <span className="flex items-center gap-2">
-                          <span className={cn('text-xs px-2 py-0.5 text-white font-medium rounded-sm border-0 shadow-none', priorityConfig[p]?.classeSolida)}>
-                            {priorityConfig[p]?.label ?? p}
+                    {(['high', 'medium', 'low'] as Prioridade[]).map((p) => {
+                      const cfg = priorityConfig[p];
+                      const itemBg =
+                        p === 'high'
+                          ? 'bg-red-600 hover:bg-red-700'
+                          : p === 'low'
+                          ? 'bg-slate-500 hover:bg-slate-600'
+                          : 'bg-amber-500 hover:bg-amber-600';
+                      return (
+                        <SelectItem key={p} value={p} className="cursor-pointer my-0.5 p-1">
+                          <span className={cn('flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs font-medium text-white w-full border-0 shadow-none', itemBg)}>
+                            <IconFlag className="size-3.5" />
+                            <span>{cfg?.label ?? p}</span>
                           </span>
-                        </span>
-                      </SelectItem>
-                    ))}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </LinhaCampo>
@@ -501,97 +562,174 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                 <SeletorResponsavel
                   responsaveis={responsaveisCartao}
                   idsResponsaveis={idsResponsaveisCartao}
-                  responsavel={respCartao ?? null}
                   aoSelecionarMultiplo={(novosIds) => {
                     updateCard(cartao.id, {
                       ids_responsaveis: novosIds,
                       assignee_ids: novosIds,
-                      id_responsavel: novosIds[0] ?? null,
-                      assignee_id: novosIds[0] ?? null,
-                    });
-                  }}
-                  aoSelecionar={(novoId) => {
-                    updateCard(cartao.id, {
-                      id_responsavel: novoId,
-                      ids_responsaveis: novoId ? [novoId] : [],
                     });
                   }}
                 >
-                  <div className="flex items-center justify-between min-h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs cursor-pointer hover:bg-accent hover:text-foreground">
-                    {responsaveisCartao.length > 0 ? (
-                      <div className="flex items-center gap-1.5 flex-wrap py-0.5">
-                        <div className="flex -space-x-1.5 overflow-hidden">
-                          {responsaveisCartao.map((m) => (
-                            <Avatar key={m.id} className="size-4 ring-1 ring-background">
-                              {(m.url_avatar || m.avatar_url) && (
-                                <AvatarImage src={m.url_avatar || m.avatar_url!} alt={m.nome_completo || m.full_name} />
-                              )}
-                              <AvatarFallback className="text-[9px]">
-                                {m.iniciais || m.initials}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                        </div>
-                        <span className="text-foreground">
-                          {responsaveisCartao.length === 1
-                            ? (responsaveisCartao[0].nome_completo || responsaveisCartao[0].full_name)
-                            : `${responsaveisCartao.length} responsáveis`}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">Não atribuído</span>
+                  <div className="flex items-center justify-between min-h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs cursor-pointer hover:bg-accent hover:text-foreground transition-colors">
+                    <div className="flex items-center gap-2">
+                      <IconUserPlus className="size-3.5 text-primary" />
+                      <span className="font-medium text-foreground">
+                        {idsResponsaveisCartao.length === 0
+                          ? 'Atribuir responsáveis…'
+                          : 'Adicionar / alterar responsáveis'}
+                      </span>
+                    </div>
+                    {idsResponsaveisCartao.length > 0 && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                        {idsResponsaveisCartao.length}
+                      </Badge>
                     )}
                   </div>
                 </SeletorResponsavel>
+
+                {/* Lista de responsáveis atribuídos abaixo do input */}
+                {responsaveisCartao.length > 0 ? (
+                  <div className="mt-2 space-y-1.5">
+                    {responsaveisCartao.map((membro) => {
+                      const nome = membro.nome_completo || membro.full_name || 'Responsável';
+                      return (
+                        <div
+                          key={membro.id}
+                          className="flex items-center justify-between gap-2 p-1.5 px-2.5 rounded-md bg-muted/40 border border-border/50 hover:bg-muted/70 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Avatar className="size-6 shrink-0 ring-1 ring-border">
+                              {(membro.url_avatar || membro.avatar_url) && (
+                                <AvatarImage src={membro.url_avatar || membro.avatar_url!} alt={nome} />
+                              )}
+                              <AvatarFallback className="text-[10px] font-semibold">
+                                {membro.iniciais || membro.initials || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-xs font-medium text-foreground truncate">
+                                {nome}
+                              </span>
+                              {membro.email && (
+                                <span className="text-[10px] text-muted-foreground truncate">
+                                  {membro.email}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            title={`Remover ${nome}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const novosIds = idsResponsaveisCartao.filter((id) => id !== String(membro.id));
+                              updateCard(cartao.id, {
+                                ids_responsaveis: novosIds,
+                                assignee_ids: novosIds,
+                              });
+                            }}
+                            className="p-1 rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                          >
+                            <IconX className="size-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic px-1 pt-0.5">
+                    Nenhum responsável atribuído
+                  </p>
+                )}
               </LinhaCampo>
 
               <LinhaCampo icon={IconCalendar} label="Data de vencimento">
-                <SeletorDataVencimento
-                  dataVencimento={dataVencCartao}
-                  aoSelecionar={(novaData) => {
-                    updateCard(cartao.id, {
-                      data_vencimento: novaData,
-                      due_date: novaData,
-                    });
-                  }}
-                >
+                {podeEditarPrazoEChecklists ? (
+                  <SeletorDataVencimento
+                    dataVencimento={dataVencCartao}
+                    aoSelecionar={(novaData) => {
+                      updateCard(cartao.id, {
+                        data_vencimento: novaData,
+                        due_date: novaData,
+                      });
+                    }}
+                  >
+                    <div
+                      className={cn(
+                        'flex items-center justify-between h-9 w-full rounded-sm border-0 px-3 text-xs transition-colors cursor-pointer shadow-none',
+                        dataVencCartao
+                          ? infoPrazo.classeBadge
+                          : 'border-0 bg-muted/80 text-muted-foreground hover:bg-muted'
+                      )}
+                    >
+                      <span className="flex items-center gap-2 truncate">
+                        <IconCalendar className="size-4 shrink-0" />
+                        <span>{dataVencCartao ? infoPrazo.textoFormatado : 'Definir vencimento…'}</span>
+                      </span>
+                    </div>
+                  </SeletorDataVencimento>
+                ) : (
                   <div
+                    onClick={() => {
+                      toast.error('Apenas o criador ou responsáveis podem alterar a data de vencimento.');
+                    }}
                     className={cn(
-                      'flex items-center justify-between h-9 w-full rounded-sm border-0 px-3 text-xs transition-colors cursor-pointer shadow-none',
+                      'flex items-center justify-between h-9 w-full rounded-sm border-0 px-3 text-xs shadow-none opacity-80 cursor-not-allowed select-none',
                       dataVencCartao
                         ? infoPrazo.classeBadge
-                        : 'border-0 bg-muted/80 text-muted-foreground hover:bg-muted'
+                        : 'border-0 bg-muted/80 text-muted-foreground'
                     )}
+                    title="Apenas o criador ou responsáveis podem alterar a data de vencimento"
                   >
                     <span className="flex items-center gap-2 truncate">
                       <IconCalendar className="size-4 shrink-0" />
-                      <span>{dataVencCartao ? infoPrazo.textoFormatado : 'Definir vencimento…'}</span>
+                      <span>{dataVencCartao ? infoPrazo.textoFormatado : 'Sem vencimento'}</span>
                     </span>
                   </div>
-                </SeletorDataVencimento>
+                )}
               </LinhaCampo>
 
               <LinhaCampo icon={IconSquareCheck} label="Checklists">
-                <AddChecklistPopover
-                  cardId={cartao.id}
-                  checklists={listasCartao}
-                  align="start"
-                  trigger={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 w-full justify-between font-normal text-muted-foreground hover:text-foreground"
-                    >
-                      <span className="flex items-center gap-2">
-                        <IconSquareCheck className="size-4 text-primary" />
-                        <span>Adicionar checklist</span>
-                      </span>
-                      <span className="text-xs text-muted-foreground tabular-nums">
-                        {listasCartao.length}/5
-                      </span>
-                    </Button>
-                  }
-                />
+                {podeEditarPrazoEChecklists ? (
+                  <AddChecklistPopover
+                    cardId={cartao.id}
+                    checklists={listasCartao}
+                    align="start"
+                    trigger={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-full justify-between font-normal text-muted-foreground hover:text-foreground"
+                      >
+                        <span className="flex items-center gap-2">
+                          <IconSquareCheck className="size-4 text-primary" />
+                          <span>Adicionar checklist</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {listasCartao.length}/5
+                        </span>
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    onClick={() => {
+                      toast.error('Apenas o criador ou responsáveis podem adicionar checklists.');
+                    }}
+                    className="h-8 w-full justify-between font-normal text-muted-foreground opacity-60 cursor-not-allowed"
+                    title="Apenas o criador ou responsáveis podem alterar checklists"
+                  >
+                    <span className="flex items-center gap-2">
+                      <IconSquareCheck className="size-4 text-muted-foreground" />
+                      <span>Adicionar checklist</span>
+                    </span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {listasCartao.length}/5
+                    </span>
+                  </Button>
+                )}
               </LinhaCampo>
 
               <Separator />

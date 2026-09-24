@@ -22,18 +22,35 @@ export function criarModuloCartoes() {
       const { data, isLoading } = useQuery({
         queryKey: ["cards"],
         queryFn: async () => {
-          const { data, error } = await supabase
+          let data: any[] = [];
+          const res = await supabase
             .from("cartoes")
             .select(
               `
               id, id_usuario, titulo, descricao, coluna, prioridade,
-              id_responsavel, data_vencimento, posicao, criado_em,
-              membros_equipe (id, nome_completo, iniciais, url_avatar)
+              data_vencimento, posicao, criado_em,
+              ids_responsaveis
             `
             )
             .order("coluna", { ascending: true })
             .order("posicao", { ascending: true });
-          if (error) throw error;
+
+          if (!res.error && res.data) {
+            data = res.data;
+          } else {
+            const fallbackRes = await supabase
+              .from("cartoes")
+              .select(
+                `
+                id, id_usuario, titulo, descricao, coluna, prioridade,
+                data_vencimento, posicao, criado_em
+              `
+              )
+              .order("coluna", { ascending: true })
+              .order("posicao", { ascending: true });
+            if (fallbackRes.error) throw fallbackRes.error;
+            data = fallbackRes.data ?? [];
+          }
           const chkMap = loadSupabaseChecklists();
           try {
             const { data: allDbChecklists } = await supabase
@@ -161,18 +178,33 @@ export function criarModuloCartoes() {
         queryKey: ["card", id],
         queryFn: async () => {
           const idQuery = /^\d+$/.test(String(id)) ? Number(id) : id;
-          const { data, error } = await supabase
+          let data: any = null;
+          const res = await supabase
             .from("cartoes")
             .select(
               `
               id, id_usuario, titulo, descricao, coluna, prioridade, data_vencimento, posicao, criado_em,
-              id_responsavel,
-              membros_equipe (id, nome_completo, iniciais, url_avatar)
+              ids_responsaveis
             `,
             )
             .eq("id", idQuery)
             .single();
-          if (error) throw error;
+
+          if (!res.error && res.data) {
+            data = res.data;
+          } else {
+            const fallbackRes = await supabase
+              .from("cartoes")
+              .select(
+                `
+                id, id_usuario, titulo, descricao, coluna, prioridade, data_vencimento, posicao, criado_em
+              `,
+              )
+              .eq("id", idQuery)
+              .single();
+            if (fallbackRes.error) throw fallbackRes.error;
+            data = fallbackRes.data;
+          }
           const chkMap = loadSupabaseChecklists();
           try {
             const { data: dbChecklists } = await supabase
@@ -291,14 +323,19 @@ export function criarModuloCartoes() {
       const queryClient = useQueryClient();
       const mutation = useMutation({
         mutationFn: async (input: CreateCardInput) => {
-          const rawResp = input.id_responsavel ?? input.assignee_id;
-          const respParsed = rawResp != null ? (/^\d+$/.test(String(rawResp)) ? Number(rawResp) : rawResp) : null;
+          const rawRespIds =
+            input.ids_responsaveis !== undefined
+              ? input.ids_responsaveis
+              : input.assignee_ids !== undefined
+              ? input.assignee_ids
+              : input.id_responsavel
+              ? [String(input.id_responsavel)]
+              : [];
           const payload: any = {
             id_usuario: user?.id ?? undefined,
             titulo: input.titulo ?? input.title ?? "",
             coluna: input.coluna ?? input.column ?? "todo",
             prioridade: input.prioridade ?? input.priority ?? "low",
-            id_responsavel: respParsed,
             data_vencimento: input.data_vencimento ?? input.due_date ?? null,
             posicao: input.posicao ?? input.nextPosition ?? 0,
             descricao: input.descricao ?? input.description ?? "",
@@ -307,12 +344,39 @@ export function criarModuloCartoes() {
             payload.id = Number(input.id);
           }
 
-          const { data, error } = await supabase
-            .from("cartoes")
-            .insert(payload)
-            .select()
-            .single();
-          if (error) throw error;
+          let data = null;
+          try {
+            const resWithIds = await supabase
+              .from("cartoes")
+              .insert({ ...payload, ids_responsaveis: rawRespIds.map(String) })
+              .select()
+              .single();
+            if (!resWithIds.error && resWithIds.data) {
+              data = resWithIds.data;
+            }
+          } catch {
+            /* fallback */
+          }
+
+          if (!data) {
+            const resFallback = await supabase
+              .from("cartoes")
+              .insert(payload)
+              .select()
+              .single();
+            if (resFallback.error) throw resFallback.error;
+            data = resFallback.data;
+          }
+
+          if (rawRespIds.length > 0 && data?.id) {
+            const metaMap = loadSupabaseMetadata();
+            metaMap[data.id] = {
+              ...(metaMap[data.id] ?? {}),
+              assignee_ids: rawRespIds.map(String),
+            };
+            saveSupabaseMetadata(metaMap);
+          }
+
           return data;
         },
         onSuccess: () => {
@@ -355,15 +419,7 @@ export function criarModuloCartoes() {
             fields.ids_responsaveis !== undefined
               ? fields.ids_responsaveis
               : fields.assignee_ids;
-          if (rawRespIds !== undefined) {
-            patch.id_responsavel =
-              rawRespIds && rawRespIds.length > 0
-                ? (/^\d+$/.test(String(rawRespIds[0])) ? Number(rawRespIds[0]) : rawRespIds[0])
-                : null;
-          } else if (fields.id_responsavel !== undefined || fields.assignee_id !== undefined) {
-            const rawResp = fields.id_responsavel !== undefined ? fields.id_responsavel : fields.assignee_id;
-            patch.id_responsavel = rawResp != null ? (/^\d+$/.test(String(rawResp)) ? Number(rawResp) : rawResp) : null;
-          }
+
           if (fields.data_vencimento !== undefined || fields.due_date !== undefined) {
             patch.data_vencimento = fields.data_vencimento ?? fields.due_date;
           }
@@ -379,13 +435,7 @@ export function criarModuloCartoes() {
                 .from("cartoes")
                 .update({ ...patch, ids_responsaveis: rawRespIds ? rawRespIds.map(String) : [] })
                 .eq("id", idQuery)
-                .select(
-                  `
-                  id, id_usuario, titulo, descricao, coluna, prioridade,
-                  id_responsavel, data_vencimento, posicao, criado_em,
-                  membros_equipe (id, nome_completo, iniciais, url_avatar)
-                `
-                )
+                .select()
                 .single();
               if (!error && data) updateData = data;
             } catch {
@@ -398,13 +448,7 @@ export function criarModuloCartoes() {
               .from("cartoes")
               .update(patch)
               .eq("id", idQuery)
-              .select(
-                `
-                id, id_usuario, titulo, descricao, coluna, prioridade,
-                id_responsavel, data_vencimento, posicao, criado_em,
-                membros_equipe (id, nome_completo, iniciais, url_avatar)
-              `
-              )
+              .select()
               .single();
             if (error) throw error;
             updateData = data;

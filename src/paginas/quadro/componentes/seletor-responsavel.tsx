@@ -90,7 +90,14 @@ export function SeletorResponsavel({
   const selecionarMultiplo = aoSelecionarMultiplo ?? onSelectMultiple;
   const selecionarSimples = aoSelecionar ?? onSelect;
 
+  // Previne duplo disparo de cliques/onSelect do cmdk
+  const [ultimoCliqueTempo, setUltimoCliqueTempo] = useState(0);
+
   const alternarMembro = (idMembro: string) => {
+    const agora = Date.now();
+    if (agora - ultimoCliqueTempo < 150) return;
+    setUltimoCliqueTempo(agora);
+
     const idStr = String(idMembro);
     let novaLista: string[];
     if (listaSelecionados.includes(idStr)) {
@@ -99,13 +106,19 @@ export function SeletorResponsavel({
       novaLista = [...listaSelecionados, idStr];
     }
 
-    selecionarMultiplo?.(novaLista);
-    selecionarSimples?.(novaLista[0] ?? null);
+    if (selecionarMultiplo) {
+      selecionarMultiplo(novaLista);
+    } else if (selecionarSimples) {
+      selecionarSimples(novaLista[0] ?? null);
+    }
   };
 
   const limparTodos = () => {
-    selecionarMultiplo?.([]);
-    selecionarSimples?.(null);
+    if (selecionarMultiplo) {
+      selecionarMultiplo([]);
+    } else if (selecionarSimples) {
+      selecionarSimples(null);
+    }
   };
 
   // Objetos dos membros selecionados para renderização
@@ -195,18 +208,14 @@ export function SeletorResponsavel({
                 return (
                   <CommandItem
                     key={member.id}
-                    value={`${nomeMembro} ${member.email || ''}`}
+                    value={`${nomeMembro} ${member.email || ''} ${member.id}`}
                     onSelect={() => alternarMembro(member.id)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      alternarMembro(member.id);
-                    }}
                     className={cn(
-                      "cursor-pointer gap-2 text-xs py-1.5 px-2 rounded-sm transition-colors",
+                      "cursor-pointer gap-2 text-xs py-1.5 px-2 rounded-sm transition-colors select-none",
                       estaSelecionado && "bg-accent/60 font-medium"
                     )}
                   >
-                    <Avatar className="size-5 shrink-0">
+                    <Avatar className="size-5 shrink-0 pointer-events-none">
                       {(member.url_avatar || member.avatar_url) && (
                         <AvatarImage src={member.url_avatar || member.avatar_url!} alt={nomeMembro} />
                       )}
@@ -214,7 +223,7 @@ export function SeletorResponsavel({
                         {member.iniciais || member.initials}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col min-w-0 flex-1">
+                    <div className="flex flex-col min-w-0 flex-1 pointer-events-none">
                       <span className="truncate">{nomeMembro}</span>
                       {member.email && (
                         <span className="text-[10px] text-muted-foreground truncate">
@@ -224,7 +233,7 @@ export function SeletorResponsavel({
                     </div>
                     <div
                       className={cn(
-                        "size-4 rounded-xs border flex items-center justify-center shrink-0 transition-colors",
+                        "size-4 rounded-xs border flex items-center justify-center shrink-0 transition-colors pointer-events-none",
                         estaSelecionado
                           ? "bg-primary border-primary text-primary-foreground"
                           : "border-muted-foreground/30"
@@ -243,14 +252,10 @@ export function SeletorResponsavel({
                   <CommandItem
                     value="limpar remover desmarcar desatribuir"
                     onSelect={limparTodos}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      limparTodos();
-                    }}
-                    className="cursor-pointer gap-2 text-xs text-muted-foreground hover:text-destructive py-1.5 px-2"
+                    className="cursor-pointer gap-2 text-xs text-muted-foreground hover:text-destructive py-1.5 px-2 select-none"
                   >
-                    <IconX className="size-3.5" />
-                    <span>Remover todos os responsáveis</span>
+                    <IconX className="size-3.5 pointer-events-none" />
+                    <span className="pointer-events-none">Remover todos os responsáveis</span>
                   </CommandItem>
                 </CommandGroup>
               </>

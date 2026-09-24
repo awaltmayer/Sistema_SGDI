@@ -18,6 +18,7 @@ import { SeletorDataVencimento, calcularStatusPrazo } from './seletor-data-venci
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
 import { CardQuickMenu } from './menu-rapido-cartao';
 import type { Prioridade } from '@/dados/dados-iniciais';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utilitarios';
 import './cartao-item.css';
 
@@ -56,8 +57,9 @@ export function CartaoItem({
   const idCartao = itemCartao?.id ?? "";
   const arrastoBloqueado = arrastoDesabilitado ?? dragDisabled ?? false;
 
-  const { useUpdateCard } = useDataProvider();
+  const { useUpdateCard, useCurrentUser } = useDataProvider();
   const { mutate: updateCard } = useUpdateCard();
+  const { data: usuarioAtual } = useCurrentUser();
 
   const {
     attributes,
@@ -93,8 +95,6 @@ export function CartaoItem({
     updateCard(itemCartao.id, {
       ids_responsaveis: novosIds,
       assignee_ids: novosIds,
-      id_responsavel: novosIds[0] ?? null,
-      assignee_id: novosIds[0] ?? null,
     });
 
   const selecionarDataVencimento = (data: string | null) =>
@@ -112,6 +112,22 @@ export function CartaoItem({
 
   // Checagem de prazo de vencimento (Azul: > 7d, Amarelo: 0-7d, Vermelho: < 0d)
   const infoPrazo = calcularStatusPrazo(dataVenc);
+
+  // Permissão de alteração de prazo: apenas criador ou responsáveis
+  const podeEditarPrazo = (() => {
+    if (!usuarioAtual || !itemCartao) return false;
+    const uId = String(usuarioAtual.id);
+    const criadorId = itemCartao.id_usuario ?? (itemCartao as any).user_id;
+    if (criadorId && String(criadorId) === uId) return true;
+    if (idsResponsaveisCartao.map(String).includes(uId)) return true;
+    if (usuarioAtual.email) {
+      const emailLower = usuarioAtual.email.toLowerCase();
+      if (responsaveisCartao.some((r: any) => r?.email && r.email.toLowerCase() === emailLower)) {
+        return true;
+      }
+    }
+    return false;
+  })();
 
   const todosItens = listasCartao.flatMap((c) => c.itens ?? c.items ?? []);
   const totalItensLista = todosItens.length;
@@ -220,9 +236,7 @@ export function CartaoItem({
               <SeletorResponsavel
                 responsaveis={responsaveisCartao}
                 idsResponsaveis={idsResponsaveisCartao}
-                responsavel={respCartao ?? null}
                 aoSelecionarMultiplo={selecionarResponsaveis}
-                aoSelecionar={selecionarResponsavel}
               >
                 <span className="flex items-center gap-1.5 rounded px-1 py-0.5 text-muted-foreground hover:text-foreground hover:bg-accent max-w-full">
                   {responsaveisCartao.length > 0 ? (
@@ -253,23 +267,42 @@ export function CartaoItem({
             </div>
             <div>
               <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Vencimento</span>
-              <SeletorDataVencimento
-                dataVencimento={dataVenc}
-                aoSelecionar={selecionarDataVencimento}
-              >
+              {podeEditarPrazo ? (
+                <SeletorDataVencimento
+                  dataVencimento={dataVenc}
+                  aoSelecionar={selecionarDataVencimento}
+                >
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium transition-colors max-w-full truncate border-0 shadow-none cursor-pointer',
+                      dataVenc
+                        ? infoPrazo.classeBadge
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent'
+                    )}
+                    title={dataVenc ? `Vencimento: ${infoPrazo.textoFormatado} (${infoPrazo.textoRelativo})` : 'Definir vencimento'}
+                  >
+                    <IconCalendar className="size-3.5 shrink-0" />
+                    <span className="truncate">{dataVenc ? infoPrazo.textoFormatado : 'Sem data'}</span>
+                  </span>
+                </SeletorDataVencimento>
+              ) : (
                 <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast.error('Apenas o criador ou responsáveis podem alterar a data de vencimento.');
+                  }}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium transition-colors max-w-full truncate border-0 shadow-none',
+                    'inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium transition-colors max-w-full truncate border-0 shadow-none cursor-not-allowed select-none opacity-85',
                     dataVenc
                       ? infoPrazo.classeBadge
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent'
+                      : 'border-transparent text-muted-foreground'
                   )}
-                  title={dataVenc ? `Vencimento: ${infoPrazo.textoFormatado} (${infoPrazo.textoRelativo})` : 'Definir vencimento'}
+                  title="Apenas o criador ou responsáveis podem alterar a data de vencimento"
                 >
                   <IconCalendar className="size-3.5 shrink-0" />
                   <span className="truncate">{dataVenc ? infoPrazo.textoFormatado : 'Sem data'}</span>
                 </span>
-              </SeletorDataVencimento>
+              )}
             </div>
           </div>
 

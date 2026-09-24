@@ -30,12 +30,21 @@ import "./bloco-lista-verificacao.css";
 export interface PropsBlocoListaVerificacao {
   cardId: string;
   listaVerificacao?: ListaVerificacao;
+  podeEditar?: boolean;
+  canEdit?: boolean;
   // alias compatibilidade
   checklist?: ListaVerificacao;
 }
 export type ChecklistBlockProps = PropsBlocoListaVerificacao;
 
-export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: PropsBlocoListaVerificacao) {
+export function BlocoListaVerificacao({
+  cardId,
+  listaVerificacao,
+  checklist,
+  podeEditar = true,
+  canEdit,
+}: PropsBlocoListaVerificacao) {
+  const permissaoEdicao = canEdit !== undefined ? canEdit : podeEditar;
   const lista = listaVerificacao ?? checklist!;
 
   const {
@@ -158,7 +167,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
             }`}
           />
 
-          {estaEditandoTitulo ? (
+          {estaEditandoTitulo && permissaoEdicao ? (
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               <Input
                 ref={refInputTitulo}
@@ -192,50 +201,58 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
           ) : (
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div
-                className="group/title flex items-center gap-1.5 cursor-pointer rounded px-1.5 py-0.5 transition-colors hover:bg-accent truncate"
-                onClick={() => setEstaEditandoTitulo(true)}
-                title="Clique para renomear checklist"
+                className={`group/title flex items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors truncate ${
+                  permissaoEdicao ? "cursor-pointer hover:bg-accent" : "cursor-default"
+                }`}
+                onClick={() => {
+                  if (permissaoEdicao) setEstaEditandoTitulo(true);
+                }}
+                title={permissaoEdicao ? "Clique para renomear checklist" : titLista}
               >
                 <h3 className="font-semibold text-base text-foreground truncate">
                   {titLista}
                 </h3>
-                <IconPencil className="size-3.5 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
+                {permissaoEdicao && (
+                  <IconPencil className="size-3.5 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
+                )}
               </div>
             </div>
           )}
         </div>
 
         {/* Ação de Excluir Checklist */}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            >
-              <IconTrash className="size-3.5 mr-1" />
-              Excluir
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir "{titLista}"?</AlertDialogTitle>
-              <AlertDialogDescription>
-                A exclusão deste checklist é definitiva e removerá todos os seus
-                itens associados.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={excluirListaVerificacao}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        {permissaoEdicao && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
               >
-                Excluir checklist
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <IconTrash className="size-3.5 mr-1" />
+                Excluir
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir "{titLista}"?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  A exclusão deste checklist é definitiva e removerá todos os seus
+                  itens associados.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={excluirListaVerificacao}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Excluir checklist
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Barra de Progresso Minimalista e Indicador de % */}
@@ -276,6 +293,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
             cardId={cardId}
             checklistId={lista.id}
             item={item}
+            podeEditar={permissaoEdicao}
             onToggle={(itemId) => {
               toggleItem({
                 cardId,
@@ -303,56 +321,58 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
       </div>
 
       {/* Formulário / Botão de Adicionar Item */}
-      <div className="pt-0.5">
-        {estaAdicionandoItem ? (
-          <div className="space-y-2 rounded-md bg-accent/40 p-2.5">
-            <Textarea
-              ref={refInputItem}
-              value={textoNovoItem}
-              onChange={(e) => setTextoNovoItem(e.target.value)}
-              onKeyDown={aoPressionarTeclaItem}
-              placeholder="Digite o nome do item e pressione Enter…"
-              className="min-h-[64px] resize-y text-sm bg-background"
-            />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={adicionarItem}
-                  disabled={!textoNovoItem.trim()}
-                  className="h-8 text-xs"
-                >
-                  Adicionar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setEstaAdicionandoItem(false);
-                    setTextoNovoItem("");
-                  }}
-                  className="h-8 text-xs text-muted-foreground"
-                >
-                  Cancelar
-                </Button>
+      {permissaoEdicao && (
+        <div className="pt-0.5">
+          {estaAdicionandoItem ? (
+            <div className="space-y-2 rounded-md bg-accent/40 p-2.5">
+              <Textarea
+                ref={refInputItem}
+                value={textoNovoItem}
+                onChange={(e) => setTextoNovoItem(e.target.value)}
+                onKeyDown={aoPressionarTeclaItem}
+                placeholder="Digite o nome do item e pressione Enter…"
+                className="min-h-[64px] resize-y text-sm bg-background"
+              />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={adicionarItem}
+                    disabled={!textoNovoItem.trim()}
+                    className="h-8 text-xs"
+                  >
+                    Adicionar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setEstaAdicionandoItem(false);
+                      setTextoNovoItem("");
+                    }}
+                    className="h-8 text-xs text-muted-foreground"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  Enter para adicionar • Esc para cancelar
+                </span>
               </div>
-              <span className="text-[11px] text-muted-foreground">
-                Enter para adicionar • Esc para cancelar
-              </span>
             </div>
-          </div>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setEstaAdicionandoItem(true)}
-            className="h-8 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
-          >
-            <IconPlus className="size-3.5 mr-1.5" />
-            Adicionar um item
-          </Button>
-        )}
-      </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEstaAdicionandoItem(true)}
+              className="h-8 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer"
+            >
+              <IconPlus className="size-3.5 mr-1.5" />
+              Adicionar um item
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

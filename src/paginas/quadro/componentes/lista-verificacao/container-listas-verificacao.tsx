@@ -9,6 +9,8 @@ import "./container-listas-verificacao.css";
 export interface PropsContainerListasVerificacao {
   cardId: string;
   listasVerificacao?: ListaVerificacao[];
+  podeEditar?: boolean;
+  canEdit?: boolean;
   // alias compatibilidade
   checklists?: ListaVerificacao[];
 }
@@ -20,7 +22,10 @@ export function ContainerListasVerificacao({
   cardId,
   listasVerificacao,
   checklists,
+  podeEditar = true,
+  canEdit,
 }: PropsContainerListasVerificacao) {
+  const permissaoEdicao = canEdit !== undefined ? canEdit : podeEditar;
   const listas = listasVerificacao ?? checklists ?? [];
   const contagem = listas.length;
   const atingiuLimite = contagem >= LIMITE_MAXIMO_LISTAS;
@@ -34,17 +39,19 @@ export function ContainerListasVerificacao({
             <p className="text-lg font-semibold text-foreground">Checklists</p>
             <Badge color="gray">0/{LIMITE_MAXIMO_LISTAS}</Badge>
           </div>
-          <AddChecklistPopover
-            cardId={cardId}
-            checklists={listas}
-            align="end"
-            trigger={
-              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs font-medium">
-                <IconPlus className="size-3.5" />
-                Adicionar checklist
-              </Button>
-            }
-          />
+          {permissaoEdicao && (
+            <AddChecklistPopover
+              cardId={cardId}
+              checklists={listas}
+              align="end"
+              trigger={
+                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs font-medium cursor-pointer">
+                  <IconPlus className="size-3.5" />
+                  Adicionar checklist
+                </Button>
+              }
+            />
+          )}
         </div>
 
         <div className="sgdi-checklists-vazio-card">
@@ -53,18 +60,22 @@ export function ContainerListasVerificacao({
           </div>
           <p className="text-sm font-medium text-foreground">Nenhum checklist criado</p>
           <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-3">
-            Divida esta tarefa em etapas menores ou subtarefas e acompanhe o progresso com barras percentuais.
+            {permissaoEdicao
+              ? "Divida esta tarefa em etapas menores ou subtarefas e acompanhe o progresso com barras percentuais."
+              : "Esta tarefa não possui checklists criados no momento."}
           </p>
-          <AddChecklistPopover
-            cardId={cardId}
-            checklists={listas}
-            trigger={
-              <Button size="sm" className="h-8 text-xs gap-1.5">
-                <IconPlus className="size-3.5" />
-                Criar primeiro checklist
-              </Button>
-            }
-          />
+          {permissaoEdicao && (
+            <AddChecklistPopover
+              cardId={cardId}
+              checklists={listas}
+              trigger={
+                <Button size="sm" className="h-8 text-xs gap-1.5 cursor-pointer">
+                  <IconPlus className="size-3.5" />
+                  Criar primeiro checklist
+                </Button>
+              }
+            />
+          )}
         </div>
       </div>
     );
@@ -82,7 +93,7 @@ export function ContainerListasVerificacao({
           </Badge>
         </div>
 
-        {!atingiuLimite && (
+        {permissaoEdicao && !atingiuLimite && (
           <AddChecklistPopover
             cardId={cardId}
             checklists={listas}
@@ -91,7 +102,7 @@ export function ContainerListasVerificacao({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 gap-1.5 text-xs font-medium"
+                className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
               >
                 <IconPlus className="size-3.5" />
                 Novo checklist
@@ -108,6 +119,7 @@ export function ContainerListasVerificacao({
             key={itemChecklist.id}
             cardId={cardId}
             checklist={itemChecklist}
+            podeEditar={permissaoEdicao}
           />
         ))}
       </div>

@@ -2,6 +2,7 @@ import {
   IconArrowsSort,
   IconSearch,
   IconX,
+  IconDownload,
 } from '@tabler/icons-react';
 import {
   Select,
@@ -14,6 +15,9 @@ import { Input } from '@/componentes/ui/campo-texto';
 import { Button } from '@/componentes/base/botao';
 import { SeletorSolicitante } from './seletor-solicitante';
 import { SeletorFiltroResponsavel } from './seletor-filtro-responsavel';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import './barra-ferramentas-quadro.css';
 
 export type SortBy = 'manual' | 'priority' | 'due_date' | 'assignee' | 'title' | 'created_at';
@@ -30,6 +34,7 @@ export interface PropsBarraFerramentasQuadro {
   onRequesterFilterChange?: (r: string) => void;
   assigneeFilter?: string;
   onAssigneeFilterChange?: (a: string) => void;
+  cartoesVisiveis?: any[];
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   aoMudarOrdenacao?: (s: SortBy) => void;
@@ -75,6 +80,7 @@ export function BarraFerramentasQuadro({
   onAssigneeFilterChange,
   filtroResponsavel,
   aoMudarFiltroResponsavel,
+  cartoesVisiveis,
 }: PropsBarraFerramentasQuadro) {
   const ordenacaoAtual = ordenarPor ?? sortBy ?? 'manual';
   const mudarOrdenacao = aoMudarOrdenacao ?? onSortByChange ?? (() => { });
@@ -98,6 +104,118 @@ export function BarraFerramentasQuadro({
     mudarPrioFiltro?.('all');
     mudarSolicitanteFiltro?.('all');
     mudarResponsavelFiltro?.('all');
+  };
+
+  const exportarCSV = () => {
+    const lista = cartoesVisiveis ?? [];
+    if (lista.length === 0) {
+      toast.info('Não há tarefas visíveis para exportar com os filtros atuais.');
+      return;
+    }
+
+    const escaparCsv = (valor: any): string => {
+      if (valor == null) return '""';
+      const str = String(valor).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const cabecalho = [
+      'ID',
+      'Título',
+      'Descrição',
+      'Coluna / Status',
+      'Prioridade',
+      'Responsáveis',
+      'Data de Vencimento',
+      'Data de Criação',
+      'Progresso Checklists',
+      'Tempo Total Gasto',
+    ];
+
+    const linhas = lista.map((c) => {
+      const col = c.coluna ?? c.column;
+      const colNome =
+        col === 'todo'
+          ? 'A Fazer'
+          : col === 'in-progress'
+          ? 'Em Andamento'
+          : col === 'done'
+          ? 'Concluído'
+          : (col ?? '');
+
+      const prio = c.prioridade ?? c.priority;
+      const prioNome =
+        prio === 'high'
+          ? 'Alta'
+          : prio === 'medium'
+          ? 'Média'
+          : prio === 'low'
+          ? 'Baixa'
+          : (prio ?? '');
+
+      const nomesResponsaveis = (c.responsaveis ?? c.assignees ?? [])
+        .map((r: any) => r.nome_completo || r.full_name || r.name)
+        .filter(Boolean)
+        .join(', ') || (c.responsavel?.nome_completo || c.assignee?.full_name || '');
+
+      let dataVencFormatada = '';
+      const rawVenc = c.data_vencimento ?? c.due_date;
+      if (rawVenc) {
+        try {
+          dataVencFormatada = format(new Date(rawVenc), 'dd/MM/yyyy', { locale: ptBR });
+        } catch {
+          dataVencFormatada = String(rawVenc);
+        }
+      }
+
+      let criadoEmFormatado = '';
+      const rawCriado = c.criado_em ?? c.created_at;
+      if (rawCriado) {
+        try {
+          criadoEmFormatado = format(new Date(rawCriado), 'dd/MM/yyyy HH:mm', { locale: ptBR });
+        } catch {
+          criadoEmFormatado = String(rawCriado);
+        }
+      }
+
+      const listas = c.listas_verificacao ?? c.checklists ?? [];
+      const todosItens = listas.flatMap((l: any) => l.itens ?? l.items ?? []);
+      const itensConcluidos = todosItens.filter((i: any) => i.esta_concluido ?? i.is_completed).length;
+      const progressoChecklists = todosItens.length > 0
+        ? `${itensConcluidos}/${todosItens.length} concluídos`
+        : 'Sem checklists';
+
+      const seg = c.rastreador_tempo?.tempo_total_segundos ?? c.time_tracker?.total_spent_seconds ?? 0;
+      const h = Math.floor(seg / 3600);
+      const m = Math.floor((seg % 3600) / 60);
+      const s = seg % 60;
+      const tempoGasto = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+      return [
+        escaparCsv(c.id),
+        escaparCsv(c.titulo ?? c.title ?? ''),
+        escaparCsv(c.descricao ?? c.description ?? ''),
+        escaparCsv(colNome),
+        escaparCsv(prioNome),
+        escaparCsv(nomesResponsaveis),
+        escaparCsv(dataVencFormatada),
+        escaparCsv(criadoEmFormatado),
+        escaparCsv(progressoChecklists),
+        escaparCsv(tempoGasto),
+      ].join(';');
+    });
+
+    const csvFinal = '\uFEFF' + [cabecalho.map(escaparCsv).join(';'), ...linhas].join('\r\n');
+    const blob = new Blob([csvFinal], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `tarefas_sgdi_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`${lista.length} tarefa(s) exportada(s) para CSV com sucesso!`);
   };
 
   return (
@@ -199,6 +317,19 @@ export function BarraFerramentasQuadro({
               <span className="hidden sm:inline">Limpar</span>
             </Button>
           )}
+        </div>
+
+        {/* BEM NO CANTO DIREITO: Botão Exportar CSV */}
+        <div className="flex items-center ml-auto shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarCSV}
+            className="h-8 gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-normal text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer shadow-xs transition-colors"
+          >
+            <IconDownload className="size-3.5 text-muted-foreground shrink-0" />
+            <span>Exportar CSV</span>
+          </Button>
         </div>
       </div>
     </div>

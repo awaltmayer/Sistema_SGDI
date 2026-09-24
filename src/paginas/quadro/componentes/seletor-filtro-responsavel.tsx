@@ -39,9 +39,9 @@ export function SeletorFiltroResponsavel({
     const ids = new Set<string>();
     let semResp = false;
     for (const c of cartoes) {
-      const respId = c.id_responsavel ?? c.assignee_id;
-      if (respId) {
-        ids.add(String(respId));
+      const respIds = (c.ids_responsaveis ?? c.assignee_ids ?? (c.id_responsavel ? [String(c.id_responsavel)] : [])).map(String);
+      if (respIds.length > 0) {
+        respIds.forEach((id) => ids.add(id));
       } else {
         semResp = true;
       }

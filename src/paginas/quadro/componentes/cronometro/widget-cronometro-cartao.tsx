@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   IconPlayerPlay,
   IconPlayerPause,
@@ -6,6 +6,7 @@ import {
   IconHistory,
   IconClock,
 } from "@tabler/icons-react";
+import { toast } from "sonner";
 import { Button } from "@/componentes/base/botao";
 import { useDataProvider } from "@/lib/provedor-dados";
 import { PauseReasonDialog } from "./dialogo-motivo-pausa";
@@ -25,10 +26,18 @@ export interface PropsWidgetCronometroCartao {
   cardTitle: string;
   timeTracker?: RastreadorTempoTarefa;
   compact?: boolean;
+  responsaveis?: any[];
+  idsResponsaveis?: string[];
+  idResponsavel?: string | null;
+  responsavel?: any;
   // Aliases compatibilidade
   tituloCartao?: string;
   rastreadorTempo?: RastreadorTempoTarefa;
   compacto?: boolean;
+  assignees?: any[];
+  assigneeIds?: string[];
+  assigneeId?: string | null;
+  assignee?: any;
 }
 export type CardTimerWidgetProps = PropsWidgetCronometroCartao;
 
@@ -37,9 +46,17 @@ export function WidgetCronometroCartao({
   cardTitle,
   timeTracker,
   compact = false,
+  responsaveis,
+  idsResponsaveis,
+  idResponsavel,
+  responsavel,
   tituloCartao,
   rastreadorTempo,
   compacto,
+  assignees,
+  assigneeIds,
+  assigneeId,
+  assignee,
 }: PropsWidgetCronometroCartao) {
   const titulo = tituloCartao ?? cardTitle;
   const rastreador = rastreadorTempo ?? timeTracker;
@@ -50,22 +67,76 @@ export function WidgetCronometroCartao({
     usePauseTaskTimer,
     useResumeTaskTimer,
     useStopTaskTimer,
+    useCurrentUser,
+    useTeamMembers,
   } = useDataProvider();
 
   const { mutate: startTimer } = useStartTaskTimer();
   const { mutate: pauseTimer } = usePauseTaskTimer();
   const { mutate: resumeTimer } = useResumeTaskTimer();
   const { mutate: stopTimer } = useStopTaskTimer();
+  const { data: usuarioAtual } = useCurrentUser();
+  const { data: membros = [] } = useTeamMembers();
+
+  // Consolidação de todos os IDs de responsáveis atribuídos a este cartão
+  const listaIdsResponsaveis = useMemo(() => {
+    const list: string[] = [];
+    if (idsResponsaveis && idsResponsaveis.length > 0) list.push(...idsResponsaveis.map(String));
+    if (assigneeIds && assigneeIds.length > 0) list.push(...assigneeIds.map(String));
+    if (responsaveis && responsaveis.length > 0) list.push(...responsaveis.map((r: any) => String(r.id)));
+    if (assignees && assignees.length > 0) list.push(...assignees.map((r: any) => String(r.id)));
+    if (idResponsavel) list.push(String(idResponsavel));
+    if (assigneeId) list.push(String(assigneeId));
+    if (responsavel?.id) list.push(String(responsavel.id));
+    if (assignee?.id) list.push(String(assignee.id));
+    return Array.from(new Set(list));
+  }, [idsResponsaveis, assigneeIds, responsaveis, assignees, idResponsavel, assigneeId, responsavel, assignee]);
+
+  // Membro correspondente ao usuário logado
+  const membroAtual = useMemo(() => {
+    if (!usuarioAtual) return null;
+    return (
+      membros.find(
+        (m: any) =>
+          (m.email && m.email.toLowerCase() === (usuarioAtual.email ?? "").toLowerCase()) ||
+          (m.id_usuario && String(m.id_usuario) === String(usuarioAtual.id)) ||
+          (m.id_usuario_membro && String(m.id_usuario_membro) === String(usuarioAtual.id)) ||
+          String(m.id) === String(usuarioAtual.id)
+      ) ?? null
+    );
+  }, [usuarioAtual, membros]);
+
+  // Validação: Somente quem for responsável pela tarefa poderá iniciar o cronômetro
+  const podeIniciarCronometro = useMemo(() => {
+    if (!usuarioAtual) return false;
+    if (listaIdsResponsaveis.length === 0) return false;
+
+    const uId = String(usuarioAtual.id);
+    const mId = membroAtual ? String(membroAtual.id) : null;
+    const uEmail = usuarioAtual.email?.toLowerCase();
+
+    if (listaIdsResponsaveis.includes(uId)) return true;
+    if (mId && listaIdsResponsaveis.includes(mId)) return true;
+
+    if (uEmail) {
+      const respEmails = membros
+        .filter((m: any) => listaIdsResponsaveis.includes(String(m.id)))
+        .map((m: any) => m.email?.toLowerCase())
+        .filter(Boolean);
+      if (respEmails.includes(uEmail)) return true;
+    }
+
+    return false;
+  }, [usuarioAtual, membroAtual, listaIdsResponsaveis, membros]);
+
+  const estaExecutando = Boolean(rastreador?.em_execucao ?? rastreador?.is_running);
+  const iniciadoEm = rastreador?.iniciado_em ?? rastreador?.started_at;
+  const segundosBase =
+    rastreador?.tempo_total_segundos ?? rastreador?.total_spent_seconds ?? 0;
 
   const [dialogoPausaAberto, setDialogoPausaAberto] = useState(false);
   const [dialogoLogAberto, setDialogoLogAberto] = useState(false);
-  const [segundosAtuais, setSegundosAtuais] = useState(
-    rastreador?.total_spent_seconds ?? 0
-  );
-
-  const estaExecutando = rastreador?.is_running ?? false;
-  const iniciadoEm = rastreador?.started_at;
-  const segundosBase = rastreador?.total_spent_seconds ?? 0;
+  const [segundosAtuais, setSegundosAtuais] = useState(segundosBase);
 
   useEffect(() => {
     if (!estaExecutando || !iniciadoEm) {
@@ -91,7 +162,17 @@ export function WidgetCronometroCartao({
 
   const iniciarOuRetomar = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (segundosBase > 0 || (rastreador?.pauses && rastreador.pauses.length > 0)) {
+    if (!podeIniciarCronometro) {
+      if (listaIdsResponsaveis.length === 0) {
+        toast.error("Esta tarefa ainda não tem um responsável atribuído.");
+      } else {
+        toast.error("Apenas o responsável pela tarefa pode iniciar o cronômetro.");
+      }
+      return;
+    }
+
+    const pausas = rastreador?.pausas ?? rastreador?.pauses ?? [];
+    if (segundosBase > 0 || pausas.length > 0) {
       resumeTimer(cardId);
     } else {
       startTimer(cardId);
@@ -122,12 +203,19 @@ export function WidgetCronometroCartao({
         >
           <button
             type="button"
-            title={estaExecutando ? "Pausar tarefa" : "Iniciar/Retomar tarefa"}
+            title={
+              estaExecutando
+                ? "Pausar tarefa"
+                : !podeIniciarCronometro
+                ? "Apenas os responsáveis pela tarefa podem iniciar o cronômetro"
+                : "Iniciar/Retomar tarefa"
+            }
             aria-label={estaExecutando ? "Pausar tarefa" : "Iniciar tarefa"}
             onClick={estaExecutando ? clicarPausar : iniciarOuRetomar}
             className={cn(
               'sgdi-cronometro-btn-trigger',
-              estaExecutando ? 'ativo' : segundosAtuais > 0 ? 'inativo' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+              estaExecutando ? 'ativo' : segundosAtuais > 0 ? 'inativo' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              !estaExecutando && !podeIniciarCronometro && 'opacity-60 cursor-not-allowed hover:bg-transparent'
             )}
           >
             {estaExecutando ? (
@@ -232,8 +320,18 @@ export function WidgetCronometroCartao({
               <Button
                 variant="default"
                 size="sm"
-                className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                className={cn(
+                  "flex-1 gap-1.5 text-white transition-colors",
+                  !podeIniciarCronometro
+                    ? "bg-slate-400 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-600 cursor-not-allowed"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                )}
                 onClick={iniciarOuRetomar}
+                title={
+                  !podeIniciarCronometro
+                    ? "Apenas os responsáveis pela tarefa podem iniciar o cronômetro"
+                    : undefined
+                }
               >
                 <IconPlayerPlay className="size-4" />
                 {segundosAtuais > 0 ? "Retomar Trabalho" : "Iniciar Tarefa"}

@@ -35,20 +35,92 @@ export function criarModuloCartoes() {
             .order("posicao", { ascending: true });
           if (error) throw error;
           const chkMap = loadSupabaseChecklists();
+          try {
+            const { data: allDbChecklists } = await supabase
+              .from("checklists")
+              .select(`
+                id, id_cartao, titulo, posicao, criado_em,
+                itens_checklist (id, id_checklist, titulo, esta_concluido, posicao, criado_em)
+              `)
+              .order("posicao", { ascending: true });
+
+            if (allDbChecklists && allDbChecklists.length > 0) {
+              const grouped: Record<string, any[]> = {};
+              for (const c of allDbChecklists as any[]) {
+                const cid = String(c.id_cartao);
+                if (!grouped[cid]) grouped[cid] = [];
+                grouped[cid].push({
+                  id: String(c.id),
+                  id_cartao: cid,
+                  titulo: c.titulo,
+                  prioridade: (c.prioridade ?? "medium") as Prioridade,
+                  posicao: c.posicao ?? 0,
+                  itens: ((c.itens_checklist ?? []) as any[])
+                    .sort((a, b) => (a.posicao ?? 0) - (b.posicao ?? 0))
+                    .map((it) => ({
+                      id: String(it.id),
+                      id_checklist: String(it.id_checklist),
+                      titulo: it.titulo,
+                      esta_concluido: Boolean(it.esta_concluido),
+                      posicao: it.posicao ?? 0,
+                    })),
+                });
+              }
+              for (const [cid, lists] of Object.entries(grouped)) {
+                chkMap[cid] = lists;
+              }
+              saveSupabaseChecklists(chkMap);
+            }
+          } catch {
+            /* Fallback seguro para chkMap do storage */
+          }
+          const { data: allMembersData } = await supabase
+            .from("membros_equipe")
+            .select("id, nome_completo, iniciais, url_avatar, email");
+          const allMembers = allMembersData ?? [];
           const metaMap = loadSupabaseMetadata();
           return (data ?? []).map((row: any) => {
+            const meta = metaMap[row.id] ?? {};
+            const rawIds =
+              row.ids_responsaveis &&
+              Array.isArray(row.ids_responsaveis) &&
+              row.ids_responsaveis.length > 0
+                ? row.ids_responsaveis
+                : meta.assignee_ids &&
+                  Array.isArray(meta.assignee_ids) &&
+                  meta.assignee_ids.length > 0
+                ? meta.assignee_ids
+                : row.id_responsavel != null
+                ? [String(row.id_responsavel)]
+                : [];
+            const idsResponsaveis: string[] = rawIds.map(String);
+            const responsaveisList = allMembers
+              .filter((m: any) => idsResponsaveis.includes(String(m.id)))
+              .map((m: any) => ({
+                id: String(m.id),
+                nome_completo: m.nome_completo,
+                iniciais: m.iniciais,
+                url_avatar: m.url_avatar,
+                full_name: m.nome_completo,
+                initials: m.iniciais,
+                avatar_url: m.url_avatar,
+              }));
             const tm = Array.isArray(row.membros_equipe)
               ? row.membros_equipe[0]
               : row.membros_equipe;
-            const meta = metaMap[row.id] ?? {};
-            const respObj = tm
-              ? {
-                  id: String(tm.id),
-                  nome_completo: tm.nome_completo,
-                  iniciais: tm.iniciais,
-                  url_avatar: tm.url_avatar,
-                }
-              : null;
+            const respObj =
+              responsaveisList[0] ??
+              (tm
+                ? {
+                    id: String(tm.id),
+                    nome_completo: tm.nome_completo,
+                    iniciais: tm.iniciais,
+                    url_avatar: tm.url_avatar,
+                    full_name: tm.nome_completo,
+                    initials: tm.iniciais,
+                    avatar_url: tm.url_avatar,
+                  }
+                : null);
 
             return {
               id: String(row.id),
@@ -57,7 +129,11 @@ export function criarModuloCartoes() {
               descricao: row.descricao,
               coluna: row.coluna as IdColuna,
               prioridade: row.prioridade as Prioridade,
-              id_responsavel: row.id_responsavel != null ? String(row.id_responsavel) : null,
+              id_responsavel: respObj ? respObj.id : row.id_responsavel != null ? String(row.id_responsavel) : null,
+              ids_responsaveis: idsResponsaveis,
+              assignee_ids: idsResponsaveis,
+              responsaveis: responsaveisList,
+              assignees: responsaveisList,
               data_vencimento: row.data_vencimento,
               posicao: row.posicao,
               criado_em: row.criado_em,
@@ -69,6 +145,7 @@ export function criarModuloCartoes() {
                 pausas: [],
               },
               responsavel: respObj,
+              assignee: respObj,
             };
           });
         },
@@ -97,19 +174,85 @@ export function criarModuloCartoes() {
             .single();
           if (error) throw error;
           const chkMap = loadSupabaseChecklists();
+          try {
+            const { data: dbChecklists } = await supabase
+              .from("checklists")
+              .select(`
+                id, id_cartao, titulo, posicao, criado_em,
+                itens_checklist (id, id_checklist, titulo, esta_concluido, posicao, criado_em)
+              `)
+              .eq("id_cartao", idQuery as any)
+              .order("posicao", { ascending: true });
+
+            if (dbChecklists && dbChecklists.length > 0) {
+              const parsed = dbChecklists.map((c: any) => ({
+                id: String(c.id),
+                id_cartao: String(c.id_cartao),
+                titulo: c.titulo,
+                prioridade: (c.prioridade ?? "medium") as Prioridade,
+                posicao: c.posicao ?? 0,
+                itens: ((c.itens_checklist ?? []) as any[])
+                  .sort((a, b) => (a.posicao ?? 0) - (b.posicao ?? 0))
+                  .map((it) => ({
+                    id: String(it.id),
+                    id_checklist: String(it.id_checklist),
+                    titulo: it.titulo,
+                    esta_concluido: Boolean(it.esta_concluido),
+                    posicao: it.posicao ?? 0,
+                  })),
+              }));
+              chkMap[data.id] = parsed;
+              saveSupabaseChecklists(chkMap);
+            }
+          } catch {
+            /* Fallback seguro para chkMap do storage */
+          }
+          const { data: allMembersData } = await supabase
+            .from("membros_equipe")
+            .select("id, nome_completo, iniciais, url_avatar, email");
+          const allMembers = allMembersData ?? [];
           const metaMap = loadSupabaseMetadata();
           const meta = metaMap[data.id] ?? {};
+          const rawIds =
+            (data as any).ids_responsaveis &&
+            Array.isArray((data as any).ids_responsaveis) &&
+            (data as any).ids_responsaveis.length > 0
+              ? (data as any).ids_responsaveis
+              : meta.assignee_ids &&
+                Array.isArray(meta.assignee_ids) &&
+                meta.assignee_ids.length > 0
+              ? meta.assignee_ids
+              : data.id_responsavel != null
+              ? [String(data.id_responsavel)]
+              : [];
+          const idsResponsaveis: string[] = rawIds.map(String);
+          const responsaveisList = allMembers
+            .filter((m: any) => idsResponsaveis.includes(String(m.id)))
+            .map((m: any) => ({
+              id: String(m.id),
+              nome_completo: m.nome_completo,
+              iniciais: m.iniciais,
+              url_avatar: m.url_avatar,
+              full_name: m.nome_completo,
+              initials: m.iniciais,
+              avatar_url: m.url_avatar,
+            }));
           const tm: any = Array.isArray((data as any).membros_equipe)
             ? (data as any).membros_equipe[0]
             : (data as any).membros_equipe;
-          const respObj = tm
-            ? {
-                id: String(tm.id),
-                nome_completo: tm.nome_completo,
-                iniciais: tm.iniciais,
-                url_avatar: tm.url_avatar,
-              }
-            : null;
+          const respObj =
+            responsaveisList[0] ??
+            (tm
+              ? {
+                  id: String(tm.id),
+                  nome_completo: tm.nome_completo,
+                  iniciais: tm.iniciais,
+                  url_avatar: tm.url_avatar,
+                  full_name: tm.nome_completo,
+                  initials: tm.iniciais,
+                  avatar_url: tm.url_avatar,
+                }
+              : null);
 
           return {
             id: String(data.id),
@@ -118,7 +261,11 @@ export function criarModuloCartoes() {
             descricao: data.descricao,
             coluna: data.coluna as IdColuna,
             prioridade: data.prioridade as Prioridade,
-            id_responsavel: data.id_responsavel != null ? String(data.id_responsavel) : null,
+            id_responsavel: respObj ? respObj.id : data.id_responsavel != null ? String(data.id_responsavel) : null,
+            ids_responsaveis: idsResponsaveis,
+            assignee_ids: idsResponsaveis,
+            responsaveis: responsaveisList,
+            assignees: responsaveisList,
             data_vencimento: data.data_vencimento,
             posicao: data.posicao,
             criado_em: data.criado_em,
@@ -130,6 +277,7 @@ export function criarModuloCartoes() {
               pausas: [],
             },
             responsavel: respObj,
+            assignee: respObj,
           };
         },
         enabled: !!user && !!id,
@@ -203,7 +351,16 @@ export function criarModuloCartoes() {
           if (fields.prioridade !== undefined || fields.priority !== undefined) {
             patch.prioridade = fields.prioridade ?? fields.priority;
           }
-          if (fields.id_responsavel !== undefined || fields.assignee_id !== undefined) {
+          const rawRespIds =
+            fields.ids_responsaveis !== undefined
+              ? fields.ids_responsaveis
+              : fields.assignee_ids;
+          if (rawRespIds !== undefined) {
+            patch.id_responsavel =
+              rawRespIds && rawRespIds.length > 0
+                ? (/^\d+$/.test(String(rawRespIds[0])) ? Number(rawRespIds[0]) : rawRespIds[0])
+                : null;
+          } else if (fields.id_responsavel !== undefined || fields.assignee_id !== undefined) {
             const rawResp = fields.id_responsavel !== undefined ? fields.id_responsavel : fields.assignee_id;
             patch.id_responsavel = rawResp != null ? (/^\d+$/.test(String(rawResp)) ? Number(rawResp) : rawResp) : null;
           }
@@ -215,53 +372,145 @@ export function criarModuloCartoes() {
           }
 
           const idQuery = /^\d+$/.test(String(id)) ? Number(id) : id;
-          const { data, error } = await supabase
-            .from("cartoes")
-            .update(patch)
-            .eq("id", idQuery)
-            .select(
+          let updateData = null;
+          if (rawRespIds !== undefined) {
+            try {
+              const { data, error } = await supabase
+                .from("cartoes")
+                .update({ ...patch, ids_responsaveis: rawRespIds ? rawRespIds.map(String) : [] })
+                .eq("id", idQuery)
+                .select(
+                  `
+                  id, id_usuario, titulo, descricao, coluna, prioridade,
+                  id_responsavel, data_vencimento, posicao, criado_em,
+                  membros_equipe (id, nome_completo, iniciais, url_avatar)
+                `
+                )
+                .single();
+              if (!error && data) updateData = data;
+            } catch {
+              /* fallback se a coluna ainda não tiver sido criada no Supabase */
+            }
+          }
+
+          if (!updateData) {
+            const { data, error } = await supabase
+              .from("cartoes")
+              .update(patch)
+              .eq("id", idQuery)
+              .select(
+                `
+                id, id_usuario, titulo, descricao, coluna, prioridade,
+                id_responsavel, data_vencimento, posicao, criado_em,
+                membros_equipe (id, nome_completo, iniciais, url_avatar)
               `
-              id, id_usuario, titulo, descricao, coluna, prioridade,
-              id_responsavel, data_vencimento, posicao, criado_em,
-              membros_equipe (id, nome_completo, iniciais, url_avatar)
-            `
-            )
-            .single();
-          if (error) throw error;
-          return data;
+              )
+              .single();
+            if (error) throw error;
+            updateData = data;
+          }
+          return updateData;
         },
         onMutate: async ({ id, fields }) => {
           await queryClient.cancelQueries({ queryKey: ["cards"] });
+          await queryClient.cancelQueries({ queryKey: ["card", id] });
           const previous = queryClient.getQueryData<CardWithAssignee[]>([
             "cards",
           ]);
-          if (previous) {
-            const teamMembers = queryClient.getQueryData<seed.TeamMember[]>(["team_members"]) ?? [];
-            const newRespId =
-              fields.id_responsavel !== undefined
-                ? fields.id_responsavel
-                : fields.assignee_id;
-            let respObj = null;
+          const previousSingle = queryClient.getQueryData<CardWithAssignee>([
+            "card",
+            id,
+          ]);
+
+          const teamMembers = queryClient.getQueryData<seed.TeamMember[]>(["team_members"]) ?? [];
+          const rawRespIds =
+            fields.ids_responsaveis !== undefined
+              ? fields.ids_responsaveis
+              : fields.assignee_ids;
+          let newRespId =
+            fields.id_responsavel !== undefined
+              ? fields.id_responsavel
+              : fields.assignee_id;
+          let respObj: any = undefined;
+          let responsaveisList: any = undefined;
+
+          if (rawRespIds !== undefined) {
+            const metaMap = loadSupabaseMetadata();
+            metaMap[id] = {
+              ...(metaMap[id] ?? {}),
+              assignee_ids: rawRespIds ? rawRespIds.map(String) : [],
+            };
+            saveSupabaseMetadata(metaMap);
+
+            responsaveisList = (rawRespIds ?? [])
+              .map((rId) => {
+                const found = teamMembers.find((m) => String(m.id) === String(rId));
+                return found
+                  ? {
+                      id: String(found.id),
+                      nome_completo: found.nome_completo,
+                      iniciais: found.iniciais,
+                      url_avatar: found.url_avatar,
+                      full_name: found.nome_completo,
+                      initials: found.iniciais,
+                      avatar_url: found.url_avatar,
+                    }
+                  : null;
+              })
+              .filter(Boolean);
+            respObj = responsaveisList[0] ?? null;
+            newRespId = respObj ? respObj.id : null;
+          } else if (newRespId !== undefined) {
             if (newRespId) {
-              const found = teamMembers.find((m) => m.id === newRespId);
+              const found = teamMembers.find((m) => String(m.id) === String(newRespId));
               if (found) {
                 respObj = {
                   id: String(found.id),
                   nome_completo: found.nome_completo,
                   iniciais: found.iniciais,
                   url_avatar: found.url_avatar,
+                  full_name: found.nome_completo,
+                  initials: found.iniciais,
+                  avatar_url: found.url_avatar,
                 };
+                responsaveisList = [respObj];
+              } else {
+                respObj = null;
+                responsaveisList = [];
               }
+            } else {
+              respObj = null;
+              responsaveisList = [];
             }
+          }
 
+          if (previous) {
             queryClient.setQueryData<CardWithAssignee[]>(
               ["cards"],
               previous.map((c) => {
                 if (c.id === id) {
                   const updated: any = { ...c, ...fields };
-                  if (newRespId !== undefined) {
+                  if (rawRespIds !== undefined) {
+                    updated.ids_responsaveis = rawRespIds.map(String);
+                    updated.assignee_ids = rawRespIds.map(String);
+                    updated.responsaveis = responsaveisList;
+                    updated.assignees = responsaveisList;
                     updated.id_responsavel = newRespId;
                     updated.responsavel = respObj;
+                  } else if (newRespId !== undefined) {
+                    updated.id_responsavel = newRespId;
+                    updated.responsavel = respObj;
+                    updated.ids_responsaveis = newRespId ? [String(newRespId)] : [];
+                    updated.assignee_ids = newRespId ? [String(newRespId)] : [];
+                    updated.responsaveis = responsaveisList;
+                    updated.assignees = responsaveisList;
+                  }
+                  if (fields.data_vencimento !== undefined) {
+                    updated.data_vencimento = fields.data_vencimento;
+                    updated.due_date = fields.data_vencimento;
+                  } else if (fields.due_date !== undefined) {
+                    updated.data_vencimento = fields.due_date;
+                    updated.due_date = fields.due_date;
                   }
                   return updated;
                 }
@@ -269,11 +518,42 @@ export function criarModuloCartoes() {
               }),
             );
           }
-          return { previous };
+
+          if (previousSingle) {
+            const updatedSingle: any = { ...previousSingle, ...fields };
+            if (rawRespIds !== undefined) {
+              updatedSingle.ids_responsaveis = rawRespIds.map(String);
+              updatedSingle.assignee_ids = rawRespIds.map(String);
+              updatedSingle.responsaveis = responsaveisList;
+              updatedSingle.assignees = responsaveisList;
+              updatedSingle.id_responsavel = newRespId;
+              updatedSingle.responsavel = respObj;
+            } else if (newRespId !== undefined) {
+              updatedSingle.id_responsavel = newRespId;
+              updatedSingle.responsavel = respObj;
+              updatedSingle.ids_responsaveis = newRespId ? [String(newRespId)] : [];
+              updatedSingle.assignee_ids = newRespId ? [String(newRespId)] : [];
+              updatedSingle.responsaveis = responsaveisList;
+              updatedSingle.assignees = responsaveisList;
+            }
+            if (fields.data_vencimento !== undefined) {
+              updatedSingle.data_vencimento = fields.data_vencimento;
+              updatedSingle.due_date = fields.data_vencimento;
+            } else if (fields.due_date !== undefined) {
+              updatedSingle.data_vencimento = fields.due_date;
+              updatedSingle.due_date = fields.due_date;
+            }
+            queryClient.setQueryData<CardWithAssignee>(["card", id], updatedSingle);
+          }
+
+          return { previous, previousSingle };
         },
-        onError: (_err, _vars, context) => {
+        onError: (_err, { id }, context) => {
           if (context?.previous) {
             queryClient.setQueryData(["cards"], context.previous);
+          }
+          if (context?.previousSingle) {
+            queryClient.setQueryData(["card", id], context.previousSingle);
           }
           toast.error("Falha ao atualizar cartão");
         },

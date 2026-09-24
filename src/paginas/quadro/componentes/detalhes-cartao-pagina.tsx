@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
   IconColumns,
   IconFlag,
@@ -44,12 +45,6 @@ import { Button } from '@/componentes/base/botao';
 import { Badge } from '@/componentes/base/distintivo';
 import { Card, CardContent } from '@/componentes/ui/cartao';
 import { Skeleton } from '@/componentes/ui/esquema-carregamento';
-import { Calendar } from '@/componentes/ui/calendario';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/componentes/ui/painel-flutuante';
 import { useDataProvider } from '@/lib/provedor-dados';
 import { colunas } from '@/dados/dados-iniciais';
 import type { Prioridade, IdColuna, MembroEquipe } from '@/dados/dados-iniciais';
@@ -59,6 +54,9 @@ import { BoardTopBar } from './barra-superior-quadro';
 import { CardChecklistsContainer } from './lista-verificacao/container-listas-verificacao';
 import { AddChecklistPopover } from './lista-verificacao/seletor-adicionar-lista';
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
+import { SeletorDataVencimento, calcularStatusPrazo } from './seletor-data-vencimento';
+import { SeletorResponsavel } from './seletor-responsavel';
+import { cn } from '@/lib/utilitarios';
 import './detalhes-cartao-pagina.css';
 
 export interface PropsPaginaDetalhesCartao {
@@ -76,6 +74,8 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
     useUpdateCard,
     useDeleteCard,
     useComments,
+    useCreateComment,
+    useDeleteComment,
     useTeamMembers,
     useCurrentUser,
   } = useDataProvider();
@@ -86,6 +86,8 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
   const { data: membros = [] } = useTeamMembers();
   const { data: usuarioAtual } = useCurrentUser();
   const { data: comentarios = [] } = useComments(cardId ?? '');
+  const { mutate: createComment, isPending: criandoComentario } = useCreateComment();
+  const { mutate: deleteComment, isPending: excluindoComentario } = useDeleteComment();
 
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -190,7 +192,46 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
     navegar(rotaBase);
   };
 
+  const membroAtual =
+    (usuarioAtual &&
+      membros.find(
+        (m) =>
+          (m.email && m.email === usuarioAtual.email) ||
+          (m.id_usuario && String(m.id_usuario) === String(usuarioAtual.id)) ||
+          (m.id_usuario_membro && String(m.id_usuario_membro) === String(usuarioAtual.id))
+      )) ||
+    membros.find((m) => m.role === 'owner') ||
+    membros[0];
+
+  const eu =
+    membroAtual ??
+    (usuarioAtual
+      ? ({
+          id: usuarioAtual.id,
+          nome_completo: usuarioAtual.nome_completo || 'Usuário',
+          iniciais: usuarioAtual.iniciais || 'U',
+          email: usuarioAtual.email || '',
+          url_avatar: usuarioAtual.url_avatar || null,
+          role: 'member',
+          funcao: 'member',
+          status: 'active',
+        } as MembroEquipe)
+      : null);
+
   const adicionarComentario = () => {
+    const textoLimpo = textoComentario.trim();
+    if (!textoLimpo || !cartao || criandoComentario) return;
+
+    createComment({
+      idCartao: cartao.id,
+      cardId: cartao.id,
+      conteudo: textoLimpo,
+      body: textoLimpo,
+      idAutor: membroAtual?.id,
+      authorId: membroAtual?.id,
+      idUsuario: usuarioAtual?.id,
+      userId: usuarioAtual?.id,
+    });
     setTextoComentario('');
   };
 
@@ -199,14 +240,13 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
   const prioCartao = cartao.prioridade ?? cartao.priority;
   const respIdCartao = cartao.id_responsavel ?? cartao.assignee_id;
   const respCartao = cartao.responsavel ?? cartao.assignee ?? encontrarMembro(membros, respIdCartao);
+  const responsaveisCartao = (cartao.responsaveis ?? cartao.assignees ?? (respCartao ? [respCartao] : [])) as any[];
+  const idsResponsaveisCartao = (cartao.ids_responsaveis ?? cartao.assignee_ids ?? (respCartao?.id ? [respCartao.id] : [])) as string[];
   const dataVencCartao = cartao.data_vencimento ?? cartao.due_date;
+  const infoPrazo = calcularStatusPrazo(dataVencCartao);
   const listasCartao = cartao.listas_verificacao ?? cartao.checklists ?? [];
   const rastreadorCartao = cartao.rastreador_tempo ?? cartao.time_tracker;
   const colunaAtual = colunas.find((c) => c.id === colCartao);
-  const eu =
-    (usuarioAtual && membros.find((m) => m.email === usuarioAtual.email)) ||
-    membros.find((m) => m.role === 'owner') ||
-    membros[0];
 
   return (
     <div className="flex h-dvh flex-col">
@@ -274,55 +314,103 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   </p>
                 )}
                 {(comentarios ?? []).map((comment) => {
-                  const autor = encontrarMembro(membros, comment.id_autor || comment.author_id);
+                  const autor =
+                    comment.autor ??
+                    comment.author ??
+                    encontrarMembro(
+                      membros,
+                      comment.id_autor || comment.author_id,
+                      comment.id_usuario || comment.user_id,
+                      usuarioAtual
+                    );
+
                   let dataFormatada = '';
                   try {
                     const dataStr = comment.criado_em || comment.created_at || '';
-                    const d = parseISO(dataStr);
-                    dataFormatada = isNaN(d.getTime()) ? '' : format(d, 'MMM d');
+                    if (dataStr) {
+                      const d = parseISO(dataStr);
+                      dataFormatada = isNaN(d.getTime())
+                        ? ''
+                        : format(d, "dd 'de' MMM, HH:mm", { locale: ptBR });
+                    }
                   } catch {
                     dataFormatada = '';
                   }
+
+                  const podeExcluir =
+                    (usuarioAtual && (comment.id_usuario === usuarioAtual.id || comment.user_id === usuarioAtual.id)) ||
+                    (membroAtual && String(comment.id_autor || comment.author_id) === String(membroAtual.id)) ||
+                    membroAtual?.role === 'owner' ||
+                    membroAtual?.funcao === 'owner';
+
                   return (
-                    <div key={comment.id} className="flex gap-3">
-                      <Avatar className="size-7 shrink-0">
-                        {(autor?.url_avatar || autor?.avatar_url) && (
-                          <AvatarImage src={autor.url_avatar || autor.avatar_url!} alt={autor.nome_completo || autor.full_name} />
+                    <div
+                      key={comment.id}
+                      className="group flex gap-3 rounded-lg p-2 transition-colors hover:bg-muted/40"
+                    >
+                      <Avatar className="size-8 shrink-0">
+                        {(autor?.url_avatar || (autor as any)?.avatar_url) && (
+                          <AvatarImage
+                            src={autor.url_avatar || (autor as any).avatar_url!}
+                            alt={autor.nome_completo || (autor as any).full_name}
+                          />
                         )}
-                        <AvatarFallback className="text-xs">
-                          {autor?.iniciais ?? autor?.initials ?? '?'}
+                        <AvatarFallback className="text-xs font-medium">
+                          {autor?.iniciais ?? (autor as any)?.initials ?? '?'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">
-                            {autor?.nome_completo ?? autor?.full_name ?? 'Desconhecido'}
-                          </span>
-                          {dataFormatada && (
-                            <span className="text-xs text-muted-foreground tabular-nums">
-                              {dataFormatada}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-foreground">
+                              {autor?.nome_completo ?? (autor as any)?.full_name ?? 'Usuário'}
                             </span>
+                            {dataFormatada && (
+                              <span className="text-xs text-muted-foreground tabular-nums">
+                                {dataFormatada}
+                              </span>
+                            )}
+                          </div>
+                          {podeExcluir && (
+                            <button
+                              type="button"
+                              onClick={() => deleteComment(comment.id)}
+                              disabled={excluindoComentario}
+                              className="opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive focus:opacity-100 p-1 rounded"
+                              title="Excluir comentário"
+                              aria-label="Excluir comentário"
+                            >
+                              <IconTrash className="size-3.5" />
+                            </button>
                           )}
                         </div>
-                        <p className="text-sm text-foreground text-pretty">{comment.conteudo || comment.body}</p>
+                        <p className="mt-1 text-sm text-foreground text-pretty whitespace-pre-wrap">
+                          {comment.conteudo || comment.body}
+                        </p>
                       </div>
                     </div>
                   );
                 })}
 
                 <div className="flex gap-3 pt-2">
-                  <Avatar className="size-7 shrink-0">
-                    {(eu?.url_avatar || eu?.avatar_url) && (
-                      <AvatarImage src={eu.url_avatar || eu.avatar_url!} alt={eu.nome_completo || eu.full_name} />
+                  <Avatar className="size-8 shrink-0">
+                    {(eu?.url_avatar || (eu as any)?.avatar_url) && (
+                      <AvatarImage
+                        src={eu.url_avatar || (eu as any).avatar_url!}
+                        alt={eu.nome_completo || (eu as any).full_name}
+                      />
                     )}
-                    <AvatarFallback className="text-xs">{eu?.iniciais ?? eu?.initials ?? '?'}</AvatarFallback>
+                    <AvatarFallback className="text-xs font-medium">
+                      {eu?.iniciais ?? (eu as any)?.initials ?? '?'}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-2">
                     <Textarea
                       value={textoComentario}
                       onChange={(e) => setTextoComentario(e.target.value)}
                       placeholder="Adicionar um comentário…"
-                      className="min-h-[72px] resize-y text-sm"
+                      className="min-h-[80px] resize-y text-sm"
+                      disabled={criandoComentario}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                           e.preventDefault();
@@ -332,14 +420,14 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                     />
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
-                        ⌘ Enter para publicar
+                        Ctrl+Enter ou ⌘+Enter para publicar
                       </span>
                       <Button
                         size="sm"
                         onClick={adicionarComentario}
-                        disabled={!textoComentario.trim()}
+                        disabled={!textoComentario.trim() || criandoComentario}
                       >
-                        Adicionar comentário
+                        {criandoComentario ? 'Publicando...' : 'Adicionar comentário'}
                       </Button>
                     </div>
                   </div>
@@ -352,6 +440,9 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                 cardId={cartao.id}
                 cardTitle={tituloCartao}
                 timeTracker={rastreadorCartao}
+                responsaveis={responsaveisCartao}
+                idsResponsaveis={idsResponsaveisCartao}
+                idResponsavel={cartao.id_responsavel}
               />
 
               <LinhaCampo icon={IconColumns} label="Status">
@@ -384,14 +475,21 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   onValueChange={(v) => updateCard(cartao.id, { prioridade: v as Prioridade, priority: v as Prioridade })}
                 >
                   <SelectTrigger className="w-full text-xs">
-                    <SelectValue />
+                    <SelectValue>
+                      {prioCartao && (
+                        <span className={cn('text-xs px-2 py-0.5 text-white font-medium rounded-sm border-0 shadow-none', priorityConfig[prioCartao]?.classeSolida)}>
+                          {priorityConfig[prioCartao]?.label ?? prioCartao}
+                        </span>
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {(['high', 'medium', 'low'] as Prioridade[]).map((p) => (
                       <SelectItem key={p} value={p}>
                         <span className="flex items-center gap-2">
-                          <span className={`size-2 rounded-full ${priorityConfig[p]?.dot ?? 'bg-amber-500'}`} />
-                          {priorityConfig[p]?.label ?? p}
+                          <span className={cn('text-xs px-2 py-0.5 text-white font-medium rounded-sm border-0 shadow-none', priorityConfig[p]?.classeSolida)}>
+                            {priorityConfig[p]?.label ?? p}
+                          </span>
                         </span>
                       </SelectItem>
                     ))}
@@ -399,98 +497,78 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                 </Select>
               </LinhaCampo>
 
-              <LinhaCampo icon={IconUser} label="Responsável">
-                <Select
-                  value={respIdCartao ?? 'unassigned'}
-                  onValueChange={(val) => {
-                    const novoId = val === 'unassigned' ? null : val;
-                    updateCard(cartao.id, { id_responsavel: novoId, assignee_id: novoId });
+              <LinhaCampo icon={IconUser} label="Responsáveis">
+                <SeletorResponsavel
+                  responsaveis={responsaveisCartao}
+                  idsResponsaveis={idsResponsaveisCartao}
+                  responsavel={respCartao ?? null}
+                  aoSelecionarMultiplo={(novosIds) => {
+                    updateCard(cartao.id, {
+                      ids_responsaveis: novosIds,
+                      assignee_ids: novosIds,
+                      id_responsavel: novosIds[0] ?? null,
+                      assignee_id: novosIds[0] ?? null,
+                    });
+                  }}
+                  aoSelecionar={(novoId) => {
+                    updateCard(cartao.id, {
+                      id_responsavel: novoId,
+                      ids_responsaveis: novoId ? [novoId] : [],
+                    });
                   }}
                 >
-                  <SelectTrigger className="h-8">
-                    <SelectValue>
-                      {respCartao ? (
-                        <span className="flex items-center gap-2">
-                          <Avatar className="size-4">
-                            {(respCartao.url_avatar || respCartao.avatar_url) && (
-                              <AvatarImage src={respCartao.url_avatar || respCartao.avatar_url!} alt={respCartao.nome_completo || respCartao.full_name} />
-                            )}
-                            <AvatarFallback className="text-[10px]">
-                              {respCartao.iniciais || respCartao.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          {respCartao.nome_completo || respCartao.full_name}
+                  <div className="flex items-center justify-between min-h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs cursor-pointer hover:bg-accent hover:text-foreground">
+                    {responsaveisCartao.length > 0 ? (
+                      <div className="flex items-center gap-1.5 flex-wrap py-0.5">
+                        <div className="flex -space-x-1.5 overflow-hidden">
+                          {responsaveisCartao.map((m) => (
+                            <Avatar key={m.id} className="size-4 ring-1 ring-background">
+                              {(m.url_avatar || m.avatar_url) && (
+                                <AvatarImage src={m.url_avatar || m.avatar_url!} alt={m.nome_completo || m.full_name} />
+                              )}
+                              <AvatarFallback className="text-[9px]">
+                                {m.iniciais || m.initials}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        </div>
+                        <span className="text-foreground">
+                          {responsaveisCartao.length === 1
+                            ? (responsaveisCartao[0].nome_completo || responsaveisCartao[0].full_name)
+                            : `${responsaveisCartao.length} responsáveis`}
                         </span>
-                      ) : (
-                        'Não atribuído'
-                      )}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(membros ?? []).map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        <span className="flex items-center gap-2">
-                          <Avatar className="size-4">
-                            {(m.url_avatar || m.avatar_url) && (
-                              <AvatarImage src={m.url_avatar || m.avatar_url!} alt={m.nome_completo || m.full_name} />
-                            )}
-                            <AvatarFallback className="text-[10px]">
-                              {m.iniciais || m.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          {m.nome_completo || m.full_name}
-                        </span>
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="unassigned">Não atribuído</SelectItem>
-                  </SelectContent>
-                </Select>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Não atribuído</span>
+                    )}
+                  </div>
+                </SeletorResponsavel>
               </LinhaCampo>
 
               <LinhaCampo icon={IconCalendar} label="Data de vencimento">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`h-8 w-full justify-start ${dataVencCartao ? '' : 'text-muted-foreground'}`}
-                    >
-                      {dataVencCartao
-                        ? (() => {
-                            try {
-                              const d = parseISO(dataVencCartao);
-                              return isNaN(d.getTime()) ? 'Data inválida' : format(d, 'MMM d, yyyy');
-                            } catch {
-                              return dataVencCartao;
-                            }
-                          })()
-                        : 'Definir vencimento…'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dataVencCartao ? (() => {
-                        try {
-                          const d = parseISO(dataVencCartao);
-                          return isNaN(d.getTime()) ? undefined : d;
-                        } catch {
-                          return undefined;
-                        }
-                      })() : undefined}
-                      onSelect={(_d) => {
-                      }}
-                      defaultMonth={dataVencCartao ? (() => {
-                        try {
-                          const d = parseISO(dataVencCartao);
-                          return isNaN(d.getTime()) ? undefined : d;
-                        } catch {
-                          return undefined;
-                        }
-                      })() : undefined}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <SeletorDataVencimento
+                  dataVencimento={dataVencCartao}
+                  aoSelecionar={(novaData) => {
+                    updateCard(cartao.id, {
+                      data_vencimento: novaData,
+                      due_date: novaData,
+                    });
+                  }}
+                >
+                  <div
+                    className={cn(
+                      'flex items-center justify-between h-9 w-full rounded-sm border-0 px-3 text-xs transition-colors cursor-pointer shadow-none',
+                      dataVencCartao
+                        ? infoPrazo.classeBadge
+                        : 'border-0 bg-muted/80 text-muted-foreground hover:bg-muted'
+                    )}
+                  >
+                    <span className="flex items-center gap-2 truncate">
+                      <IconCalendar className="size-4 shrink-0" />
+                      <span>{dataVencCartao ? infoPrazo.textoFormatado : 'Definir vencimento…'}</span>
+                    </span>
+                  </div>
+                </SeletorDataVencimento>
               </LinhaCampo>
 
               <LinhaCampo icon={IconSquareCheck} label="Checklists">
@@ -570,8 +648,34 @@ function LinhaCampo({ icon: Icon, label, children }: PropsLinhaCampo) {
   );
 }
 
-function encontrarMembro(members: MembroEquipe[], id: string | null) {
-  return members.find((m) => m.id === id) ?? null;
+function encontrarMembro(
+  members: MembroEquipe[],
+  id?: string | number | null,
+  idUsuario?: string | null,
+  usuarioAtual?: { id: string; nome_completo?: string; iniciais?: string; url_avatar?: string | null; email?: string } | null
+): MembroEquipe | null {
+  if (id != null && id !== '') {
+    const achado = members.find((m) => String(m.id) === String(id));
+    if (achado) return achado;
+  }
+  if (idUsuario) {
+    const achado = members.find(
+      (m) =>
+        (m.id_usuario && String(m.id_usuario) === String(idUsuario)) ||
+        (m.id_usuario_membro && String(m.id_usuario_membro) === String(idUsuario))
+    );
+    if (achado) return achado;
+    if (usuarioAtual && String(usuarioAtual.id) === String(idUsuario)) {
+      return {
+        id: usuarioAtual.id,
+        nome_completo: usuarioAtual.nome_completo ?? 'Usuário',
+        iniciais: usuarioAtual.iniciais ?? 'U',
+        email: usuarioAtual.email ?? '',
+        url_avatar: usuarioAtual.url_avatar ?? null,
+      } as MembroEquipe;
+    }
+  }
+  return null;
 }
 
 export const CardDetailPage = PaginaDetalhesCartao;

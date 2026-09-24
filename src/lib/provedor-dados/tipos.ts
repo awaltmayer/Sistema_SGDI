@@ -40,6 +40,8 @@ export interface EntradaCriarCartao {
   priority?: Prioridade;
   id_responsavel?: string | null;
   assignee_id?: string | null;
+  ids_responsaveis?: string[] | null;
+  assignee_ids?: string[] | null;
   data_vencimento?: string | null;
   due_date?: string | null;
   id?: string | number;
@@ -59,6 +61,8 @@ export interface EntradaAtualizarCartao {
   complexity?: Complexity;
   id_responsavel?: string | null;
   assignee_id?: string | null;
+  ids_responsaveis?: string[] | null;
+  assignee_ids?: string[] | null;
   data_vencimento?: string | null;
   due_date?: string | null;
   posicao?: number;
@@ -84,6 +88,8 @@ export interface EntradaCriarComentario {
   cardId?: string;
   idAutor?: string;
   authorId?: string;
+  idUsuario?: string;
+  userId?: string;
   conteudo?: string;
   body?: string;
 }
@@ -182,11 +188,29 @@ export interface ProvedorDadosApp {
 
   // Checklists (até 5 por cartão)
   useCreateChecklist(): {
-    mutate: (input: { cardId?: string; card_id?: string; title?: string; titulo?: string }) => void;
+    mutate: (input: {
+      cardId?: string;
+      card_id?: string;
+      title?: string;
+      titulo?: string;
+      prioridade?: Prioridade;
+      priority?: Prioridade;
+      itensIniciais?: string[];
+      initialItems?: string[];
+    }) => void;
     isPending: boolean;
   };
   useUpdateChecklist(): {
-    mutate: (input: { cardId?: string; card_id?: string; checklistId?: string; checklist_id?: string; title?: string; titulo?: string }) => void;
+    mutate: (input: {
+      cardId?: string;
+      card_id?: string;
+      checklistId?: string;
+      checklist_id?: string;
+      title?: string;
+      titulo?: string;
+      prioridade?: Prioridade;
+      priority?: Prioridade;
+    }) => void;
     isPending: boolean;
   };
   useDeleteChecklist(): {
@@ -260,6 +284,10 @@ export interface ProvedorDadosApp {
   useCommentCounts(): { data: Record<string, number>; isLoading: boolean };
   useCreateComment(): {
     mutate: (input: EntradaCriarComentario) => void;
+    isPending: boolean;
+  };
+  useDeleteComment(): {
+    mutate: (id: string) => void;
     isPending: boolean;
   };
 

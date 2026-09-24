@@ -53,18 +53,34 @@ export function SeletorAdicionarLista({
 
   useEffect(() => {
     if (aberto) {
-      setTitulo("Checklist");
+      setTitulo(`Checklist ${contagem + 1}`);
       setTimeout(() => {
         refInput.current?.focus();
         refInput.current?.select();
-      }, 50);
+      }, 30);
     }
-  }, [aberto]);
+  }, [aberto, contagem]);
 
-  // TODO: criar checklist
   const criarLista = (e: React.FormEvent) => {
     e.preventDefault();
+    const tituloLimpo = titulo.trim();
+    if (!tituloLimpo) {
+      toast.error("Informe um título para o checklist");
+      return;
+    }
+
+    if (atingiuLimite) {
+      toast.error(`Limite de até ${LIMITE_MAXIMO_LISTAS} checklists por tarefa atingido.`);
+      return;
+    }
+
+    // Fecha o popover imediatamente para resposta instantânea ao usuário
     setAberto(false);
+
+    createChecklist({
+      cardId,
+      titulo: tituloLimpo,
+    });
   };
 
   return (
@@ -92,9 +108,9 @@ export function SeletorAdicionarLista({
           <div className="flex items-center justify-between border-b pb-2">
             <h4 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
               <IconSquareCheck className="size-4 text-primary" />
-              Adicionar checklist
+              Novo checklist
             </h4>
-            <span className="text-xs text-muted-foreground tabular-nums">
+            <span className="text-xs text-muted-foreground tabular-nums font-medium">
               {contagem}/{LIMITE_MAXIMO_LISTAS}
             </span>
           </div>
@@ -108,17 +124,19 @@ export function SeletorAdicionarLista({
             </div>
           ) : (
             <>
+              {/* Título do Checklist */}
               <div className="space-y-1.5">
                 <Label htmlFor="checklist-title-input" className="text-xs text-muted-foreground">
-                  Título
+                  Título do checklist
                 </Label>
                 <Input
                   id="checklist-title-input"
                   ref={refInput}
                   value={titulo}
                   onChange={(e) => setTitulo(e.target.value)}
-                  placeholder="ex.: Checklist de Design, Revisão…"
+                  placeholder="ex.: Revisão Técnica, Entrega…"
                   className="h-8 text-sm"
+                  required
                 />
               </div>
 
@@ -139,7 +157,7 @@ export function SeletorAdicionarLista({
                   className="h-8 text-xs gap-1"
                 >
                   <IconPlus className="size-3.5" />
-                  Adicionar
+                  Criar checklist
                 </Button>
               </div>
             </>
@@ -151,4 +169,3 @@ export function SeletorAdicionarLista({
 }
 
 export const AddChecklistPopover = SeletorAdicionarLista;
-

@@ -104,6 +104,22 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       )
       .on(
         "postgres_changes",
+        { event: "*", schema: "public", table: "checklists" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "itens_checklist" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["cards"] });
+          queryClient.invalidateQueries({ queryKey: ["card"] });
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "membros_equipe" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["team_members"] });

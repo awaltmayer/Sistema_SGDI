@@ -24,19 +24,29 @@ export function ItemListaVerificacaoLinha({
   cardId: _cardId,
   checklistId: _checklistId,
   item,
-  aoAlternar: _aoAlternar,
-  aoAtualizarTitulo: _aoAtualizarTitulo,
-  aoExcluir: _aoExcluir,
-  onToggle: _onToggle,
-  onUpdateTitle: _onUpdateTitle,
-  onDelete: _onDelete,
+  aoAlternar,
+  aoAtualizarTitulo,
+  aoExcluir,
+  onToggle,
+  onUpdateTitle,
+  onDelete,
 }: PropsItemListaVerificacaoLinha) {
+  const alternar = aoAlternar ?? onToggle;
+  const atualizarTitulo = aoAtualizarTitulo ?? onUpdateTitle;
+  const excluir = aoExcluir ?? onDelete;
+
   const titItem = item.titulo ?? item.title ?? "";
   const estaItemConcluido = item.esta_concluido ?? item.is_completed ?? false;
 
+  // Estado otimista local para resposta visual imediata no frontend (0ms)
+  const [concluidoLocal, setConcluidoLocal] = useState(estaItemConcluido);
   const [estaEditando, setEstaEditando] = useState(false);
   const [textoEdicao, setTextoEdicao] = useState(titItem);
   const refInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setConcluidoLocal(estaItemConcluido);
+  }, [estaItemConcluido]);
 
   useEffect(() => {
     setTextoEdicao(titItem);
@@ -49,8 +59,17 @@ export function ItemListaVerificacaoLinha({
     }
   }, [estaEditando]);
 
-  // TODO: salvar item
+  const lidarComAlternancia = () => {
+    const proximoValor = !concluidoLocal;
+    setConcluidoLocal(proximoValor); // Resposta visual imediata sem esperar rede
+    alternar?.(item.id);
+  };
+
   const salvarEdicao = () => {
+    const t = textoEdicao.trim();
+    if (t && t !== titItem) {
+      atualizarTitulo?.(item.id, t);
+    }
     setEstaEditando(false);
   };
 
@@ -106,11 +125,13 @@ export function ItemListaVerificacaoLinha({
       <div className="pt-0.5">
         <Checkbox
           id={`chk-item-${item.id}`}
-          checked={estaItemConcluido}
-          onCheckedChange={() => {
-            // TODO: alternar item
-          }}
-          className="size-4 rounded transition-transform active:scale-95"
+          checked={concluidoLocal}
+          onCheckedChange={lidarComAlternancia}
+          className={`size-4 rounded transition-transform active:scale-95 ${
+            concluidoLocal
+              ? "border-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 data-[state=checked]:text-white"
+              : ""
+          }`}
         />
       </div>
 
@@ -124,8 +145,8 @@ export function ItemListaVerificacaoLinha({
           }
         }}
         className={`flex-1 text-sm select-none leading-relaxed cursor-pointer transition-all ${
-          estaItemConcluido
-            ? "line-through text-muted-foreground/80 opacity-80"
+          concluidoLocal
+            ? "line-through text-emerald-600 dark:text-emerald-400 font-medium opacity-90"
             : "text-foreground"
         }`}
       >
@@ -145,7 +166,7 @@ export function ItemListaVerificacaoLinha({
           type="button"
           title="Excluir item"
           onClick={() => {
-            // TODO: excluir item
+            excluir?.(item.id);
           }}
           className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
@@ -157,4 +178,3 @@ export function ItemListaVerificacaoLinha({
 }
 
 export const ChecklistItemRow = ItemListaVerificacaoLinha;
-

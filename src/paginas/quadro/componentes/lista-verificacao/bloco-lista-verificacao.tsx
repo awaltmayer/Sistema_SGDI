@@ -25,7 +25,6 @@ import {
 import { ChecklistItemRow } from "./item-lista-verificacao-linha";
 import { useDataProvider } from "@/lib/provedor-dados";
 import type { ListaVerificacao } from "@/dados/dados-iniciais";
-import { toast } from "sonner";
 import "./bloco-lista-verificacao.css";
 
 export interface PropsBlocoListaVerificacao {
@@ -55,7 +54,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
   const { mutate: deleteItem } = useDeleteChecklistItem();
   const { mutate: toggleItem } = useToggleChecklistItem();
 
-  const titLista = lista.titulo ?? lista.title ?? '';
+  const titLista = lista.titulo ?? lista.title ?? 'Checklist';
   const itensLista = lista.itens ?? lista.items ?? [];
 
   // Estado de edição do título
@@ -92,8 +91,15 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
     totalItens === 0 ? 0 : Math.round((itensConcluidos / totalItens) * 100);
   const todosConcluidos = totalItens > 0 && itensConcluidos === totalItens;
 
-  // TODO: salvar titulo
   const salvarTitulo = () => {
+    const limpo = valorTitulo.trim();
+    if (limpo && limpo !== titLista) {
+      updateChecklist({
+        cardId,
+        checklistId: lista.id,
+        titulo: limpo,
+      });
+    }
     setEstaEditandoTitulo(false);
   };
 
@@ -108,8 +114,15 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
     }
   };
 
-  // TODO: adicionar item
   const adicionarItem = () => {
+    const limpo = textoNovoItem.trim();
+    if (limpo) {
+      createItem({
+        cardId,
+        checklistId: lista.id,
+        titulo: limpo,
+      });
+    }
     setTextoNovoItem("");
     setEstaAdicionandoItem(false);
   };
@@ -125,16 +138,20 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
     }
   };
 
-  // TODO: deletar checklist
-  const excluirListaVerificacao = () => {};
+  const excluirListaVerificacao = () => {
+    deleteChecklist({
+      cardId,
+      checklistId: lista.id,
+    });
+  };
 
   return (
-    <div className="space-y-3 rounded-lg border border-border/50 bg-card/50 p-4 transition-all hover:border-border">
+    <div className="space-y-2.5 rounded-lg border border-border/60 bg-card/60 p-4 transition-all hover:border-border">
       {/* Cabeçalho do Checklist */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-1 items-center gap-2 min-w-0">
           <IconSquareCheck
-            className={`size-5 shrink-0 ${
+            className={`size-5 shrink-0 transition-colors ${
               todosConcluidos
                 ? "text-emerald-600 dark:text-emerald-400"
                 : "text-primary"
@@ -173,15 +190,17 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
               </Button>
             </div>
           ) : (
-            <div
-              className="group/title flex items-center gap-2 cursor-pointer rounded px-1.5 py-0.5 transition-colors hover:bg-accent flex-1 min-w-0"
-              onClick={() => setEstaEditandoTitulo(true)}
-              title="Clique para renomear checklist"
-            >
-              <h3 className="font-semibold text-base text-foreground truncate">
-                {titLista}
-              </h3>
-              <IconPencil className="size-3.5 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div
+                className="group/title flex items-center gap-1.5 cursor-pointer rounded px-1.5 py-0.5 transition-colors hover:bg-accent truncate"
+                onClick={() => setEstaEditandoTitulo(true)}
+                title="Clique para renomear checklist"
+              >
+                <h3 className="font-semibold text-base text-foreground truncate">
+                  {titLista}
+                </h3>
+                <IconPencil className="size-3.5 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
+              </div>
             </div>
           )}
         </div>
@@ -200,9 +219,9 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Excluir {titLista}?</AlertDialogTitle>
+              <AlertDialogTitle>Excluir "{titLista}"?</AlertDialogTitle>
               <AlertDialogDescription>
-                A exclusão de um checklist é permanente e removerá todos os seus
+                A exclusão deste checklist é definitiva e removerá todos os seus
                 itens associados.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -219,20 +238,20 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
         </AlertDialog>
       </div>
 
-      {/* Barra de Progresso e Porcentagem */}
-      <div className="space-y-1.5 pt-0.5">
+      {/* Barra de Progresso Minimalista e Indicador de % */}
+      <div className="space-y-1 pt-0.5">
         <div className="flex items-center justify-between text-xs">
           <span
-            className={`font-medium tabular-nums ${
+            className={`font-semibold tabular-nums text-xs ${
               todosConcluidos
-                ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                ? "text-emerald-600 dark:text-emerald-400"
                 : "text-muted-foreground"
             }`}
           >
             {porcentagemProgresso}%
           </span>
           {totalItens > 0 && (
-            <span className="text-[11px] text-muted-foreground tabular-nums">
+            <span className="text-[11px] text-muted-foreground tabular-nums font-medium">
               {itensConcluidos}/{totalItens} concluídos
             </span>
           )}
@@ -240,8 +259,8 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
 
         <Progress
           value={porcentagemProgresso}
-          className="h-2 bg-secondary/80"
-          indicatorClassName={`transition-all duration-300 ${
+          className="h-1.5 bg-secondary/80 rounded-full overflow-hidden"
+          indicatorClassName={`transition-all duration-300 rounded-full ${
             todosConcluidos
               ? "bg-emerald-500 dark:bg-emerald-500 shadow-sm shadow-emerald-500/20"
               : "bg-primary"
@@ -250,28 +269,41 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
       </div>
 
       {/* Lista de Itens do Checklist */}
-      <div className="space-y-1 pt-1">
+      <div className="space-y-0.5 pt-1">
         {itensLista.map((item) => (
           <ChecklistItemRow
             key={item.id}
             cardId={cardId}
             checklistId={lista.id}
             item={item}
-            onToggle={(_itemId) => {
-              // TODO: alternar item
+            onToggle={(itemId) => {
+              toggleItem({
+                cardId,
+                checklistId: lista.id,
+                itemId,
+              });
             }}
-            onUpdateTitle={(_itemId, _title) => {
-              // TODO: atualizar item
+            onUpdateTitle={(itemId, title) => {
+              updateItem({
+                cardId,
+                checklistId: lista.id,
+                itemId,
+                titulo: title,
+              });
             }}
-            onDelete={(_itemId) => {
-              // TODO: excluir item
+            onDelete={(itemId) => {
+              deleteItem({
+                cardId,
+                checklistId: lista.id,
+                itemId,
+              });
             }}
           />
         ))}
       </div>
 
       {/* Formulário / Botão de Adicionar Item */}
-      <div className="pt-1">
+      <div className="pt-0.5">
         {estaAdicionandoItem ? (
           <div className="space-y-2 rounded-md bg-accent/40 p-2.5">
             <Textarea
@@ -279,7 +311,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
               value={textoNovoItem}
               onChange={(e) => setTextoNovoItem(e.target.value)}
               onKeyDown={aoPressionarTeclaItem}
-              placeholder="Adicionar um item…"
+              placeholder="Digite o nome do item e pressione Enter…"
               className="min-h-[64px] resize-y text-sm bg-background"
             />
             <div className="flex items-center justify-between">
@@ -288,7 +320,7 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
                   size="sm"
                   onClick={adicionarItem}
                   disabled={!textoNovoItem.trim()}
-                  className="h-8"
+                  className="h-8 text-xs"
                 >
                   Adicionar
                 </Button>
@@ -299,13 +331,13 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
                     setEstaAdicionandoItem(false);
                     setTextoNovoItem("");
                   }}
-                  className="h-8 text-muted-foreground"
+                  className="h-8 text-xs text-muted-foreground"
                 >
                   Cancelar
                 </Button>
               </div>
               <span className="text-[11px] text-muted-foreground">
-                Pressione Enter para adicionar
+                Enter para adicionar • Esc para cancelar
               </span>
             </div>
           </div>
@@ -326,4 +358,3 @@ export function BlocoListaVerificacao({ cardId, listaVerificacao, checklist }: P
 }
 
 export const ChecklistBlock = BlocoListaVerificacao;
-

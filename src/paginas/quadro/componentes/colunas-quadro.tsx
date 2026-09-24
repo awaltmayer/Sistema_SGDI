@@ -141,11 +141,11 @@ export function ColunasQuadro({
         }
       }
       if (responsavelFiltro !== 'all') {
-        const idResp = c.id_responsavel ?? c.assignee_id;
+        const idsResp = (c.ids_responsaveis ?? c.assignee_ids ?? (c.id_responsavel ? [String(c.id_responsavel)] : [])).map(String);
         if (responsavelFiltro === 'unassigned') {
-          if (idResp) return false;
+          if (idsResp.length > 0) return false;
         } else {
-          if (idResp !== responsavelFiltro) return false;
+          if (!idsResp.includes(String(responsavelFiltro))) return false;
         }
       }
       return true;
@@ -169,7 +169,7 @@ export function ColunasQuadro({
   }, [cartoesFiltrados, ordenar]);
 
   const sensores = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 3 } })
   );
 
   const alternarColapso = (id: string) => {
@@ -216,7 +216,7 @@ export function ColunasQuadro({
     }
     if (colAtiva === colSobre) return;
     setCartoesLocais((prev) =>
-      prev?.map((c) => (c.id === activeId ? { ...c, column: colSobre } : c)) ?? prev
+      prev?.map((c) => (c.id === activeId ? { ...c, coluna: colSobre, column: colSobre } : c)) ?? prev
     );
   };
 
@@ -324,13 +324,23 @@ export function ColunasQuadro({
           })}
         </div>
 
-        <DragOverlay>
+        <DragOverlay
+          dropAnimation={{
+            duration: 220,
+            easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+          }}
+        >
           {cartaoAtivo ? (
-            <Card className="sgdi-drag-overlay-card">
-              <p className="text-sm font-semibold text-foreground line-clamp-2">
-                {cartaoAtivo.titulo ?? cartaoAtivo.title}
-              </p>
-            </Card>
+            <div className="w-[19rem] rotate-1 scale-[1.02] shadow-2xl opacity-95 cursor-grabbing pointer-events-none select-none transition-transform">
+              <CartaoItem
+                cartao={cartaoAtivo}
+                contagemComentarios={contagensComentarios?.[cartaoAtivo.id] ?? 0}
+                colapsado={idsColapsados.has(cartaoAtivo.id)}
+                aoAlternarColapso={() => {}}
+                aoAbrirDetalhes={() => {}}
+                arrastoDesabilitado={true}
+              />
+            </div>
           ) : null}
         </DragOverlay>
       </DndContext>

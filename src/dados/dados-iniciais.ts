@@ -111,12 +111,14 @@ export interface ListaVerificacao {
   id: string;
   id_cartao: string;
   titulo: string;
+  prioridade?: Prioridade;
   posicao: number;
   itens: ItemListaVerificacao[];
 
   // Aliases
   card_id?: string;
   title?: string;
+  priority?: Prioridade;
   position?: number;
   items?: ItemListaVerificacao[];
 }
@@ -128,12 +130,16 @@ export interface RegistroPausaTempo {
   retomado_em?: string | null;
   duracao_segundos: number;
   motivo: string;
+  usuario_id?: string | null;
+  usuario_nome?: string | null;
+  usuario_email?: string | null;
 
   // Aliases
   paused_at?: string;
   resumed_at?: string | null;
   duration_seconds?: number;
   reason?: string;
+  user_name?: string | null;
 }
 export type TimePauseLog = RegistroPausaTempo;
 
@@ -163,6 +169,8 @@ export interface CartaoTarefa {
   complexidade?: Complexidade;
   rastreador_tempo?: RastreadorTempoTarefa;
   id_responsavel: string | null;
+  ids_responsaveis?: string[];
+  responsaveis?: MembroEquipe[];
   data_vencimento: string | null;
   posicao: number;
   criado_em: string;
@@ -177,6 +185,8 @@ export interface CartaoTarefa {
   complexity?: Complexidade;
   time_tracker?: RastreadorTempoTarefa;
   assignee_id?: string | null;
+  assignee_ids?: string[];
+  assignees?: MembroEquipe[];
   due_date?: string | null;
   position?: number;
   created_at?: string;
@@ -193,6 +203,12 @@ export interface Comentario {
   id_autor: string;
   conteudo: string;
   criado_em: string;
+  autor?: {
+    id?: string;
+    nome_completo?: string;
+    iniciais?: string;
+    url_avatar?: string | null;
+  } | null;
 
   // Aliases para retrocompatibilidade
   user_id?: string;
@@ -200,6 +216,12 @@ export interface Comentario {
   author_id?: string;
   body?: string;
   created_at?: string;
+  author?: {
+    id?: string;
+    full_name?: string;
+    initials?: string;
+    avatar_url?: string | null;
+  } | null;
 }
 export type Comment = Comentario;
 

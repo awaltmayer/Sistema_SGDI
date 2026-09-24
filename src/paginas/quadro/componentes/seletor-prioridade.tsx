@@ -11,14 +11,32 @@ import {
   CommandItem,
   CommandGroup,
 } from '@/componentes/ui/comando';
-import { Badge } from '@/componentes/base/distintivo';
 import type { BadgeColor } from '@/componentes/base/distintivo';
 import type { Prioridade } from '@/dados/dados-iniciais';
+import { cn } from '@/lib/utilitarios';
 
-export const configuracaoPrioridades: Record<Prioridade, { label: string; color: BadgeColor; dot: string }> = {
-  high: { label: 'Alta', color: 'red', dot: 'bg-red-500' },
-  medium: { label: 'Média', color: 'amber', dot: 'bg-amber-500' },
-  low: { label: 'Baixa', color: 'gray', dot: 'bg-gray-400' },
+export const configuracaoPrioridades: Record<
+  Prioridade,
+  { label: string; color: BadgeColor; dot: string; classeSolida: string }
+> = {
+  high: {
+    label: 'Alta',
+    color: 'red',
+    dot: 'bg-red-600',
+    classeSolida: 'bg-red-600 text-white font-medium rounded-sm border-0 shadow-none px-2 py-0.5 text-xs',
+  },
+  medium: {
+    label: 'Média',
+    color: 'amber',
+    dot: 'bg-amber-500',
+    classeSolida: 'bg-amber-500 text-white font-medium rounded-sm border-0 shadow-none px-2 py-0.5 text-xs',
+  },
+  low: {
+    label: 'Baixa',
+    color: 'gray',
+    dot: 'bg-slate-500',
+    classeSolida: 'bg-slate-500 text-white font-medium rounded-sm border-0 shadow-none px-2 py-0.5 text-xs',
+  },
 };
 export const priorityConfig = configuracaoPrioridades;
 
@@ -40,22 +58,27 @@ export function SeletorPrioridade({
   const [aberto, setAberto] = useState(false);
   const prioridadeAtual = prioridade ?? priority ?? 'medium';
   const selecionarPrioridade = aoSelecionar ?? onSelect ?? (() => {});
-  const config = configuracaoPrioridades[prioridadeAtual];
+  const config = configuracaoPrioridades[prioridadeAtual] ?? configuracaoPrioridades.medium;
 
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
         <button
-          onClick={(e) => e.stopPropagation()}
-          className="cursor-pointer"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setAberto(!aberto);
+          }}
+          className={cn(
+            'cursor-pointer inline-flex items-center justify-center transition-opacity hover:opacity-90',
+            config.classeSolida
+          )}
         >
-          <Badge color={config.color} className="text-xs">
-            {config.label}
-          </Badge>
+          {config.label}
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-48 p-0"
+        className="w-44 p-1"
         align="start"
         onClick={(e) => e.stopPropagation()}
       >
@@ -63,7 +86,7 @@ export function SeletorPrioridade({
           <CommandInput placeholder="Buscar prioridade…" />
           <CommandList>
             <CommandGroup heading="Prioridade">
-              {(['high', 'medium', 'low'] as Priority[]).map((p) => {
+              {(['high', 'medium', 'low'] as Prioridade[]).map((p) => {
                 const cfg = configuracaoPrioridades[p];
                 return (
                   <CommandItem
@@ -72,9 +95,10 @@ export function SeletorPrioridade({
                       selecionarPrioridade(p);
                       setAberto(false);
                     }}
+                    className="flex items-center gap-2 cursor-pointer py-1.5"
                   >
-                    <span className={`size-2 rounded-full ${cfg.dot}`} />
-                    {cfg.label}
+                    <span className={`size-2.5 rounded-sm ${cfg.dot}`} />
+                    <span className="font-medium text-xs text-foreground">{cfg.label}</span>
                   </CommandItem>
                 );
               })}

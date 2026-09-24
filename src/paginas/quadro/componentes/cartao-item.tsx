@@ -4,18 +4,16 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import {
   IconCalendar,
   IconMessage,
-  IconClock,
   IconChevronDown,
   IconChevronRight,
   IconSquareCheck,
-  IconAlertTriangle,
 } from '@tabler/icons-react';
 import { Card } from '@/componentes/ui/cartao';
 import { Avatar, AvatarFallback, AvatarImage } from '@/componentes/ui/avatar';
 import { useDataProvider, type CardWithAssignee } from '@/lib/provedor-dados';
 import { SeletorPrioridade } from './seletor-prioridade';
 import { SeletorResponsavel } from './seletor-responsavel';
-import { SeletorDataVencimento } from './seletor-data-vencimento';
+import { SeletorDataVencimento, calcularStatusPrazo } from './seletor-data-vencimento';
 
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
 import { CardQuickMenu } from './menu-rapido-cartao';
@@ -86,7 +84,18 @@ export function CartaoItem({
     updateCard(itemCartao.id, { prioridade });
 
   const selecionarResponsavel = (idResponsavel: string | null) =>
-    updateCard(itemCartao.id, { id_responsavel: idResponsavel });
+    updateCard(itemCartao.id, {
+      id_responsavel: idResponsavel,
+      ids_responsaveis: idResponsavel ? [idResponsavel] : [],
+    });
+
+  const selecionarResponsaveis = (novosIds: string[]) =>
+    updateCard(itemCartao.id, {
+      ids_responsaveis: novosIds,
+      assignee_ids: novosIds,
+      id_responsavel: novosIds[0] ?? null,
+      assignee_id: novosIds[0] ?? null,
+    });
 
   const selecionarDataVencimento = (data: string | null) =>
     updateCard(itemCartao.id, { data_vencimento: data });
@@ -96,14 +105,13 @@ export function CartaoItem({
   const titCartao = itemCartao.titulo ?? itemCartao.title;
   const prioCartao = itemCartao.prioridade ?? itemCartao.priority;
   const respCartao = itemCartao.responsavel ?? itemCartao.assignee;
+  const responsaveisCartao = (itemCartao.responsaveis ?? itemCartao.assignees ?? (respCartao ? [respCartao] : [])) as any[];
+  const idsResponsaveisCartao = (itemCartao.ids_responsaveis ?? itemCartao.assignee_ids ?? (respCartao?.id ? [respCartao.id] : [])) as string[];
   const listasCartao = itemCartao.listas_verificacao ?? itemCartao.checklists ?? [];
   const rastreadorCartao = itemCartao.rastreador_tempo ?? itemCartao.time_tracker;
 
-  // Checagem de prazo de vencimento
-  const diferencaDias = dataVenc ? differenceInDays(parseISO(dataVenc), new Date()) : null;
-  const estaAtrasado = diferencaDias !== null && diferencaDias < 0 && colCartao !== 'done';
-  const venceHoje = diferencaDias !== null && diferencaDias === 0 && colCartao !== 'done';
-  const relativoVencimento = dataVenc ? vencimentoRelativo(dataVenc) : null;
+  // Checagem de prazo de vencimento (Azul: > 7d, Amarelo: 0-7d, Vermelho: < 0d)
+  const infoPrazo = calcularStatusPrazo(dataVenc);
 
   const todosItens = listasCartao.flatMap((c) => c.itens ?? c.items ?? []);
   const totalItensLista = todosItens.length;
@@ -119,28 +127,12 @@ export function CartaoItem({
       {...attributes}
       {...(arrastoBloqueado ? {} : listeners)}
       className={cn(
-        'group sgdi-cartao-tile bg-card border-border hover:border-primary/40',
-        estaAtrasado && 'sgdi-cartao-atrasado',
+        'group sgdi-cartao-tile bg-card border-border hover:border-primary/40 transition-all duration-150',
         !arrastoBloqueado && 'cursor-grab active:cursor-grabbing',
-        isDragging && 'opacity-40'
+        isDragging && 'opacity-25 border-2 border-dashed border-primary/60 bg-primary/10 shadow-none pointer-events-none'
       )}
       onClick={() => abrirDetalhes(itemCartao)}
     >
-      {/* Alerta em destaque de Vencimento no topo do cartão */}
-      {estaAtrasado && (
-        <div className="sgdi-cartao-alerta-vencido">
-          <IconAlertTriangle className="size-3.5 stroke-[2.5]" />
-          <span>Vencida há {Math.abs(diferencaDias!)} dia{Math.abs(diferencaDias!) > 1 ? 's' : ''}</span>
-        </div>
-      )}
-
-      {venceHoje && (
-        <div className="sgdi-cartao-alerta-hoje">
-          <IconClock className="size-3.5 stroke-[2.5]" />
-          <span>Vence hoje!</span>
-        </div>
-      )}
-
       <div className="sgdi-cartao-cabecalho">
         <p className="flex-1 text-sm font-semibold line-clamp-2 text-foreground">
           <span className="mr-1.5 text-xs font-mono font-bold text-muted-foreground">
@@ -174,7 +166,7 @@ export function CartaoItem({
 
       {estaColapsado && (
         <div className="sgdi-cartao-linha-colapsada">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {temListas && (
               <span
                 className={cn(
@@ -188,11 +180,26 @@ export function CartaoItem({
                 {itensListaConcluidos}/{totalItensLista}
               </span>
             )}
+            {dataVenc && (
+              <span
+                className={cn(
+                  'flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[11px] font-medium transition-colors border-0 shadow-none',
+                  infoPrazo.classeBadge
+                )}
+                title={`Vencimento: ${infoPrazo.textoFormatado} (${infoPrazo.textoRelativo})`}
+              >
+                <IconCalendar className="size-3 shrink-0" />
+                <span>{infoPrazo.textoFormatado}</span>
+              </span>
+            )}
           </div>
           <CardTimerWidget
             cardId={itemCartao.id}
             cardTitle={titCartao}
             timeTracker={rastreadorCartao}
+            responsaveis={responsaveisCartao}
+            idsResponsaveis={idsResponsaveisCartao}
+            idResponsavel={itemCartao.id_responsavel}
             compact
           />
         </div>
@@ -209,26 +216,37 @@ export function CartaoItem({
               />
             </div>
             <div>
-              <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Responsável</span>
+              <span className="sgdi-cartao-campo-rotulo text-muted-foreground">Responsáveis</span>
               <SeletorResponsavel
+                responsaveis={responsaveisCartao}
+                idsResponsaveis={idsResponsaveisCartao}
                 responsavel={respCartao ?? null}
+                aoSelecionarMultiplo={selecionarResponsaveis}
                 aoSelecionar={selecionarResponsavel}
               >
-                <span className="flex items-center gap-1.5 rounded px-1 py-0.5 text-muted-foreground hover:text-foreground hover:bg-accent">
-                  {respCartao ? (
-                    <>
-                      <Avatar className="size-4">
-                        {(respCartao.url_avatar || respCartao.avatar_url) && (
-                          <AvatarImage src={respCartao.url_avatar || respCartao.avatar_url!} alt={respCartao.nome_completo || respCartao.full_name} />
-                        )}
-                        <AvatarFallback className="text-[9px]">
-                          {respCartao.iniciais || respCartao.initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="truncate text-foreground">{respCartao.nome_completo || respCartao.full_name}</span>
-                    </>
+                <span className="flex items-center gap-1.5 rounded px-1 py-0.5 text-muted-foreground hover:text-foreground hover:bg-accent max-w-full">
+                  {responsaveisCartao.length > 0 ? (
+                    <div className="flex items-center gap-1 min-w-0">
+                      <div className="flex -space-x-1.5 overflow-hidden py-0.5">
+                        {responsaveisCartao.slice(0, 3).map((r) => (
+                          <Avatar key={r.id} className="size-4 ring-1 ring-background">
+                            {(r.url_avatar || r.avatar_url) && (
+                              <AvatarImage src={r.url_avatar || r.avatar_url!} alt={r.nome_completo || r.full_name} />
+                            )}
+                            <AvatarFallback className="text-[9px]">
+                              {r.iniciais || r.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                      <span className="truncate text-foreground text-xs">
+                        {responsaveisCartao.length === 1
+                          ? (responsaveisCartao[0].nome_completo || responsaveisCartao[0].full_name)
+                          : `${responsaveisCartao.length} responsáveis`}
+                      </span>
+                    </div>
                   ) : (
-                    <span className="text-muted-foreground">Não atribuído</span>
+                    <span className="text-muted-foreground text-xs">Não atribuído</span>
                   )}
                 </span>
               </SeletorResponsavel>
@@ -239,18 +257,17 @@ export function CartaoItem({
                 dataVencimento={dataVenc}
                 aoSelecionar={selecionarDataVencimento}
               >
-                <span className={cn(
-                  'flex items-center gap-1.5 rounded px-1 py-0.5',
-                  estaAtrasado
-                    ? 'text-rose-600 font-semibold dark:text-rose-400'
-                    : venceHoje
-                      ? 'text-amber-600 font-semibold dark:text-amber-400'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                )}>
-                  <IconCalendar className="size-3.5" />
-                  {dataVenc
-                    ? format(parseISO(dataVenc), 'dd/MM/yyyy')
-                    : <span className="text-muted-foreground">Sem data</span>}
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium transition-colors max-w-full truncate border-0 shadow-none',
+                    dataVenc
+                      ? infoPrazo.classeBadge
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent'
+                  )}
+                  title={dataVenc ? `Vencimento: ${infoPrazo.textoFormatado} (${infoPrazo.textoRelativo})` : 'Definir vencimento'}
+                >
+                  <IconCalendar className="size-3.5 shrink-0" />
+                  <span className="truncate">{dataVenc ? infoPrazo.textoFormatado : 'Sem data'}</span>
                 </span>
               </SeletorDataVencimento>
             </div>
@@ -283,17 +300,11 @@ export function CartaoItem({
                 cardId={itemCartao.id}
                 cardTitle={titCartao}
                 timeTracker={rastreadorCartao}
+                responsaveis={responsaveisCartao}
+                idsResponsaveis={idsResponsaveisCartao}
+                idResponsavel={itemCartao.id_responsavel}
                 compact
               />
-              {relativoVencimento && (
-                <span className={cn(
-                  'flex items-center gap-1 tabular-nums',
-                  estaAtrasado && 'text-rose-600 font-semibold dark:text-rose-400'
-                )}>
-                  <IconClock className="size-3.5" />
-                  {relativoVencimento}
-                </span>
-              )}
             </div>
           </div>
         </>

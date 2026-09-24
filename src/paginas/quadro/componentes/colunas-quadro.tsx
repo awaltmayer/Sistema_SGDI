@@ -134,7 +134,7 @@ export function ColunasQuadro({
       }
       if (solicitanteFiltro !== 'all') {
         const idCriador = c.id_usuario ?? c.user_id;
-        if (idCriador !== solicitanteFiltro) {
+        if (!idCriador || String(idCriador) !== String(solicitanteFiltro)) {
           return false;
         }
       }

@@ -82,7 +82,7 @@ export function DialogoNovaDemanda({
       descricao: descricao.trim() || '',
       prioridade,
       id_responsavel: idResponsavel !== 'none' ? idResponsavel : null,
-      data_vencimento: dataVencimento ? new Date(dataVencimento).toISOString() : null,
+      data_vencimento: dataVencimento ? dataVencimento.split('T')[0] : null,
     });
 
     toast.success('Demanda criada com sucesso!');

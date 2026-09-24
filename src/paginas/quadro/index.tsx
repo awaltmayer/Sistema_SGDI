@@ -31,7 +31,7 @@ export default function PaginaQuadro() {
       }
       if (filtroSolicitante !== 'all') {
         const idCriador = c.id_usuario ?? c.user_id;
-        if (idCriador !== filtroSolicitante) {
+        if (!idCriador || String(idCriador) !== String(filtroSolicitante)) {
           return false;
         }
       }

@@ -112,10 +112,12 @@ export function WidgetCronometroCartao({
     if (listaIdsResponsaveis.length === 0) return false;
 
     const uId = String(usuarioAtual.id);
+    const uAuthId = (usuarioAtual as any)?.id_usuario ? String((usuarioAtual as any).id_usuario) : null;
     const mId = membroAtual ? String(membroAtual.id) : null;
     const uEmail = usuarioAtual.email?.toLowerCase();
 
     if (listaIdsResponsaveis.includes(uId)) return true;
+    if (uAuthId && listaIdsResponsaveis.includes(uAuthId)) return true;
     if (mId && listaIdsResponsaveis.includes(mId)) return true;
 
     if (uEmail) {

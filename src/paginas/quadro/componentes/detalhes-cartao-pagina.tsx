@@ -199,9 +199,10 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
     (usuarioAtual &&
       membros.find(
         (m) =>
-          (m.email && m.email === usuarioAtual.email) ||
-          (m.id_usuario && String(m.id_usuario) === String(usuarioAtual.id)) ||
-          (m.id_usuario_membro && String(m.id_usuario_membro) === String(usuarioAtual.id))
+          (m.email && usuarioAtual.email && m.email.toLowerCase() === usuarioAtual.email.toLowerCase()) ||
+          String(m.id) === String(usuarioAtual.id) ||
+          ((usuarioAtual as any).id_usuario && m.id_usuario && String(m.id_usuario) === String((usuarioAtual as any).id_usuario)) ||
+          ((usuarioAtual as any).id_usuario && m.id_usuario_membro && String(m.id_usuario_membro) === String((usuarioAtual as any).id_usuario))
       )) ||
     membros.find((m) => m.role === 'owner') ||
     membros[0];
@@ -275,17 +276,27 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
   const podeEditarPrazoEChecklists = (() => {
     if (!usuarioAtual && !membroAtual) return false;
     const uId = usuarioAtual?.id ? String(usuarioAtual.id) : null;
+    const uAuthId = (usuarioAtual as any)?.id_usuario ? String((usuarioAtual as any).id_usuario) : null;
     const mId = membroAtual?.id ? String(membroAtual.id) : null;
+    const mAuthId = membroAtual?.id_usuario ? String(membroAtual.id_usuario) : null;
     const criadorId = cartao.id_usuario ?? (cartao as any).user_id;
     const criadorStr = criadorId ? String(criadorId) : null;
 
     // É o criador do cartão?
-    if (criadorStr && (criadorStr === uId || criadorStr === mId)) {
+    if (
+      criadorStr &&
+      (criadorStr === uId ||
+        (uAuthId && criadorStr === uAuthId) ||
+        criadorStr === mId ||
+        (mAuthId && criadorStr === mAuthId))
+    ) {
       return true;
     }
     // É um dos responsáveis?
     if (uId && idsResponsaveisCartao.includes(uId)) return true;
+    if (uAuthId && idsResponsaveisCartao.includes(uAuthId)) return true;
     if (mId && idsResponsaveisCartao.includes(mId)) return true;
+    if (mAuthId && idsResponsaveisCartao.includes(mAuthId)) return true;
     if (usuarioAtual?.email) {
       const emailLower = usuarioAtual.email.toLowerCase();
       if (responsaveisCartao.some((r) => r.email && r.email.toLowerCase() === emailLower)) {
@@ -385,7 +396,12 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   }
 
                   const podeExcluir =
-                    (usuarioAtual && (comment.id_usuario === usuarioAtual.id || comment.user_id === usuarioAtual.id)) ||
+                    (usuarioAtual && (
+                      comment.id_usuario === usuarioAtual.id ||
+                      comment.user_id === usuarioAtual.id ||
+                      ((usuarioAtual as any).id_usuario && comment.id_usuario === (usuarioAtual as any).id_usuario) ||
+                      String(comment.id_autor) === String(usuarioAtual.id)
+                    )) ||
                     (membroAtual && String(comment.id_autor || comment.author_id) === String(membroAtual.id)) ||
                     membroAtual?.role === 'owner' ||
                     membroAtual?.funcao === 'owner';

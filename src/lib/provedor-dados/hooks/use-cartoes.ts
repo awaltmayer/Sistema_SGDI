@@ -122,22 +122,7 @@ export function criarModuloCartoes() {
                 initials: m.iniciais,
                 avatar_url: m.url_avatar,
               }));
-            const tm = Array.isArray(row.membros_equipe)
-              ? row.membros_equipe[0]
-              : row.membros_equipe;
-            const respObj =
-              responsaveisList[0] ??
-              (tm
-                ? {
-                    id: String(tm.id),
-                    nome_completo: tm.nome_completo,
-                    iniciais: tm.iniciais,
-                    url_avatar: tm.url_avatar,
-                    full_name: tm.nome_completo,
-                    initials: tm.iniciais,
-                    avatar_url: tm.url_avatar,
-                  }
-                : null);
+            const respObj = responsaveisList[0] ?? null;
 
             return {
               id: String(row.id),
@@ -269,22 +254,7 @@ export function criarModuloCartoes() {
               initials: m.iniciais,
               avatar_url: m.url_avatar,
             }));
-          const tm: any = Array.isArray((data as any).membros_equipe)
-            ? (data as any).membros_equipe[0]
-            : (data as any).membros_equipe;
-          const respObj =
-            responsaveisList[0] ??
-            (tm
-              ? {
-                  id: String(tm.id),
-                  nome_completo: tm.nome_completo,
-                  iniciais: tm.iniciais,
-                  url_avatar: tm.url_avatar,
-                  full_name: tm.nome_completo,
-                  initials: tm.iniciais,
-                  avatar_url: tm.url_avatar,
-                }
-              : null);
+          const respObj = responsaveisList[0] ?? null;
 
           return {
             id: String(data.id),
@@ -353,9 +323,11 @@ export function criarModuloCartoes() {
               .single();
             if (!resWithIds.error && resWithIds.data) {
               data = resWithIds.data;
+            } else if (resWithIds.error) {
+              console.warn("Aviso ao inserir com ids_responsaveis:", resWithIds.error.message);
             }
-          } catch {
-            /* fallback */
+          } catch (e) {
+            console.warn("Erro ao tentar inserir com ids_responsaveis:", e);
           }
 
           if (!data) {
@@ -382,8 +354,9 @@ export function criarModuloCartoes() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
         },
-        onError: () => {
-          toast.error("Falha ao criar cartão");
+        onError: (err: any) => {
+          console.error("Erro ao criar cartão:", err);
+          toast.error(err?.message || "Falha ao criar cartão");
         },
       });
       return {
@@ -592,14 +565,15 @@ export function criarModuloCartoes() {
 
           return { previous, previousSingle };
         },
-        onError: (_err, { id }, context) => {
+        onError: (err: any, { id }, context) => {
+          console.error("Erro ao atualizar cartão:", err);
           if (context?.previous) {
             queryClient.setQueryData(["cards"], context.previous);
           }
           if (context?.previousSingle) {
             queryClient.setQueryData(["card", id], context.previousSingle);
           }
-          toast.error("Falha ao atualizar cartão");
+          toast.error(err?.message || "Falha ao atualizar cartão");
         },
         onSettled: (_data, _err, { id }) => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
@@ -668,11 +642,12 @@ export function criarModuloCartoes() {
         onSuccess: () => {
           toast.success("Cartão excluído com sucesso");
         },
-        onError: (_err, _id, context) => {
+        onError: (err: any, _id, context) => {
+          console.error("Erro ao excluir cartão:", err);
           if (context?.previous) {
             queryClient.setQueryData(["cards"], context.previous);
           }
-          toast.error("Falha ao excluir cartão");
+          toast.error(err?.message || "Falha ao excluir cartão");
         },
         onSettled: (_data, _error, id) => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
@@ -681,6 +656,7 @@ export function criarModuloCartoes() {
             queryClient.removeQueries({ queryKey: ["comments", id] });
           }
           queryClient.invalidateQueries({ queryKey: ["comment_counts"] });
+          queryClient.invalidateQueries({ queryKey: ["comment-counts"] });
         },
       });
       return {
@@ -731,11 +707,12 @@ export function criarModuloCartoes() {
           }
           return { previous };
         },
-        onError: (_err, _vars, context) => {
+        onError: (err: any, _vars, context) => {
+          console.error("Erro ao reordenar cartões:", err);
           if (context?.previous) {
             queryClient.setQueryData(["cards"], context.previous);
           }
-          toast.error("Falha ao reordenar cartões");
+          toast.error(err?.message || "Falha ao reordenar cartões");
         },
         onSettled: () => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });

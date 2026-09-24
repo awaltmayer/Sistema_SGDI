@@ -235,16 +235,18 @@ export function criarModuloPerfil() {
           const { error } = await supabase
             .from("cartoes")
             .delete()
-            .neq("id", "");
+            .gt("id", 0 as any);
           if (error) throw error;
         },
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
           queryClient.invalidateQueries({ queryKey: ["comments"] });
+          queryClient.invalidateQueries({ queryKey: ["comment-counts"] });
           toast.success("Dados do quadro excluídos");
         },
-        onError: () => {
-          toast.error("Falha ao excluir dados do quadro");
+        onError: (err: any) => {
+          console.error("Erro ao excluir dados do quadro:", err);
+          toast.error(err?.message || "Falha ao excluir dados do quadro");
         },
       });
       return {

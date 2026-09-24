@@ -117,9 +117,11 @@ export function CartaoItem({
   const podeEditarPrazo = (() => {
     if (!usuarioAtual || !itemCartao) return false;
     const uId = String(usuarioAtual.id);
+    const uAuthId = (usuarioAtual as any)?.id_usuario ? String((usuarioAtual as any).id_usuario) : null;
     const criadorId = itemCartao.id_usuario ?? (itemCartao as any).user_id;
-    if (criadorId && String(criadorId) === uId) return true;
+    if (criadorId && (String(criadorId) === uId || (uAuthId && String(criadorId) === uAuthId))) return true;
     if (idsResponsaveisCartao.map(String).includes(uId)) return true;
+    if (uAuthId && idsResponsaveisCartao.map(String).includes(uAuthId)) return true;
     if (usuarioAtual.email) {
       const emailLower = usuarioAtual.email.toLowerCase();
       if (responsaveisCartao.some((r: any) => r?.email && r.email.toLowerCase() === emailLower)) {

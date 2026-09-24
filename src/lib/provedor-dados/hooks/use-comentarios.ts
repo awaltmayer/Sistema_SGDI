@@ -46,7 +46,7 @@ export function criarModuloComentarios() {
             return (data ?? []).map((row: any) => {
               const tm = Array.isArray(row.usuarios)
                 ? row.usuarios[0]
-                : (row.usuarios || (Array.isArray(row.membros_equipe) ? row.membros_equipe[0] : row.membros_equipe));
+                : row.usuarios;
 
               const autorObj = tm
                 ? {

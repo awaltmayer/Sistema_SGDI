@@ -24,6 +24,7 @@ export interface SolicitanteOpcao {
   iniciais: string;
   email?: string;
   url_avatar?: string | null;
+  totalDemandas?: number;
 }
 
 export interface PropsSeletorSolicitante {
@@ -46,23 +47,26 @@ export function SeletorSolicitante({
   const { data: cartoes = [] } = useCards();
 
   const solicitantes = useMemo(() => {
-    // 1. Identifica IDs de solicitantes que possuem de fato cartões no quadro
-    const idsCriadoresComCartoes = new Set<string>();
+    // 1. Identifica IDs de solicitantes e conta quantidade de demandas
+    const contagemPorCriador = new Map<string, number>();
     for (const c of cartoes) {
       const idCriador = c.id_usuario ?? c.user_id;
       if (idCriador) {
-        idsCriadoresComCartoes.add(String(idCriador));
+        const sId = String(idCriador);
+        contagemPorCriador.set(sId, (contagemPorCriador.get(sId) ?? 0) + 1);
       }
     }
 
-    if (idsCriadoresComCartoes.size === 0) {
+    if (contagemPorCriador.size === 0) {
       return [];
     }
 
     const mapa = new Map<string, SolicitanteOpcao>();
 
     // 2. Preenche os dados dos solicitantes que possuem cartões
-    for (const idCriador of idsCriadoresComCartoes) {
+    for (const idCriador of contagemPorCriador.keys()) {
+      const qtdDemandas = contagemPorCriador.get(idCriador) ?? 0;
+
       // Tenta encontrar em perfis/usuarios
       const perfil = perfis.find((p: any) => String(p.id) === idCriador || (p.id_usuario && String(p.id_usuario) === idCriador));
       if (perfil) {
@@ -72,6 +76,7 @@ export function SeletorSolicitante({
           iniciais: perfil.iniciais || perfil.nome_completo?.slice(0, 2).toUpperCase() || 'U',
           email: perfil.email,
           url_avatar: perfil.url_avatar,
+          totalDemandas: qtdDemandas,
         });
         continue;
       }
@@ -84,6 +89,7 @@ export function SeletorSolicitante({
           iniciais: usuarioAtual.iniciais || 'EU',
           email: usuarioAtual.email,
           url_avatar: usuarioAtual.url_avatar,
+          totalDemandas: qtdDemandas,
         });
         continue;
       }
@@ -102,6 +108,7 @@ export function SeletorSolicitante({
           iniciais: membro.iniciais || membro.nome_completo?.slice(0, 2).toUpperCase() || 'US',
           email: membro.email,
           url_avatar: membro.url_avatar,
+          totalDemandas: qtdDemandas,
         });
         continue;
       }
@@ -113,6 +120,7 @@ export function SeletorSolicitante({
         iniciais: 'US',
         email: undefined,
         url_avatar: null,
+        totalDemandas: qtdDemandas,
       });
     }
 
@@ -140,7 +148,7 @@ export function SeletorSolicitante({
           <div className="flex items-center gap-1.5 truncate">
             <IconUserCheck className="size-3.5 shrink-0 text-muted-foreground" />
             <span className="truncate">
-              {solicitanteAtivo ? solicitanteAtivo.nome_completo : 'Solicitante'}
+              {solicitanteAtivo ? `${solicitanteAtivo.nome_completo} (${solicitanteAtivo.totalDemandas ?? 0})` : 'Solicitante'}
             </span>
           </div>
           <IconChevronDown className="size-3 shrink-0 text-muted-foreground opacity-60" />
@@ -195,7 +203,14 @@ export function SeletorSolicitante({
                         <AvatarFallback className="text-[9px]">{s.iniciais}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="truncate font-medium">{s.nome_completo}</span>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="truncate font-medium">{s.nome_completo}</span>
+                          {s.totalDemandas != null && (
+                            <span className="text-[10px] text-muted-foreground font-semibold px-1.5 py-0.5 bg-muted rounded-full shrink-0">
+                              {s.totalDemandas} {s.totalDemandas === 1 ? 'demanda' : 'demandas'}
+                            </span>
+                          )}
+                        </div>
                         {s.email && (
                           <span className="truncate text-[10px] text-muted-foreground">
                             {s.email}

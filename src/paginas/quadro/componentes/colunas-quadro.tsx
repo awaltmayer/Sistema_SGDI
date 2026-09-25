@@ -48,11 +48,13 @@ export interface PropsColunasQuadro {
   priorityFilter?: string;
   requesterFilter?: string;
   assigneeFilter?: string;
+  statusFilter?: string;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   caminhoBase?: string;
   busca?: string;
   filtroPrioridade?: string;
+  filtroStatus?: string;
   filtroSolicitante?: string;
   filtroResponsavel?: string;
 }
@@ -83,12 +85,14 @@ export function ColunasQuadro({
   basePath,
   searchQuery: _searchQuery = '',
   priorityFilter: _priorityFilter = 'all',
+  statusFilter: _statusFilter = 'all',
   requesterFilter: _requesterFilter = 'all',
   assigneeFilter: _assigneeFilter = 'all',
   ordenarPor,
   caminhoBase,
   busca,
   filtroPrioridade,
+  filtroStatus,
   filtroSolicitante,
   filtroResponsavel,
 }: PropsColunasQuadro) {
@@ -119,6 +123,7 @@ export function ColunasQuadro({
 
   const termoBusca = (busca ?? _searchQuery ?? '').trim().toLowerCase();
   const prioridadeFiltro = filtroPrioridade ?? _priorityFilter ?? 'all';
+  const statusFiltro = filtroStatus ?? _statusFilter ?? 'all';
   const solicitanteFiltro = filtroSolicitante ?? _requesterFilter ?? 'all';
   const responsavelFiltro = filtroResponsavel ?? _assigneeFilter ?? 'all';
 
@@ -142,6 +147,10 @@ export function ColunasQuadro({
       if (prioridadeFiltro !== 'all' && prio !== prioridadeFiltro) {
         return false;
       }
+      if (statusFiltro !== 'all') {
+        const col = c.coluna ?? c.column;
+        if (col !== statusFiltro) return false;
+      }
       if (solicitanteFiltro !== 'all') {
         const idCriador = c.id_usuario ?? c.user_id;
         if (!idCriador || String(idCriador) !== String(solicitanteFiltro)) {
@@ -158,7 +167,7 @@ export function ColunasQuadro({
       }
       return true;
     });
-  }, [cartoes, termoBusca, prioridadeFiltro, solicitanteFiltro, responsavelFiltro]);
+  }, [cartoes, termoBusca, prioridadeFiltro, statusFiltro, solicitanteFiltro, responsavelFiltro]);
 
   const cartoesPorColuna = useMemo(() => {
     const agrupados: Record<IdColuna, CardWithAssignee[]> = {

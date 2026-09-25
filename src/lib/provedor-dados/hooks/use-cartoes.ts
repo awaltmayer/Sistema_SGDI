@@ -302,7 +302,7 @@ export function criarModuloCartoes() {
               ? [String(input.id_responsavel)]
               : [];
           const payload: any = {
-            id_usuario: user?.id ?? undefined,
+            id_usuario: input.id_usuario ?? input.user_id ?? user?.id ?? undefined,
             titulo: input.titulo ?? input.title ?? "",
             coluna: input.coluna ?? input.column ?? "todo",
             prioridade: input.prioridade ?? input.priority ?? "low",

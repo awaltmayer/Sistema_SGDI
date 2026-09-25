@@ -3,6 +3,8 @@ import {
   IconSearch,
   IconX,
   IconDownload,
+  IconLayoutKanban,
+  IconList,
 } from '@tabler/icons-react';
 import {
   Select,
@@ -15,6 +17,7 @@ import { Input } from '@/componentes/ui/campo-texto';
 import { Button } from '@/componentes/base/botao';
 import { SeletorSolicitante } from './seletor-solicitante';
 import { SeletorFiltroResponsavel } from './seletor-filtro-responsavel';
+import { useDataProvider } from '@/lib/provedor-dados';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -30,11 +33,15 @@ export interface PropsBarraFerramentasQuadro {
   onSearchQueryChange?: (query: string) => void;
   priorityFilter?: string;
   onPriorityFilterChange?: (p: string) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (s: string) => void;
   requesterFilter?: string;
   onRequesterFilterChange?: (r: string) => void;
   assigneeFilter?: string;
   onAssigneeFilterChange?: (a: string) => void;
   cartoesVisiveis?: any[];
+  modoExibicao?: 'quadro' | 'lista';
+  aoMudarModoExibicao?: (m: 'quadro' | 'lista') => void;
   // Aliases compatibilidade
   ordenarPor?: SortBy;
   aoMudarOrdenacao?: (s: SortBy) => void;
@@ -42,6 +49,8 @@ export interface PropsBarraFerramentasQuadro {
   aoMudarBusca?: (query: string) => void;
   filtroPrioridade?: string;
   aoMudarFiltroPrioridade?: (p: string) => void;
+  filtroStatus?: string;
+  aoMudarFiltroStatus?: (s: string) => void;
   filtroSolicitante?: string;
   aoMudarFiltroSolicitante?: (r: string) => void;
   filtroResponsavel?: string;
@@ -66,6 +75,8 @@ export function BarraFerramentasQuadro({
   onSearchQueryChange,
   priorityFilter = 'all',
   onPriorityFilterChange,
+  statusFilter = 'all',
+  onStatusFilterChange,
   requesterFilter = 'all',
   onRequesterFilterChange,
   ordenarPor,
@@ -74,6 +85,8 @@ export function BarraFerramentasQuadro({
   aoMudarBusca,
   filtroPrioridade,
   aoMudarFiltroPrioridade,
+  filtroStatus,
+  aoMudarFiltroStatus,
   filtroSolicitante,
   aoMudarFiltroSolicitante,
   assigneeFilter = 'all',
@@ -81,13 +94,20 @@ export function BarraFerramentasQuadro({
   filtroResponsavel,
   aoMudarFiltroResponsavel,
   cartoesVisiveis,
+  modoExibicao = 'quadro',
+  aoMudarModoExibicao,
 }: PropsBarraFerramentasQuadro) {
+  const { useTeamMembers } = useDataProvider();
+  const { data: membros = [] } = useTeamMembers();
+
   const ordenacaoAtual = ordenarPor ?? sortBy ?? 'manual';
   const mudarOrdenacao = aoMudarOrdenacao ?? onSortByChange ?? (() => { });
   const termoBusca = busca !== undefined ? busca : searchQuery;
   const mudarBusca = aoMudarBusca ?? onSearchQueryChange;
   const prioFiltro = filtroPrioridade !== undefined ? filtroPrioridade : priorityFilter;
   const mudarPrioFiltro = aoMudarFiltroPrioridade ?? onPriorityFilterChange;
+  const statFiltro = filtroStatus !== undefined ? filtroStatus : statusFilter;
+  const mudarStatFiltro = aoMudarFiltroStatus ?? onStatusFilterChange;
   const solicitanteFiltro = filtroSolicitante !== undefined ? filtroSolicitante : requesterFilter;
   const mudarSolicitanteFiltro = aoMudarFiltroSolicitante ?? onRequesterFilterChange;
   const responsavelFiltro = filtroResponsavel !== undefined ? filtroResponsavel : assigneeFilter;
@@ -96,12 +116,14 @@ export function BarraFerramentasQuadro({
   const temFiltrosAtivos =
     termoBusca.trim().length > 0 ||
     prioFiltro !== 'all' ||
+    statFiltro !== 'all' ||
     solicitanteFiltro !== 'all' ||
     responsavelFiltro !== 'all';
 
   const limparFiltros = () => {
     mudarBusca?.('');
     mudarPrioFiltro?.('all');
+    mudarStatFiltro?.('all');
     mudarSolicitanteFiltro?.('all');
     mudarResponsavelFiltro?.('all');
   };
@@ -125,6 +147,7 @@ export function BarraFerramentasQuadro({
       'Descrição',
       'Coluna / Status',
       'Prioridade',
+      'Solicitante',
       'Responsáveis',
       'Data de Vencimento',
       'Data de Criação',
@@ -152,6 +175,12 @@ export function BarraFerramentasQuadro({
           : prio === 'low'
           ? 'Baixa'
           : (prio ?? '');
+
+      const idCriador = c.id_usuario ?? c.user_id;
+      const membroCriador = idCriador
+        ? membros.find((m: any) => String(m.id) === String(idCriador) || (m.id_usuario && String(m.id_usuario) === String(idCriador)))
+        : null;
+      const nomeSolicitante = membroCriador?.nome_completo || (membroCriador as any)?.full_name || (idCriador ? 'Usuário' : 'Sistema');
 
       const nomesResponsaveis = (c.responsaveis ?? c.assignees ?? [])
         .map((r: any) => r.nome_completo || r.full_name || r.name)
@@ -197,6 +226,7 @@ export function BarraFerramentasQuadro({
         escaparCsv(c.descricao ?? c.description ?? ''),
         escaparCsv(colNome),
         escaparCsv(prioNome),
+        escaparCsv(nomeSolicitante),
         escaparCsv(nomesResponsaveis),
         escaparCsv(dataVencFormatada),
         escaparCsv(criadoEmFormatado),
@@ -289,6 +319,32 @@ export function BarraFerramentasQuadro({
             </Select>
           </div>
 
+          {/* Filtro por Status */}
+          <div className="sgdi-ordenar-grupo">
+            <Select
+              value={statFiltro}
+              onValueChange={(val) => mudarStatFiltro?.(val)}
+            >
+              <SelectTrigger className="h-8 w-[125px] text-xs">
+                <span className="truncate">
+                  {statFiltro === 'all'
+                    ? 'Status'
+                    : statFiltro === 'todo'
+                      ? '📋 A Fazer'
+                      : statFiltro === 'in-progress'
+                        ? '⚡ Em Andamento'
+                        : '✅ Concluído'}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">Todos os Status</SelectItem>
+                <SelectItem value="todo" className="text-xs">📋 A Fazer</SelectItem>
+                <SelectItem value="in-progress" className="text-xs">⚡ Em Andamento</SelectItem>
+                <SelectItem value="done" className="text-xs">✅ Concluído</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Filtro por Solicitante */}
           <div className="sgdi-ordenar-grupo">
             <SeletorSolicitante
@@ -319,8 +375,33 @@ export function BarraFerramentasQuadro({
           )}
         </div>
 
-        {/* BEM NO CANTO DIREITO: Botão Exportar CSV */}
-        <div className="flex items-center ml-auto shrink-0">
+        {/* BEM NO CANTO DIREITO: Toggle de Modo de Exibição e Botão Exportar CSV */}
+        <div className="flex items-center gap-2 ml-auto shrink-0">
+          {aoMudarModoExibicao && (
+            <div className="flex items-center rounded-md border border-input p-0.5 bg-background">
+              <Button
+                variant={modoExibicao === 'quadro' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => aoMudarModoExibicao('quadro')}
+                className="h-7 px-2.5 text-xs gap-1.5 cursor-pointer font-medium"
+                title="Visualização em Quadro Kanban"
+              >
+                <IconLayoutKanban className="size-3.5" />
+                <span className="hidden md:inline">Quadro</span>
+              </Button>
+              <Button
+                variant={modoExibicao === 'lista' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => aoMudarModoExibicao('lista')}
+                className="h-7 px-2.5 text-xs gap-1.5 cursor-pointer font-medium"
+                title="Visualização em Lista / Tabela Paginada"
+              >
+                <IconList className="size-3.5" />
+                <span className="hidden md:inline">Lista</span>
+              </Button>
+            </div>
+          )}
+
           <Button
             variant="outline"
             size="sm"

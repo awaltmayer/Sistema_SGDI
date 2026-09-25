@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { format, parseISO, differenceInDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
   IconCalendar,
   IconMessage,
@@ -57,9 +59,10 @@ export function CartaoItem({
   const idCartao = itemCartao?.id ?? "";
   const arrastoBloqueado = arrastoDesabilitado ?? dragDisabled ?? false;
 
-  const { useUpdateCard, useCurrentUser } = useDataProvider();
+  const { useUpdateCard, useCurrentUser, useTeamMembers } = useDataProvider();
   const { mutate: updateCard } = useUpdateCard();
   const { data: usuarioAtual } = useCurrentUser();
+  const { data: membros = [] } = useTeamMembers();
 
   const {
     attributes,
@@ -131,6 +134,46 @@ export function CartaoItem({
     return false;
   })();
 
+  const criadorId = itemCartao.id_usuario ?? (itemCartao as any).user_id;
+
+  const nomeCriador = useMemo(() => {
+    if (!criadorId) return null;
+    const sCriadorId = String(criadorId);
+
+    const membro = membros.find(
+      (m: any) =>
+        String(m.id) === sCriadorId ||
+        (m.id_usuario && String(m.id_usuario) === sCriadorId) ||
+        (m.id_usuario_membro && String(m.id_usuario_membro) === sCriadorId)
+    );
+    if (membro?.nome_completo) return membro.nome_completo;
+    if ((membro as any)?.full_name) return (membro as any).full_name;
+    if (membro?.email) return membro.email;
+
+    if (
+      usuarioAtual &&
+      (String(usuarioAtual.id) === sCriadorId ||
+        ((usuarioAtual as any).id_usuario && String((usuarioAtual as any).id_usuario) === sCriadorId))
+    ) {
+      return usuarioAtual.nome_completo || (usuarioAtual as any).full_name || usuarioAtual.email || 'Você';
+    }
+
+    return null;
+  }, [criadorId, membros, usuarioAtual]);
+
+  const dataCriacao = itemCartao.criado_em ?? (itemCartao as any).created_at;
+  let dataHoraCriacaoFormatada = '';
+  if (dataCriacao) {
+    try {
+      const dataObj = typeof dataCriacao === 'string' ? parseISO(dataCriacao) : new Date(dataCriacao);
+      if (!isNaN(dataObj.getTime())) {
+        dataHoraCriacaoFormatada = format(dataObj, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      }
+    } catch {
+      dataHoraCriacaoFormatada = '';
+    }
+  }
+
   const todosItens = listasCartao.flatMap((c) => c.itens ?? c.items ?? []);
   const totalItensLista = todosItens.length;
   const itensListaConcluidos = todosItens.filter((i) => i.esta_concluido ?? i.is_completed).length;
@@ -152,12 +195,25 @@ export function CartaoItem({
       onClick={() => abrirDetalhes(itemCartao)}
     >
       <div className="sgdi-cartao-cabecalho">
-        <p className="flex-1 text-sm font-semibold line-clamp-2 text-foreground">
-          <span className="mr-1.5 text-xs font-mono font-bold text-muted-foreground">
-            #{itemCartao.id}
-          </span>
-          {titCartao}
-        </p>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold line-clamp-2 text-foreground">
+            <span className="mr-1.5 text-xs font-mono font-bold text-muted-foreground">
+              #{itemCartao.id}
+            </span>
+            {titCartao}
+          </p>
+          {(nomeCriador || dataHoraCriacaoFormatada) && (
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground mt-1 font-normal leading-tight">
+              {nomeCriador && (
+                <span className="truncate max-w-[130px] font-medium text-foreground/80" title={nomeCriador}>
+                  {nomeCriador}
+                </span>
+              )}
+              {nomeCriador && dataHoraCriacaoFormatada && <span>•</span>}
+              {dataHoraCriacaoFormatada && <span>{dataHoraCriacaoFormatada}</span>}
+            </div>
+          )}
+        </div>
         <div className="sgdi-cartao-acoes-cabecalho">
           <CardQuickMenu
             card={itemCartao}

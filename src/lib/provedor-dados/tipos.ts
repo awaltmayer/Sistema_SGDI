@@ -30,6 +30,8 @@ export type ChecklistItem = ItemListaVerificacao;
 export interface EntradaCriarCartao {
   titulo?: string;
   title?: string;
+  id_usuario?: string | null;
+  user_id?: string | null;
   coluna?: IdColuna;
   column?: IdColuna;
   nextPosition?: number;
@@ -51,6 +53,8 @@ export type CreateCardInput = EntradaCriarCartao;
 export interface EntradaAtualizarCartao {
   titulo?: string;
   title?: string;
+  id_usuario?: string | null;
+  user_id?: string | null;
   descricao?: string;
   description?: string;
   coluna?: IdColuna;

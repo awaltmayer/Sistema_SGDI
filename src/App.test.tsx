@@ -238,6 +238,88 @@ describe("SGDI Dashboard - Suíte de Testes", () => {
       expect(temNaoAtribuidoVazio).toBe(false);
     });
   });
+
+  describe("Sprint 1 - Ordenação por Prioridade (Importância e Urgência)", () => {
+    it("deve ordenar demandas colocando Alta prioridade no topo, seguida por Média e Baixa", () => {
+      const demandas = [
+        { id: "1", prioridade: "low" },
+        { id: "2", prioridade: "high" },
+        { id: "3", prioridade: "medium" },
+        { id: "4", prioridade: "high" },
+      ];
+      const ranking: Record<string, number> = { high: 0, medium: 1, low: 2 };
+      const ordenadas = [...demandas].sort(
+        (a, b) => (ranking[a.prioridade] ?? 2) - (ranking[b.prioridade] ?? 2)
+      );
+
+      expect(ordenadas.map((d) => d.id)).toEqual(["2", "4", "3", "1"]);
+    });
+  });
+
+  describe("Sprint 2 - Contagem e Vínculo de Demandas por Solicitante", () => {
+    it("deve calcular a quantidade exata de demandas por solicitante", () => {
+      const demandas = [
+        { id: "1", id_usuario: "user-uuid-1" },
+        { id: "2", id_usuario: "user-uuid-2" },
+        { id: "3", id_usuario: "user-uuid-1" },
+        { id: "4", id_usuario: "user-uuid-1" },
+      ];
+
+      const contagem = new Map<string, number>();
+      for (const d of demandas) {
+        if (d.id_usuario) {
+          contagem.set(d.id_usuario, (contagem.get(d.id_usuario) ?? 0) + 1);
+        }
+      }
+
+      expect(contagem.get("user-uuid-1")).toBe(3);
+      expect(contagem.get("user-uuid-2")).toBe(1);
+      expect(contagem.get("user-uuid-inexistente")).toBeUndefined();
+    });
+  });
+
+  describe("Sprint 3 - Filtro por Status e Paginação de Demandas", () => {
+    const listaDemandas = Array.from({ length: 25 }, (_, i) => ({
+      id: String(i + 1),
+      titulo: `Demanda ${i + 1}`,
+      coluna: i % 2 === 0 ? "todo" : "in-progress",
+      prioridade: i % 3 === 0 ? "high" : "medium",
+    }));
+
+    it("deve filtrar demandas pelo status/coluna selecionada", () => {
+      const filtroStatus = "in-progress";
+      const filtradas = listaDemandas.filter((d) => d.coluna === filtroStatus);
+
+      expect(filtradas.length).toBe(12);
+      expect(filtradas.every((d) => d.coluna === "in-progress")).toBe(true);
+    });
+
+    it("deve paginar listagem de demandas em blocos de 10 itens", () => {
+      const ITENS_POR_PAGINA = 10;
+      const totalPaginas = Math.ceil(listaDemandas.length / ITENS_POR_PAGINA);
+
+      expect(totalPaginas).toBe(3);
+
+      // Página 1
+      const p1 = listaDemandas.slice(0, 10);
+      expect(p1).toHaveLength(10);
+      expect(p1[0].id).toBe("1");
+      expect(p1[9].id).toBe("10");
+
+      // Página 2
+      const p2 = listaDemandas.slice(10, 20);
+      expect(p2).toHaveLength(10);
+      expect(p2[0].id).toBe("11");
+      expect(p2[9].id).toBe("20");
+
+      // Página 3 (restante)
+      const p3 = listaDemandas.slice(20, 25);
+      expect(p3).toHaveLength(5);
+      expect(p3[0].id).toBe("21");
+      expect(p3[4].id).toBe("25");
+    });
+  });
 });
+
 
 

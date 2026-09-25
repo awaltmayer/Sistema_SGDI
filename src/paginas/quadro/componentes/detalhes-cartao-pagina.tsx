@@ -273,6 +273,29 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
   const rastreadorCartao = cartao.rastreador_tempo ?? cartao.time_tracker;
   const colunaAtual = colunas.find((c) => c.id === colCartao);
 
+  const criadorCartao = cartao
+    ? encontrarMembro(
+        membros,
+        cartao.id_usuario ?? (cartao as any).user_id,
+        cartao.id_usuario ?? (cartao as any).user_id,
+        usuarioAtual
+      )
+    : null;
+  const nomeCriador = criadorCartao?.nome_completo || (criadorCartao as any)?.full_name || criadorCartao?.email;
+
+  const dataCriacao = cartao ? (cartao.criado_em ?? (cartao as any).created_at) : null;
+  let dataHoraCriacaoFormatada = '';
+  if (dataCriacao) {
+    try {
+      const dataObj = typeof dataCriacao === 'string' ? parseISO(dataCriacao) : new Date(dataCriacao);
+      if (!isNaN(dataObj.getTime())) {
+        dataHoraCriacaoFormatada = format(dataObj, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      }
+    } catch {
+      dataHoraCriacaoFormatada = '';
+    }
+  }
+
   const podeEditarPrazoEChecklists = (() => {
     if (!usuarioAtual && !membroAtual) return false;
     const uId = usuarioAtual?.id ? String(usuarioAtual.id) : null;
@@ -341,6 +364,18 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   className="h-auto -mx-2 -my-1 rounded-md border-none bg-transparent px-2 py-1 text-3xl md:text-3xl font-semibold tracking-tight text-balance shadow-none transition-colors hover:bg-accent focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring flex-1"
                 />
               </div>
+
+              {(nomeCriador || dataHoraCriacaoFormatada) && (
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground -mt-4">
+                  {nomeCriador && (
+                    <span>
+                      Criado por <strong className="font-medium text-foreground">{nomeCriador}</strong>
+                    </span>
+                  )}
+                  {nomeCriador && dataHoraCriacaoFormatada && <span>•</span>}
+                  {dataHoraCriacaoFormatada && <span>{dataHoraCriacaoFormatada}</span>}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <p className="text-lg font-semibold text-foreground">Descrição</p>

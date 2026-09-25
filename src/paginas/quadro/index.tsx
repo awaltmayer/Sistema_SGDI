@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { BarraSuperiorQuadro } from './componentes/barra-superior-quadro';
 import { BarraFerramentasQuadro, type TipoOrdenacao } from './componentes/barra-ferramentas-quadro';
 import { ColunasQuadro } from './componentes/colunas-quadro';
+import { TabelaDemandas } from './componentes/tabela-demandas';
+import { ordenarCartoes } from './componentes/ordenar-cartoes';
 import { useDataProvider } from '@/lib/provedor-dados';
 import './quadro-pagina.css';
 
@@ -11,8 +13,10 @@ export default function PaginaQuadro() {
   const [ordenarPor, setOrdenarPor] = useState<TipoOrdenacao>('manual');
   const [busca, setBusca] = useState('');
   const [filtroPrioridade, setFiltroPrioridade] = useState('all');
+  const [filtroStatus, setFiltroStatus] = useState('all');
   const [filtroSolicitante, setFiltroSolicitante] = useState('all');
   const [filtroResponsavel, setFiltroResponsavel] = useState('all');
+  const [modoExibicao, setModoExibicao] = useState<'quadro' | 'lista'>('quadro');
 
   const { useCards } = useDataProvider();
   const { data: cartoes = [] } = useCards();
@@ -39,6 +43,12 @@ export default function PaginaQuadro() {
       if (filtroPrioridade !== 'all' && prio !== filtroPrioridade) {
         return false;
       }
+      if (filtroStatus !== 'all') {
+        const col = c.coluna ?? c.column;
+        if (col !== filtroStatus) {
+          return false;
+        }
+      }
       if (filtroSolicitante !== 'all') {
         const idCriador = c.id_usuario ?? c.user_id;
         if (!idCriador || String(idCriador) !== String(filtroSolicitante)) {
@@ -55,7 +65,11 @@ export default function PaginaQuadro() {
       }
       return true;
     });
-  }, [cartoes, termoBusca, filtroPrioridade, filtroSolicitante, filtroResponsavel]);
+  }, [cartoes, termoBusca, filtroPrioridade, filtroStatus, filtroSolicitante, filtroResponsavel]);
+
+  const cartoesOrdenados = useMemo(() => {
+    return ordenarCartoes(cartoesVisiveis, ordenarPor);
+  }, [cartoesVisiveis, ordenarPor]);
 
   return (
     <div className="sgdi-quadro-pagina-container">
@@ -67,21 +81,35 @@ export default function PaginaQuadro() {
         aoMudarBusca={setBusca}
         filtroPrioridade={filtroPrioridade}
         aoMudarFiltroPrioridade={setFiltroPrioridade}
+        filtroStatus={filtroStatus}
+        aoMudarFiltroStatus={setFiltroStatus}
         filtroSolicitante={filtroSolicitante}
         aoMudarFiltroSolicitante={setFiltroSolicitante}
         filtroResponsavel={filtroResponsavel}
         aoMudarFiltroResponsavel={setFiltroResponsavel}
         cartoesVisiveis={cartoesVisiveis}
+        modoExibicao={modoExibicao}
+        aoMudarModoExibicao={setModoExibicao}
       />
       <div className="sgdi-quadro-conteudo-area">
-        <ColunasQuadro
-          ordenarPor={ordenarPor}
-          caminhoBase={caminhoBase}
-          busca={busca}
-          filtroPrioridade={filtroPrioridade}
-          filtroSolicitante={filtroSolicitante}
-          filtroResponsavel={filtroResponsavel}
-        />
+        {modoExibicao === 'quadro' ? (
+          <ColunasQuadro
+            ordenarPor={ordenarPor}
+            caminhoBase={caminhoBase}
+            busca={busca}
+            filtroPrioridade={filtroPrioridade}
+            filtroStatus={filtroStatus}
+            filtroSolicitante={filtroSolicitante}
+            filtroResponsavel={filtroResponsavel}
+          />
+        ) : (
+          <div className="p-4 md:p-6 w-full max-w-7xl mx-auto h-full overflow-hidden flex flex-col">
+            <TabelaDemandas
+              cartoes={cartoesOrdenados}
+              caminhoBase={caminhoBase}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

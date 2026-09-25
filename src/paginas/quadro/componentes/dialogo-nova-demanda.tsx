@@ -42,24 +42,43 @@ export function DialogoNovaDemanda({
   const estaAberto = aberto ?? open;
   const mudarAberto = aoMudarAberto ?? onOpenChange;
 
-  const { useCreateCard, useUpdateCard, useCards, useTeamMembers } = useDataProvider();
+  const { useCreateCard, useUpdateCard, useCards, useTeamMembers, useCurrentUser } = useDataProvider();
   const { mutate: createCard, isPending: estaCriando } = useCreateCard();
   const { mutate: updateCard } = useUpdateCard();
   const { data: cartoes = [] } = useCards();
   const { data: membros = [] } = useTeamMembers();
+  const { data: usuarioAtual } = useCurrentUser();
 
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [coluna, setColuna] = useState<IdColuna>('todo');
   const [prioridade, setPrioridade] = useState<Prioridade>('medium');
+  const [idSolicitante, setIdSolicitante] = useState<string>('');
   const [idResponsavel, setIdResponsavel] = useState<string>('none');
   const [dataVencimento, setDataVencimento] = useState('');
+
+  // Sincroniza solicitante padrão com o usuário atual logado
+  const solicitantePadrao = (() => {
+    if (!usuarioAtual) return membros[0]?.id ? String(membros[0].id) : '';
+    const uId = String(usuarioAtual.id);
+    const uAuthId = (usuarioAtual as any)?.id_usuario ? String((usuarioAtual as any).id_usuario) : null;
+    const m = membros.find(
+      (item) =>
+        String(item.id) === uId ||
+        (item.id_usuario && String(item.id_usuario) === uId) ||
+        (uAuthId && item.id_usuario && String(item.id_usuario) === uAuthId)
+    );
+    return m?.id ? String(m.id) : (membros[0]?.id ? String(membros[0].id) : uId);
+  })();
+
+  const solicitanteAtivo = idSolicitante || solicitantePadrao;
 
   const redefinirFormulario = () => {
     setTitulo('');
     setDescricao('');
     setColuna('todo');
     setPrioridade('medium');
+    setIdSolicitante('');
     setIdResponsavel('none');
     setDataVencimento('');
   };
@@ -75,8 +94,18 @@ export function DialogoNovaDemanda({
     const cartoesDaColuna = cartoes.filter((c) => (c.coluna ?? c.column) === coluna);
     const proximaPosicao = cartoesDaColuna.length;
 
+    const membroSolicitante = membros.find(
+      (m) =>
+        String(m.id) === solicitanteAtivo ||
+        (m.id_usuario && String(m.id_usuario) === solicitanteAtivo)
+    );
+    const finalIdUsuario =
+      membroSolicitante?.id_usuario ||
+      (membroSolicitante?.id ? String(membroSolicitante.id) : undefined);
+
     createCard({
       titulo: tituloLimpo,
+      id_usuario: finalIdUsuario,
       coluna,
       posicao: proximaPosicao,
       descricao: descricao.trim() || '',
@@ -178,8 +207,32 @@ export function DialogoNovaDemanda({
               </div>
             </div>
 
-            {/* Linha 2: Responsável e Prazo Final */}
+            {/* Linha 2: Solicitante e Responsável */}
             <div className="sgdi-dialogo-grid-2">
+              <div className="sgdi-dialogo-campo">
+                <Label className="text-xs font-semibold">Solicitante</Label>
+                <Select value={solicitanteAtivo} onValueChange={setIdSolicitante}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Selecione o solicitante" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {membros.map((m) => (
+                      <SelectItem key={m.id} value={String(m.id)} className="text-xs">
+                        <div className="sgdi-dialogo-responsavel-item">
+                          <Avatar className="size-4">
+                            {(m.url_avatar || m.avatar_url) && (
+                              <AvatarImage src={m.url_avatar || m.avatar_url!} alt={m.nome_completo || m.full_name} />
+                            )}
+                            <AvatarFallback className="text-[9px]">{m.iniciais || m.initials}</AvatarFallback>
+                          </Avatar>
+                          <span>{m.nome_completo || m.full_name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="sgdi-dialogo-campo">
                 <Label className="text-xs font-semibold">Responsável</Label>
                 <Select value={idResponsavel} onValueChange={setIdResponsavel}>
@@ -204,19 +257,20 @@ export function DialogoNovaDemanda({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              <div className="sgdi-dialogo-campo">
-                <Label htmlFor="demand-due" className="text-xs font-semibold">
-                  Prazo Final / Data de Entrega
-                </Label>
-                <Input
-                  id="demand-due"
-                  type="date"
-                  value={dataVencimento}
-                  onChange={(e) => setDataVencimento(e.target.value)}
-                  className="h-9 text-xs"
-                />
-              </div>
+            {/* Linha 3: Prazo Final */}
+            <div className="sgdi-dialogo-campo">
+              <Label htmlFor="demand-due" className="text-xs font-semibold">
+                Prazo Final / Data de Entrega
+              </Label>
+              <Input
+                id="demand-due"
+                type="date"
+                value={dataVencimento}
+                onChange={(e) => setDataVencimento(e.target.value)}
+                className="h-9 text-xs"
+              />
             </div>
           </div>
 

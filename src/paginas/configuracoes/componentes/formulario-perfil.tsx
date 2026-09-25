@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/componentes/ui/avatar';
 import { Button } from '@/componentes/base/botao';
 import { Input } from '@/componentes/ui/campo-texto';
@@ -13,8 +13,6 @@ export function FormularioPerfil() {
   const { mutate: atualizarPerfil, isPending: estaPendente } = useUpdateProfile();
 
   const [nome, setNome] = useState(usuarioAtual?.nome_completo ?? usuarioAtual?.full_name ?? '');
-  const [previaAvatar, setPreviaAvatar] = useState<string | null>(null);
-  const refInputArquivo = useRef<HTMLInputElement>(null);
 
   const nomeAtual = usuarioAtual?.nome_completo ?? usuarioAtual?.full_name ?? '';
 
@@ -27,8 +25,8 @@ export function FormularioPerfil() {
 
   const houveAlteracao = useMemo(() => {
     if (!usuarioAtual) return false;
-    return nome !== nomeAtual || previaAvatar !== null;
-  }, [nome, nomeAtual, previaAvatar, usuarioAtual]);
+    return nome.trim() !== nomeAtual.trim() && nome.trim().length > 0;
+  }, [nome, nomeAtual, usuarioAtual]);
 
   const salvarPerfil = () => {
     if (!usuarioAtual) return;
@@ -48,23 +46,7 @@ export function FormularioPerfil() {
     toast.success('Perfil salvo');
   };
 
-  const carregarImagem = () => {
-    refInputArquivo.current?.click();
-  };
-
-  const lidarComArquivo = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const arquivo = e.target.files?.[0];
-    if (!arquivo) return;
-    const url = URL.createObjectURL(arquivo);
-    setPreviaAvatar(url);
-  };
-
-  const removerAvatar = () => {
-    setPreviaAvatar(null);
-    if (refInputArquivo.current) refInputArquivo.current.value = '';
-  };
-
-  const avatarUrl = previaAvatar ?? usuarioAtual?.url_avatar ?? usuarioAtual?.avatar_url ?? undefined;
+  const avatarUrl = usuarioAtual?.url_avatar ?? usuarioAtual?.avatar_url ?? undefined;
   const nomeDisplay = usuarioAtual?.nome_completo ?? usuarioAtual?.full_name ?? 'Avatar do perfil';
 
   return (
@@ -72,32 +54,22 @@ export function FormularioPerfil() {
       <h2 className="text-lg font-semibold text-foreground">Perfil</h2>
 
       <div className="space-y-2">
-        <Label className="text-sm text-muted-foreground">Avatar</Label>
+        <Label className="text-sm text-muted-foreground">Foto de perfil</Label>
         <div className="flex items-center gap-4">
-          <Avatar className="size-12">
+          <Avatar className="size-14">
             {avatarUrl && (
               <AvatarImage
                 src={avatarUrl}
                 alt={nomeDisplay}
               />
             )}
-            <AvatarFallback>{iniciais}</AvatarFallback>
+            <AvatarFallback className="text-base font-semibold">{iniciais}</AvatarFallback>
           </Avatar>
-          <Button variant="ghost" size="sm" onClick={carregarImagem} className="font-medium text-primary">
-            Enviar nova imagem
-          </Button>
-          <Button variant="ghost" size="sm" onClick={removerAvatar} className="font-medium text-primary">
-            Remover
-          </Button>
-          <input
-            ref={refInputArquivo}
-            type="file"
-            accept="image/png,image/jpeg"
-            className="hidden"
-            onChange={lidarComArquivo}
-          />
+          <div className="text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">{nomeDisplay}</p>
+            <p>{email}</p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">PNG ou JPG, até 2MB.</p>
       </div>
 
       <div className="space-y-2">
@@ -122,7 +94,7 @@ export function FormularioPerfil() {
       </div>
 
       <Button disabled={!houveAlteracao || estaPendente} onClick={salvarPerfil}>
-        {estaPendente && <IconLoader2 className="size-4 animate-spin" />}
+        {estaPendente && <IconLoader2 className="size-4 animate-spin mr-2" />}
         Salvar alterações
       </Button>
     </div>

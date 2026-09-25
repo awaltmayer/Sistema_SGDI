@@ -73,8 +73,6 @@ export function CartaoItem({
     isDragging,
   } = useSortable({ id: idCartao, disabled: arrastoBloqueado || !itemCartao });
 
-  if (!itemCartao) return null;
-
   const contagem = contagemComentarios ?? commentCount ?? 0;
   const estaColapsado = colapsado ?? collapsed ?? false;
   const alternarColapso = aoAlternarColapso ?? onToggleCollapse ?? (() => {});
@@ -180,6 +178,8 @@ export function CartaoItem({
   const temListas = totalItensLista > 0;
   const listaCompleta =
     totalItensLista > 0 && itensListaConcluidos === totalItensLista;
+
+  if (!itemCartao) return null;
 
   return (
     <Card

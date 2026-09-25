@@ -1,163 +1,222 @@
 # SGDI - Sistema de Gestão de Demandas de TI
 
-Sistema web para gerenciamento de tarefas, demandas e projetos de equipes de Tecnologia da Informação
+> Plataforma completa e moderna para gerenciamento, rastreamento e governança de demandas, tarefas e projetos de equipes de Tecnologia da Informação.
 
 ---
 
-## 🚀 Tecnologias e Stacks Utilizadas
+## 📌 Visão Geral
+
+O **SGDI** (Sistema de Gestão de Demandas de TI) foi projetado para elevar a produtividade e a rastreabilidade operacional de times de tecnologia. Com interface fluida, suporte a **Dark Mode**, fluxos ágeis em **Quadro Kanban**, visualização alternativa em **Lista / Tabela Paginada**, controle estrito de solicitantes, múltiplos responsáveis por demanda, checklists dinâmicos, apontamento de horas com cronômetro integrado e exportação de relatórios, o sistema atende desde o registro da demanda até a entrega final com total governança.
+
+---
+
+## 🚀 Tecnologias e Arquitetura
 
 ### Front-end
-- **React 18** (com TypeScript)
-- **Vite** (Build tool e servidor de desenvolvimento ultrarrápido)
-- **React Router DOM v6** (Roteamento SPA de alta performance)
-- **CSS** (Design system com suporte a Dark Mode e temas dinâmicos)
-- **Radix UI** (Componentes acessíveis e headless: Dialogs, Popovers, Selects, Dropdowns, etc.)
-- **@dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`) (Arrastar e soltar suave no Kanban)
-- **@tanstack/react-query v5** (Gerenciamento de estado assíncrono, cache e sincronização)
-- **Tabler Icons & Lucide React** (Ícones modernos e consistentes)
-- **Date-fns** (Manipulação e formatação internacionalizada de datas em pt-BR)
-- **Sonner** (Notificações toast elegantes)
+- **React 18** (com **TypeScript** em modo estrito)
+- **Vite** (Build tool e servidor de desenvolvimento de alta velocidade)
+- **React Router DOM v6** (Roteamento SPA com rotas protegidas e divisão de bundle)
+- **Tailwind CSS & Vanilla CSS Variables** (Design System com Dark Mode e temas personalizáveis)
+- **Radix UI** (Primitivos de acessibilidade: Diálogos, Menus Suspensos, Popovers, Comandos e Alertas)
+- **@dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`) (Arrastar e soltar suave no Kanban)
+- **@tanstack/react-query v5** (Cache assíncrono, invalidação inteligente e sincronização em tempo real)
+- **Tabler Icons & Lucide React** (Conjunto consistente de ícones vetoriais)
+- **Date-fns** (Tratamento e formatação de datas internacionalizadas em `pt-BR`)
+- **Sonner** (Notificações toast modernas e não obstrutivas)
 
-### Back-end & Infraestrutura
+### Back-end & Banco de Dados
 - **Supabase**
-  - **Supabase Auth**: Autenticação por e-mail/senha e OAuth (Google)
-  - **PostgreSQL**: Banco de dados relacional com Row Level Security (RLS)
-  - **Storage**: Armazenamento de avatares e anexos
+  - **PostgreSQL**: Banco de dados relacional robusto com IDs sequenciais humanizados (`#1`, `#2`...)
+  - **Supabase Auth**: Autenticação segura por e-mail/senha e login social OAuth (Google)
+  - **Row Level Security (RLS)**: Políticas ativas de segurança por usuário e organização
+  - **Triggers e Funções SQL**: Sincronização automática entre `auth.users` e tabela unificada de `usuarios`
+
+### Testes Automatizados
+- **Vitest**: Suíte de testes unitários cobrindo regras de negócio, ordenação por urgência, filtros combinados, cálculo de demandas por solicitante e lógica de paginação.
 
 ---
 
-## 📂 Estrutura de Pastas do Projeto
+## 🎯 Funcionalidades do Sistema
+
+### 1. Governança de Demandas & Sprints
+- **Classificação por Urgência / Prioridade**: Níveis **Alta** (🔴 Urgente), **Média** (🟡) e **Baixa** (🟢), com ordenação dinâmica que posiciona automaticamente as demandas prioritárias no topo.
+- **Controle Estrito de Solicitantes**: Substituição total de texto livre por vínculo com usuários cadastrados na base, permitindo rastrear o autor, exibir data/hora de criação no cartão (`Criado por [Nome] • dd/MM/yyyy às HH:mm`) e monitorar a quantidade de demandas abertas por usuário.
+- **Múltiplos Responsáveis**: Atribuição de um ou mais membros por tarefa, com exibição de avatares empilhados.
+- **Gestão de Prazos e Vencimentos**: Seletor de data de entrega com alertas visuais inteligentes (*No Prazo*, *Vence Hoje*, *Atrasado*). Apenas o solicitante ou responsáveis possuem permissão para renegociar prazos.
+- **Checklists e Critérios de Aceite**: Criação de listas de verificação com barra de progresso percentual e cálculo em tempo real de itens concluídos.
+- **Cronômetro e Apontamento de Horas**: Rastreamento de tempo gasto na execução da demanda com suporte a início, pausa justificada (com registro de motivo) e histórico acumulado.
+
+### 2. Consultas Avançadas & Navegação
+- **Busca Global**: Localização instantânea por ID numérico (ex: `12` ou `#12`), termos do título ou conteúdo da descrição.
+- **Filtros Combinados em Tempo Real**:
+  - Filtro por **Status** (`Todos`, `📋 A Fazer`, `⚡ Em Andamento`, `✅ Concluído`).
+  - Filtro por **Prioridade** (`Todas`, `🔴 Alta`, `🟡 Média`, `🟢 Baixa`).
+  - Filtro por **Solicitante** (com contador de demandas abertas por usuário).
+  - Filtro por **Responsável** (membro específico, não atribuídos ou todos).
+  - Botão de **Limpeza Rápida** de filtros ativos.
+- **Modos de Visualização Alternáveis**:
+  - **Visualização em Quadro (Kanban)**: 3 colunas ágeis com arrastar-e-soltar, personalização de cores por coluna e paginação interna de 10 em 10 itens por status.
+  - **Visualização em Lista / Tabela Paginada**: Tabela corporativa completa com cabeçalhos ordenáveis, navegação por páginas (Primeira, Anterior, Próxima, Última) e indicador de registros (`1 a 10 de N demandas`).
+- **Exportação de Relatórios**: Exportação em um clique para **CSV** formatado (compatível com Excel) contendo ID, Título, Descrição, Status, Prioridade, Solicitante, Responsáveis, Vencimento, Data de Criação, Progresso de Checklists e Tempo Gasto.
+
+### 3. Gestão de Equipe & Segurança
+- **Tabela Única de Usuários**: Estrutura unificada de perfis e membros, com controle de função (Administrador / Membro).
+- **Gestão de Convites**: Envio de convites por e-mail, alteração de privilégios e revogação de acessos.
+- **Configurações Pessoais**: Edição de perfil, alteração de senha e alternância de temas (Claro, Escuro ou Automático).
+
+---
+
+## 📂 Estrutura de Diretórios
 
 ```text
-SGDI-ti/
-├── public/                 # Recursos estáticos
+Sistema_SGDI/
+├── public/                     # Favicon e ativos públicos estáticos
 ├── src/
-│   ├── componentes/        # Componentes reutilizáveis
-│   │   ├── base/           # Botões, Badges, etc.
-│   │   └── ui/             # Componentes de UI (Radix UI + Tailwind)
-│   ├── dados/              # Constantes, tipos e dados iniciais
+│   ├── componentes/            # Componentes reutilizáveis
+│   │   ├── base/               # Botões, Badges, Distintivos
+│   │   └── ui/                 # Componentes headless (Radix UI) e primitivos
+│   ├── dados/                  # Definições de tipos, enums e dados de fallback
 │   │   └── dados-iniciais.ts
-│   ├── integracoes/        # Clientes e integrações externas
-│   │   └── supabase/       # Cliente e configurações do Supabase
-│   ├── lib/                # Provedores de contexto e utilitários
-│   │   ├── autenticacao/   # Contexto e hooks de autenticação
-│   │   ├── provedor-dados.tsx # Provedor de dados (React Query + Supabase)
-│   │   └── utilitarios.ts  # Funções auxiliares (cn, etc.)
-│   ├── paginas/            # Telas da aplicação
-│   │   ├── autenticacao/   # Login, Cadastro, OAuth Callback
-│   │   ├── configuracoes/  # Perfil, Senha, Membros da Equipe
-│   │   └── quadro/         # Quadro Kanban e Detalhes do Cartão
-│   ├── App.tsx             # Configuração de rotas e provedores globais
-│   ├── index.css           # Estilos globais e tokens de cores
-│   └── main.tsx            # Ponto de entrada da aplicação
-├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
-└── vite.config.ts
+│   ├── integracoes/            # Conexões externas
+│   │   └── supabase/           # Cliente Supabase tipado
+│   ├── lib/                    # Camada de lógica e contexto
+│   │   ├── autenticacao/       # AuthProvider, hooks de sessão e login
+│   │   ├── provedor-dados/     # Hooks do React Query (cartões, usuários, comentários)
+│   │   └── utilitarios.ts      # Utilitários de classes CSS (cn/clsx)
+│   ├── paginas/                # Páginas da aplicação (SPA)
+│   │   ├── autenticacao/       # Telas de Login, Cadastro e Retorno OAuth
+│   │   ├── configuracoes/      # Perfil, Senha e Gestão de Membros da Equipe
+│   │   ├── quadro/             # Gestão de Demandas
+│   │   │   └── componentes/    # Quadro Kanban, Tabela paginada, Barra de ferramentas,
+│   │   │                       # Cronômetro, Checklists e Detalhes do Cartão
+│   │   └── nao-encontrado.tsx  # Tratamento de rota 404
+│   ├── App.test.tsx            # Suíte de testes automatizados com Vitest
+│   ├── App.tsx                 # Rotas e provedores da aplicação
+│   ├── index.css               # Design system, CSS variables e classes utilitárias
+│   └── main.tsx                # Bootstrap da aplicação React
+├── supabase/
+│   └── migrations/             # Scripts SQL de schema, RLS e migrações
+├── package.json                # Dependências e scripts de execução
+├── tsconfig.json               # Configurações do TypeScript
+└── vite.config.ts              # Configurações do Vite e plugins
 ```
 
 ---
 
-## 📊 Status do Projeto: O que já tem vs. O que falta implementar
+## 🗄️ Modelo de Dados (Supabase / PostgreSQL)
 
-### ✅ Funcionalidades Já Implementadas e Funcionando
+O banco de dados foi estruturado com chaves primárias numéricas sequenciais (`SERIAL / INT`) para legibilidade e índices otimizados para busca e filtragem:
 
-1. **Autenticação & Sessão Completa**
-   - [x] Login com e-mail e senha integrado ao Supabase
-   - [x] Cadastro de novos usuários
-   - [x] Login social via Google OAuth
-   - [x] Redirecionamento automático de rotas públicas/protegidas (`/auth` ↔ `/board`)
-   - [x] Persistência de sessão de usuário
+```mermaid
+erDiagram
+    USUARIOS ||--o{ CARTOES : "solicita (id_usuario)"
+    CARTOES ||--o{ COMENTARIOS : "possui"
+    CARTOES ||--o{ CHECKLISTS : "possui"
+    CHECKLISTS ||--o{ ITENS_CHECKLIST : "contem"
+    CARTOES ||--o{ HISTORICO_TEMPO : "registra"
 
-2. **Interface e Tema**
-   - [x] Suporte nativo a Tema Claro, Tema Escuro e Automático (Sistema)
-   - [x] Interface 100% responsiva (Desktop, Tablet e Mobile)
-   - [x] Notificações toast em ações da aplicação
+    USUARIOS {
+        int id PK
+        uuid id_usuario FK
+        string nome_completo
+        string email
+        string funcao
+        string status
+    }
 
-3. **Quadro Kanban Interativo**
-   - [x] Renderização de colunas dinâmicas (A Fazer, Em Andamento, Concluído)
-   - [x] Arrastar e soltar cartões entre colunas e reordenação vertical (`@dnd-kit`)
-   - [x] Personalização de cores das colunas com persistência local
-   - [x] Filtragem em tempo real por termo de busca e nível de prioridade
-   - [x] Ordenação múltipla (manual, prioridade, data de vencimento, responsável, etc.)
-   - [x] Modal de Criação Rápida de Demandas ("Nova Demanda")
-   - [x] Criação de cartões direto na coluna "A Fazer"
-   - [x] Navegação completa para a página de detalhes da tarefa (`/board/:cardId`)
+    CARTOES {
+        int id PK
+        uuid id_usuario FK
+        string titulo
+        string descricao
+        string coluna
+        string prioridade
+        text_array ids_responsaveis
+        date data_vencimento
+        timestamp criado_em
+    }
 
-4. **Configurações & Gestão de Equipe**
-   - [x] Atualização de perfil do usuário (nome completo e iniciais)
-   - [x] Alteração de senha
-   - [x] Listagem de membros ativos e convites pendentes
-   - [x] Convite de novos membros por e-mail
-   - [x] Alteração de função de membros (Administrador / Membro)
-   - [x] Exclusão e revogação de membros/convites
+    CHECKLISTS {
+        int id PK
+        int id_cartao FK
+        string titulo
+    }
 
----
+    ITENS_CHECKLIST {
+        int id PK
+        int id_checklist FK
+        string titulo
+        boolean esta_concluido
+    }
 
-### ⏳ Funcionalidades com Interface Pronta (Sem a persistência lógica completa)
-
-As seguintes funcionalidades estão com **100% dos estilos, componentes visuais, botões e modais mantidos no front-end**, prontas para terem sua persistência e regras de negócio ativadas:
-
-1. **Comentários nas Demandas**
-   - *Status atual:* Campo de texto, listagem visual e atalho `⌘ + Enter` disponíveis.
-   - *Falta:* Persistir novos comentários e exclusão no banco de dados via Supabase.
-
-2. **Atribuição de Usuário / Responsável no Cartão**
-   - *Status atual:* Popover com busca e lista de membros da equipe com avatar funcional na interface.
-   - *Falta:* Executar a mutação de atualização do campo `assignee_id` no card ao selecionar.
-
-3. **Data de Vencimento / Prazo**
-   - *Status atual:* Popover com calendário interativo e badges de alerta ("Vence hoje!", "Vencida há X dias").
-   - *Falta:* Salvar a data selecionada no campo `due_date` do card via mutação.
-
-4. **Checklists / Listas de Verificação**
-   - *Status atual:* Interface de até 5 checklists por cartão, com cálculo dinâmico de porcentagem, barra de progresso, inclusão de itens e caixas de seleção.
-   - *Falta:* Conectar a gravação dos itens e estados `is_completed` no backend.
-
-5. **Descrição Detalhada do Cartão**
-   - *Status atual:* Campo de área de texto expansível com estilos e placeholders.
-   - *Falta:* Salvar o conteúdo digitado no campo `description` no evento `onBlur`/debounce.
-
-6. **Exclusão de Cartões**
-   - *Status atual:* Botões de exclusão no menu rápido e na página de detalhes com diálogo de confirmação (`AlertDialog`).
-   - *Falta:* Disparar a mutação `useDeleteCard` na confirmação.
+    COMENTARIOS {
+        int id PK
+        int id_cartao FK
+        uuid id_usuario FK
+        text conteudo
+        timestamp criado_em
+    }
+```
 
 ---
 
-## 🛠️ Como Executar o Projeto Localmente
+## 🛠️ Instalação e Execução Local
 
 ### Pré-requisitos
-- **Node.js** (versão 18 ou superior)
-- **npm** ou **pnpm** / **yarn**
+- **Node.js** (versão 18.x ou superior)
+- Gerenciador de pacotes **npm**, **pnpm** ou **yarn**
+- Uma instância ativa do **Supabase** (projeto Cloud ou local)
 
-### 1. Clonar o repositório e instalar dependências
+### 1. Clonar o projeto e instalar as dependências
 ```bash
 git clone <URL_DO_REPOSITORIO>
-cd SGDI-ti
+cd Sistema_SGDI
 npm install
 ```
 
-### 2. Configurar variáveis de ambiente
-Crie um arquivo `.env` na raiz do projeto com as credenciais do seu projeto Supabase:
+### 2. Configurar as Variáveis de Ambiente
+Crie um arquivo `.env` na raiz do projeto com as chaves do seu projeto Supabase:
 ```env
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anonima-aqui
+VITE_SUPABASE_ANON_KEY=sua-chave-publica-anonima-aqui
 ```
 
-### 3. Iniciar o servidor de desenvolvimento
+### 3. Aplicar as Migrações no Banco de Dados
+Execute os scripts presentes na pasta `supabase/migrations/` no SQL Editor do seu painel Supabase (em especial `20260924_tabela_unica_usuarios.sql`).
+
+### 4. Iniciar o Ambiente de Desenvolvimento
 ```bash
 npm run dev
 ```
-O aplicativo estará acessível em `http://localhost:8080` (ou na porta informada pelo terminal).
+Acesse a aplicação no navegador em `http://localhost:8080` (ou na porta indicada pelo Vite).
 
-### 4. Build de Produção
+---
+
+## 🧪 Executando os Testes Automatizados
+
+A aplicação possui testes unitários implementados com **Vitest** para garantir a integridade das regras de negócio:
+
 ```bash
-npm run build
-```
-Para testar a versão otimizada localmente:
-```bash
-npm run preview
+# Executa a suíte de testes completa
+npm test
+
+# Executa os testes em modo contínuo (watch)
+npm test -- --watch
 ```
 
 ---
 
+## 📦 Scripts Disponíveis
+
+| Comando | Descrição |
+| :--- | :--- |
+| `npm run dev` | Inicia o servidor local de desenvolvimento com Hot Module Replacement (HMR). |
+| `npm run build` | Compila o código TypeScript e gera o bundle minificado para produção em `/dist`. |
+| `npm run preview` | Executa localmente o servidor com a build de produção compilada. |
+| `npm test` | Roda a suíte de testes unitários com o Vitest. |
+
+---
+
+## 📄 Licença
+
+Este projeto é desenvolvido para fins corporativos e acadêmicos de Gestão de Demandas de TI. Distribuído sob a licença **MIT**.

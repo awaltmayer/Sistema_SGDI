@@ -16,13 +16,18 @@ O **SGDI** (Sistema de Gestão de Demandas de TI) foi projetado para elevar a pr
 - **React 18** (com **TypeScript** em modo estrito)
 - **Vite** (Build tool e servidor de desenvolvimento de alta velocidade)
 - **React Router DOM v6** (Roteamento SPA com rotas protegidas e divisão de bundle)
-- **Tailwind CSS & Vanilla CSS Variables** (Design System com Dark Mode e temas personalizáveis)
+- **CSS Padrão W3C & CSS Variables** (Design System 100% nativo, sem compiladores externos, com Dark/Light Mode e tokens semânticos)
 - **Radix UI** (Primitivos de acessibilidade: Diálogos, Menus Suspensos, Popovers, Comandos e Alertas)
 - **@dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`) (Arrastar e soltar suave no Kanban)
 - **@tanstack/react-query v5** (Cache assíncrono, invalidação inteligente e sincronização em tempo real)
 - **Tabler Icons & Lucide React** (Conjunto consistente de ícones vetoriais)
 - **Date-fns** (Tratamento e formatação de datas internacionalizadas em `pt-BR`)
 - **Sonner** (Notificações toast modernas e não obstrutivas)
+
+### Arquitetura de Estilização (100% CSS Nativo)
+- **Zero Dependência de Tailwind CSS**: O sistema opera integralmente sobre a especificação **W3C Standard CSS**, sem dependência de compiladores, pré-processadores ou plugins de build do Tailwind.
+- **Design System Modular**: Tokens globais de design (`:root` e `.dark` com variáveis OKLCH de alto contraste e acessibilidade), classes semânticas padronizadas (`.sgdi-*`) e arquivos `.css` modulares organizados por componente.
+- **Performance de Build**: Pipeline otimizada diretamente pelo Vite, com suporte nativo a temas Claro/Escuro, microinterações e transições fluidas.
 
 ### Back-end & Banco de Dados
 - **Supabase**
@@ -92,7 +97,8 @@ Sistema_SGDI/
 │   │   └── nao-encontrado.tsx  # Tratamento de rota 404
 │   ├── App.test.tsx            # Suíte de testes automatizados com Vitest
 │   ├── App.tsx                 # Rotas e provedores da aplicação
-│   ├── index.css               # Design system, CSS variables e classes utilitárias
+│   ├── estilos/                # Sistema de Design consolidado em CSS W3C nativo
+│   ├── index.css               # Design tokens, variáveis CSS globais e resets nativos
 │   └── main.tsx                # Bootstrap da aplicação React
 ├── supabase/
 │   └── migrations/             # Scripts SQL de schema, RLS e migrações

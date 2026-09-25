@@ -58,9 +58,6 @@ export function FormularioTrocarSenha() {
           onChange={(e) => setSenhaAtual(e.target.value)}
           className="max-w-md"
         />
-        {erros.novaSenha && (
-          <p className="text-sm text-destructive">{erros.novaSenha}</p>
-        )}
       </div>
 
       <div className="space-y-2">

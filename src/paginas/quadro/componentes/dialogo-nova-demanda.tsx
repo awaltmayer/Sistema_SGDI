@@ -111,6 +111,7 @@ export function DialogoNovaDemanda({
       descricao: descricao.trim() || '',
       prioridade,
       id_responsavel: idResponsavel !== 'none' ? idResponsavel : null,
+      ids_responsaveis: idResponsavel !== 'none' ? [idResponsavel] : [],
       data_vencimento: dataVencimento ? dataVencimento.split('T')[0] : null,
     });
 
@@ -136,6 +137,7 @@ export function DialogoNovaDemanda({
               </div>
             </div>
           </DialogHeader>
+
 
           <div className="sgdi-dialogo-demanda-corpo">
             {/* Título */}
@@ -244,7 +246,7 @@ export function DialogoNovaDemanda({
                       Não atribuído
                     </SelectItem>
                     {membros.map((m) => (
-                      <SelectItem key={m.id} value={m.id} className="text-xs">
+                      <SelectItem key={m.id} value={String(m.id)} className="text-xs">
                         <div className="sgdi-dialogo-responsavel-item">
                           <Avatar className="size-4">
                             {(m.url_avatar || m.avatar_url) && <AvatarImage src={m.url_avatar || m.avatar_url!} alt={m.nome_completo || m.full_name} />}

@@ -13,6 +13,9 @@ import {
   IconClock,
   IconAlertCircle,
   IconInbox,
+  IconCircleDashed,
+  IconProgress,
+  IconCircleCheck,
 } from '@tabler/icons-react';
 import { Badge } from '@/componentes/base/distintivo';
 import { Button } from '@/componentes/base/botao';
@@ -144,17 +147,20 @@ export function TabelaDemandas({
                     <td className="py-3 px-4">
                       {col === 'todo' && (
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-600 dark:text-slate-300 border border-slate-500/20">
-                          📋 A Fazer
+                          <IconCircleDashed className="size-3.5 text-muted-foreground shrink-0" />
+                          A Fazer
                         </span>
                       )}
                       {col === 'in-progress' && (
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                          ⚡ Em Andamento
+                          <IconProgress className="size-3.5 text-blue-500 shrink-0" />
+                          Em Andamento
                         </span>
                       )}
                       {col === 'done' && (
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          ✅ Concluído
+                          <IconCircleCheck className="size-3.5 text-emerald-500 shrink-0" />
+                          Concluído
                         </span>
                       )}
                     </td>
@@ -208,10 +214,11 @@ export function TabelaDemandas({
                         <span
                           className={cn(
                             'inline-flex items-center gap-1 font-medium',
-                            infoPrazo.status === 'atrasado' && 'text-rose-600 font-semibold',
-                            infoPrazo.status === 'hoje' && 'text-amber-600 font-semibold',
-                            infoPrazo.status === 'normal' && 'text-muted-foreground'
+                            infoPrazo.status === 'atrasado' && 'text-rose-600 dark:text-rose-400 font-semibold',
+                            infoPrazo.status === 'atencao' && 'text-amber-600 dark:text-amber-400 font-semibold',
+                            infoPrazo.status === 'dentro-do-prazo' && 'text-blue-600 dark:text-blue-400 font-medium'
                           )}
+                          title={`Vencimento: ${dataVencFormatada} (${infoPrazo.textoRelativo})`}
                         >
                           <IconCalendar className="size-3.5" />
                           {dataVencFormatada}

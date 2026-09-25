@@ -211,15 +211,15 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
     membroAtual ??
     (usuarioAtual
       ? ({
-          id: usuarioAtual.id,
-          nome_completo: usuarioAtual.nome_completo || 'Usuário',
-          iniciais: usuarioAtual.iniciais || 'U',
-          email: usuarioAtual.email || '',
-          url_avatar: usuarioAtual.url_avatar || null,
-          role: 'member',
-          funcao: 'member',
-          status: 'active',
-        } as MembroEquipe)
+        id: usuarioAtual.id,
+        nome_completo: usuarioAtual.nome_completo || 'Usuário',
+        iniciais: usuarioAtual.iniciais || 'U',
+        email: usuarioAtual.email || '',
+        url_avatar: usuarioAtual.url_avatar || null,
+        role: 'member',
+        funcao: 'member',
+        status: 'active',
+      } as MembroEquipe)
       : null);
 
   const adicionarComentario = () => {
@@ -247,10 +247,10 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
     Array.isArray(rawIds) && rawIds.length > 0
       ? rawIds.map(String)
       : cartao.id_responsavel != null
-      ? [String(cartao.id_responsavel)]
-      : cartao.assignee_id != null
-      ? [String(cartao.assignee_id)]
-      : [];
+        ? [String(cartao.id_responsavel)]
+        : cartao.assignee_id != null
+          ? [String(cartao.assignee_id)]
+          : [];
 
   const responsaveisCartao: MembroEquipe[] = (() => {
     const resolved: MembroEquipe[] = [];
@@ -275,11 +275,11 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
   const criadorCartao = cartao
     ? encontrarMembro(
-        membros,
-        cartao.id_usuario ?? (cartao as any).user_id,
-        cartao.id_usuario ?? (cartao as any).user_id,
-        usuarioAtual
-      )
+      membros,
+      cartao.id_usuario ?? (cartao as any).user_id,
+      cartao.id_usuario ?? (cartao as any).user_id,
+      usuarioAtual
+    )
     : null;
   const nomeCriador = criadorCartao?.nome_completo || (criadorCartao as any)?.full_name || criadorCartao?.email;
 
@@ -549,10 +549,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                   onValueChange={(v) => lidarComMudancaStatus(v as IdColuna)}
                 >
                   <SelectTrigger className="w-full text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <ColumnIcon name={colunaAtual?.icon ?? 'circle-dashed'} className="size-3.5" />
-                      <SelectValue />
-                    </div>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {colunas.map((col) => (
@@ -578,8 +575,8 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                       prioCartao === 'high'
                         ? 'bg-red-600 hover:bg-red-700 [&>svg]:text-white'
                         : prioCartao === 'low'
-                        ? 'bg-slate-500 hover:bg-slate-600 [&>svg]:text-white'
-                        : 'bg-amber-500 hover:bg-amber-600 [&>svg]:text-white'
+                          ? 'bg-slate-500 hover:bg-slate-600 [&>svg]:text-white'
+                          : 'bg-amber-500 hover:bg-amber-600 [&>svg]:text-white'
                     )}
                   >
                     <div className="flex items-center gap-2">
@@ -594,8 +591,8 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
                         p === 'high'
                           ? 'bg-red-600 hover:bg-red-700'
                           : p === 'low'
-                          ? 'bg-slate-500 hover:bg-slate-600'
-                          : 'bg-amber-500 hover:bg-amber-600';
+                            ? 'bg-slate-500 hover:bg-slate-600'
+                            : 'bg-amber-500 hover:bg-amber-600';
                       return (
                         <SelectItem key={p} value={p} className="cursor-pointer my-0.5 p-1">
                           <span className={cn('flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs font-medium text-white w-full border-0 shadow-none', itemBg)}>

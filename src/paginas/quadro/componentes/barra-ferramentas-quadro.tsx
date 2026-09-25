@@ -5,6 +5,9 @@ import {
   IconDownload,
   IconLayoutKanban,
   IconList,
+  IconCircleDashed,
+  IconProgress,
+  IconCircleCheck,
 } from '@tabler/icons-react';
 import {
   Select,
@@ -161,20 +164,20 @@ export function BarraFerramentasQuadro({
         col === 'todo'
           ? 'A Fazer'
           : col === 'in-progress'
-          ? 'Em Andamento'
-          : col === 'done'
-          ? 'Concluído'
-          : (col ?? '');
+            ? 'Em Andamento'
+            : col === 'done'
+              ? 'Concluído'
+              : (col ?? '');
 
       const prio = c.prioridade ?? c.priority;
       const prioNome =
         prio === 'high'
           ? 'Alta'
           : prio === 'medium'
-          ? 'Média'
-          : prio === 'low'
-          ? 'Baixa'
-          : (prio ?? '');
+            ? 'Média'
+            : prio === 'low'
+              ? 'Baixa'
+              : (prio ?? '');
 
       const idCriador = c.id_usuario ?? c.user_id;
       const membroCriador = idCriador
@@ -325,22 +328,49 @@ export function BarraFerramentasQuadro({
               value={statFiltro}
               onValueChange={(val) => mudarStatFiltro?.(val)}
             >
-              <SelectTrigger className="h-8 w-[125px] text-xs">
-                <span className="truncate">
-                  {statFiltro === 'all'
-                    ? 'Status'
-                    : statFiltro === 'todo'
-                      ? '📋 A Fazer'
-                      : statFiltro === 'in-progress'
-                        ? '⚡ Em Andamento'
-                        : '✅ Concluído'}
+              <SelectTrigger className="h-8 w-[140px] text-xs">
+                <span className="truncate flex items-center gap-1.5">
+                  {statFiltro === 'all' && 'Status'}
+                  {statFiltro === 'todo' && (
+                    <>
+                      <IconCircleDashed className="size-3.5 text-muted-foreground shrink-0" />
+                      <span>A Fazer</span>
+                    </>
+                  )}
+                  {statFiltro === 'in-progress' && (
+                    <>
+                      <IconProgress className="size-3.5 text-blue-500 shrink-0" />
+                      <span>Em Andamento</span>
+                    </>
+                  )}
+                  {statFiltro === 'done' && (
+                    <>
+                      <IconCircleCheck className="size-3.5 text-emerald-500 shrink-0" />
+                      <span>Concluído</span>
+                    </>
+                  )}
                 </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all" className="text-xs">Todos os Status</SelectItem>
-                <SelectItem value="todo" className="text-xs">📋 A Fazer</SelectItem>
-                <SelectItem value="in-progress" className="text-xs">⚡ Em Andamento</SelectItem>
-                <SelectItem value="done" className="text-xs">✅ Concluído</SelectItem>
+                <SelectItem value="todo" className="text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <IconCircleDashed className="size-3.5 text-muted-foreground shrink-0" />
+                    <span>A Fazer</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="in-progress" className="text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <IconProgress className="size-3.5 text-blue-500 shrink-0" />
+                    <span>Em Andamento</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="done" className="text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <IconCircleCheck className="size-3.5 text-emerald-500 shrink-0" />
+                    <span>Concluído</span>
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

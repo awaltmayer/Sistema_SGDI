@@ -34,8 +34,8 @@ export function AbasConfiguracoes() {
   return (
     <Tabs value={aba} onValueChange={lidarComMudancaAba}>
       <TabsList>
-        <TabsTrigger value="profile" className="font-medium text-primary">Perfil</TabsTrigger>
-        <TabsTrigger value="general" className="font-medium text-primary">Geral</TabsTrigger>
+        <TabsTrigger value="profile">Perfil</TabsTrigger>
+        <TabsTrigger value="general">Geral</TabsTrigger>
       </TabsList>
 
       <TabsContent value="profile" className="mt-6 space-y-6">

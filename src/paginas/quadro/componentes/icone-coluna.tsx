@@ -4,7 +4,7 @@ import {
   IconCircleCheck,
   type Icon as TablerIcon,
 } from '@tabler/icons-react';
-import type { IconeColuna as ChaveIconeColuna } from '@/dados/dados-iniciais';
+import type { IconeColuna as ChaveIconeColuna } from '@/tipos/quadro';
 
 const map: Record<ChaveIconeColuna, TablerIcon> = {
   'circle-dashed': IconCircleDashed,

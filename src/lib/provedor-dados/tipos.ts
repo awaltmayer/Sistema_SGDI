@@ -10,7 +10,7 @@ import type {
   RastreadorTempoTarefa,
   ListaVerificacao,
   ItemListaVerificacao,
-} from "@/dados/dados-iniciais";
+} from "@/tipos/quadro";
 
 // ── Aliases de Entidades ──────────────────────────────────────────────
 export type Card = CartaoTarefa;
@@ -275,6 +275,10 @@ export interface ProvedorDadosApp {
     isPending: boolean;
   };
   useStopTaskTimer(): {
+    mutate: (cardId: string) => void;
+    isPending: boolean;
+  };
+  useMarkTaskCompleted(): {
     mutate: (cardId: string) => void;
     isPending: boolean;
   };

@@ -1,4 +1,4 @@
-// Dados iniciais tipados para o modelo de quadro do sistema (100% em Português).
+// Tipos de domínio e configurações estruturais do modelo de quadro do sistema SGDI.
 
 export type Prioridade = 'high' | 'medium' | 'low';
 export type Priority = Prioridade;
@@ -133,6 +133,7 @@ export interface RegistroPausaTempo {
   usuario_id?: string | null;
   usuario_nome?: string | null;
   usuario_email?: string | null;
+  tipo?: 'pausa' | 'conclusao';
 
   // Aliases
   paused_at?: string;
@@ -140,6 +141,7 @@ export interface RegistroPausaTempo {
   duration_seconds?: number;
   reason?: string;
   user_name?: string | null;
+  type?: 'pausa' | 'conclusao';
 }
 export type TimePauseLog = RegistroPausaTempo;
 
@@ -149,6 +151,10 @@ export interface RastreadorTempoTarefa {
   tempo_total_segundos: number;
   ultima_acao_em?: string;
   pausas: RegistroPausaTempo[];
+  concluido_em?: string | null;
+  concluido_por_nome?: string | null;
+  concluido_por_email?: string | null;
+  concluido_por_id?: string | null;
 
   // Aliases
   is_running?: boolean;
@@ -156,6 +162,8 @@ export interface RastreadorTempoTarefa {
   total_spent_seconds?: number;
   last_action_at?: string;
   pauses?: RegistroPausaTempo[];
+  completed_at?: string | null;
+  completed_by_name?: string | null;
 }
 export type TaskTimeTracker = RastreadorTempoTarefa;
 
@@ -280,141 +288,4 @@ export const colunas: Coluna[] = [
   { id: 'todo', label: 'A fazer', icon: 'circle-dashed' },
   { id: 'in-progress', label: 'Em andamento', icon: 'progress' },
   { id: 'done', label: 'Concluído', icon: 'circle-check' },
-];
-
-export const membrosEquipe: MembroEquipe[] = [
-  {
-    id: '1',
-    nome_completo: 'Enio Muliterno Neto',
-    iniciais: 'EN',
-    email: '1138165@atitus.edu.br',
-    funcao: 'owner',
-    status: 'active',
-    url_avatar: null,
-  },
-  {
-    id: '2',
-    nome_completo: 'Augusto Wolfart Altmayer',
-    iniciais: 'AA',
-    email: '1138100@atitus.edu.br',
-    funcao: 'member',
-    status: 'active',
-    url_avatar: null,
-  },
-  {
-    id: '3',
-    nome_completo: 'Ricardo Pereira Drews',
-    iniciais: 'RD',
-    email: '1138132@atitus.edu.br',
-    funcao: 'member',
-    status: 'active',
-    url_avatar: null,
-  },
-  {
-    id: '4',
-    nome_completo: 'Luiz Henrique Appelt Weller',
-    iniciais: 'LW',
-    email: '1138930@atitus.edu.br',
-    funcao: 'member',
-    status: 'active',
-    url_avatar: null,
-  },
-];
-
-export const usuarioAtual: PerfilUsuario = {
-  id: '1',
-  nome_completo: 'Enio Muliterno Neto',
-  iniciais: 'EN',
-  email: '1138165@atitus.edu.br',
-  tema: 'system',
-  url_avatar: null,
-};
-
-export const cartoes: CartaoTarefa[] = [
-  {
-    id: '1',
-    titulo: 'Auditoria do sistema de design',
-    descricao: 'Audite os tokens e a biblioteca de componentes atuais. Documente as lacunas e proponha atualizações antes do kickoff do sprint do Q2.',
-    coluna: 'todo',
-    prioridade: 'high',
-    complexidade: 'high',
-    id_responsavel: '1',
-    data_vencimento: '2026-07-08',
-    posicao: 0,
-    criado_em: '2026-06-28T09:00:00Z',
-    cor: 'blue',
-    rastreador_tempo: {
-      em_execucao: false,
-      tempo_total_segundos: 5400,
-      pausas: [{ id: 'pause-1', pausado_em: '2026-06-29T10:00:00Z', retomado_em: '2026-06-29T10:30:00Z', duracao_segundos: 1800, motivo: 'Reunião de alinhamento' }],
-    },
-  },
-  {
-    id: '2',
-    titulo: 'Escrever documentação de onboarding',
-    descricao: 'Crie um guia passo a passo para novos membros.',
-    coluna: 'todo',
-    prioridade: 'low',
-    complexidade: 'low',
-    id_responsavel: '4',
-    data_vencimento: '2026-07-12',
-    posicao: 1,
-    criado_em: '2026-07-01T10:00:00Z',
-    rastreador_tempo: { em_execucao: false, tempo_total_segundos: 3600, pausas: [] },
-  },
-  {
-    id: '3',
-    titulo: 'Atualizar página de preços',
-    descricao: 'Revise o texto e o layout da página de preços.',
-    coluna: 'todo',
-    prioridade: 'medium',
-    complexidade: 'medium',
-    id_responsavel: '2',
-    data_vencimento: '2026-07-15',
-    posicao: 2,
-    criado_em: '2026-07-02T11:00:00Z',
-    rastreador_tempo: { em_execucao: false, tempo_total_segundos: 7200, pausas: [] },
-  },
-  {
-    id: '4',
-    titulo: 'Auditoria de acessibilidade',
-    descricao: 'Execute uma auditoria de acessibilidade em todas as páginas públicas e produza um relatório de conformidade WCAG 2.1 AA.',
-    coluna: 'todo',
-    prioridade: 'high',
-    complexidade: 'very-high',
-    id_responsavel: '3',
-    data_vencimento: '2026-07-20',
-    posicao: 3,
-    criado_em: '2026-07-03T09:30:00Z',
-    rastreador_tempo: {
-      em_execucao: false,
-      tempo_total_segundos: 14400,
-      pausas: [
-        {
-          id: 'pause-3',
-          pausado_em: '2026-07-04T11:00:00Z',
-          retomado_em: '2026-07-04T12:00:00Z',
-          duracao_segundos: 3600,
-          motivo: 'Bloqueio técnico / dependência',
-        },
-      ],
-    },
-  },
-];
-
-export const comentarios: Comentario[] = [
-  {
-    id: '1',
-    id_cartao: '1',
-    id_autor: '1',
-    conteudo: 'Arquivo de tokens atualizado — precisa de revisão por pares.',
-    criado_em: '2026-07-06T10:00:00Z',
-  },
-  {
-    id: '2',
-    id_cartao: '1',
-    id_autor: '2',
-    conteudo: 'Claro — vou revisar até o fim do dia.',
-    criado_em: '2026-07-07T14:30:00Z',
-  },
 ];

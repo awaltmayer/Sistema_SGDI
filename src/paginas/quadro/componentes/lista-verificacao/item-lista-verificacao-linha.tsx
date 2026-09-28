@@ -4,7 +4,7 @@ import { Checkbox } from "@/componentes/ui/caixa-selecao";
 import { Button } from "@/componentes/base/botao";
 import { Input } from "@/componentes/ui/campo-texto";
 import { toast } from "sonner";
-import type { ItemListaVerificacao } from "@/dados/dados-iniciais";
+import type { ItemListaVerificacao } from "@/tipos/quadro";
 import "./item-lista-verificacao-linha.css";
 
 export interface PropsItemListaVerificacaoLinha {

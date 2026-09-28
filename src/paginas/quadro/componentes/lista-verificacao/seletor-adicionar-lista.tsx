@@ -9,7 +9,7 @@ import { Input } from "@/componentes/ui/campo-texto";
 import { Label } from "@/componentes/ui/rotulo";
 import { IconSquareCheck, IconPlus, IconAlertCircle } from "@tabler/icons-react";
 import { useDataProvider } from "@/lib/provedor-dados";
-import type { ListaVerificacao } from "@/dados/dados-iniciais";
+import type { ListaVerificacao } from "@/tipos/quadro";
 import { toast } from "sonner";
 import "./seletor-adicionar-lista.css";
 

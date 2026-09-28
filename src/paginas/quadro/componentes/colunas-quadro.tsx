@@ -29,8 +29,7 @@ import {
   type CardWithAssignee,
   type ReorderInput,
 } from '@/lib/provedor-dados';
-import { colunas as columnDefs } from '@/dados/dados-iniciais';
-import type { IdColuna } from '@/dados/dados-iniciais';
+import { colunas as columnDefs, type IdColuna } from '@/tipos/quadro';
 import { CartaoItem, CardTile } from './cartao-item';
 import { AddCardInput } from './entrada-novo-cartao';
 import { ColumnIcon } from './icone-coluna';
@@ -100,10 +99,12 @@ export function ColunasQuadro({
   const rotaBase = caminhoBase ?? basePath ?? '';
 
   const navegar = useNavigate();
-  const { useCards, useCommentCounts, useReorderCards } = useDataProvider();
+  const { useCards, useCommentCounts, useReorderCards, useStopTaskTimer, useMarkTaskCompleted } = useDataProvider();
   const { data: todosCartoes = [], isLoading: carregando } = useCards();
   const { data: contagensComentarios = {} } = useCommentCounts();
   const { mutate: reorderCards } = useReorderCards();
+  const { mutate: stopTaskTimer } = useStopTaskTimer();
+  const { mutate: markTaskCompleted } = useMarkTaskCompleted();
 
   const [cartaoAtivo, setCartaoAtivo] = useState<CardWithAssignee | null>(null);
   const [cartoesLocais, setCartoesLocais] = useState<CardWithAssignee[] | null>(null);
@@ -295,7 +296,19 @@ export function ColunasQuadro({
         alterados.push({ id: card.id, coluna: cardCol, column: cardCol, posicao: cardPos, position: cardPos });
       }
     }
-    if (alterados.length > 0) reorderCards(alterados);
+    if (alterados.length > 0) {
+      for (const alt of alterados) {
+        const original = todosCartoes.find((c) => c.id === alt.id);
+        const origCol = original?.coluna ?? original?.column;
+        const newCol = alt.coluna ?? alt.column;
+        if (newCol === 'done' && origCol !== 'done') {
+          markTaskCompleted(alt.id);
+        } else if (newCol === 'done') {
+          stopTaskTimer(alt.id);
+        }
+      }
+      reorderCards(alterados);
+    }
     setCartoesLocais(null);
   };
 

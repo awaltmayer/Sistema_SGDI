@@ -48,8 +48,7 @@ import { Badge } from '@/componentes/base/distintivo';
 import { Card, CardContent } from '@/componentes/ui/cartao';
 import { Skeleton } from '@/componentes/ui/esquema-carregamento';
 import { useDataProvider } from '@/lib/provedor-dados';
-import { colunas } from '@/dados/dados-iniciais';
-import type { Prioridade, IdColuna, MembroEquipe } from '@/dados/dados-iniciais';
+import { colunas, type Prioridade, type IdColuna, type MembroEquipe } from '@/tipos/quadro';
 import { priorityConfig } from './seletor-prioridade';
 import { ColumnIcon } from './icone-coluna';
 import { BoardTopBar } from './barra-superior-quadro';
@@ -81,11 +80,15 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
     useDeleteComment,
     useTeamMembers,
     useCurrentUser,
+    useStopTaskTimer,
+    useMarkTaskCompleted,
   } = useDataProvider();
 
   const { data: cartao, isLoading: carregando } = useCard(cardId ?? '');
   const { mutate: updateCard } = useUpdateCard();
   const { mutate: deleteCard } = useDeleteCard();
+  const { mutate: stopTaskTimer } = useStopTaskTimer();
+  const { mutate: markTaskCompleted } = useMarkTaskCompleted();
   const { data: membros = [] } = useTeamMembers();
   const { data: usuarioAtual } = useCurrentUser();
   const { data: comentarios = [] } = useComments(cardId ?? '');
@@ -99,6 +102,12 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
 
   const lidarComMudancaStatus = (novaCol: IdColuna) => {
     if (!cartao) return;
+    const colAtual = cartao.coluna ?? cartao.column;
+    if (novaCol === 'done' && colAtual !== 'done') {
+      markTaskCompleted(cartao.id);
+    } else if (novaCol === 'done') {
+      stopTaskTimer(cartao.id);
+    }
     updateCard(cartao.id, { coluna: novaCol, column: novaCol });
   };
 
@@ -537,6 +546,7 @@ export function PaginaDetalhesCartao({ basePath, caminhoBase }: PropsPaginaDetal
               <CardTimerWidget
                 cardId={cartao.id}
                 cardTitle={tituloCartao}
+                coluna={colCartao}
                 timeTracker={rastreadorCartao}
                 responsaveis={responsaveisCartao}
                 idsResponsaveis={idsResponsaveisCartao}

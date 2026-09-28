@@ -1,6 +1,6 @@
 import { useDataProvider } from '@/lib/provedor-dados';
 import { Tabs, TabsList, TabsTrigger } from '@/componentes/ui/abas';
-import type { Tema } from '@/dados/dados-iniciais';
+import type { Tema } from '@/tipos/quadro';
 
 export function AlternadorTema() {
   const { useCurrentUser, useUpdateTheme } = useDataProvider();

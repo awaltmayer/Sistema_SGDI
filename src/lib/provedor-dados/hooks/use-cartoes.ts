@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integracoes/supabase/cliente";
 import { useAuth } from "@/lib/autenticacao/provedor-autenticacao";
 import { toast } from "sonner";
-import * as seed from "@/dados/dados-iniciais";
 import type {
   CardWithAssignee,
   CreateCardInput,
@@ -12,8 +11,14 @@ import type {
   IdColuna,
   Prioridade,
   Complexity,
+  TeamMember,
 } from "../tipos";
 import { loadSupabaseChecklists, loadSupabaseMetadata, saveSupabaseChecklists, saveSupabaseMetadata } from "../storage-local";
+import { registrarConclusaoNoLog, desmarcarConclusao } from "../auxiliares";
+
+function pararCronometroSeAtivo(cardId: string, user?: any, queryClient?: any) {
+  return registrarConclusaoNoLog(cardId, user, queryClient);
+}
 
 export function criarModuloCartoes() {
   return {
@@ -367,6 +372,7 @@ export function criarModuloCartoes() {
 
     useUpdateCard: () => {
       const queryClient = useQueryClient();
+      const { user } = useAuth();
       const mutation = useMutation({
         mutationFn: async ({
           id,
@@ -429,8 +435,6 @@ export function criarModuloCartoes() {
           return updateData;
         },
         onMutate: async ({ id, fields }) => {
-          await queryClient.cancelQueries({ queryKey: ["cards"] });
-          await queryClient.cancelQueries({ queryKey: ["card", id] });
           const previous = queryClient.getQueryData<CardWithAssignee[]>([
             "cards",
           ]);
@@ -439,7 +443,20 @@ export function criarModuloCartoes() {
             id,
           ]);
 
-          const teamMembers = queryClient.getQueryData<seed.TeamMember[]>(["team_members"]) ?? [];
+          const currentCard = previous?.find((c) => c.id === id) ?? previousSingle;
+          const prevCol = currentCard?.coluna ?? currentCard?.column;
+          const nextCol = fields.coluna ?? fields.column;
+
+          if (nextCol === "done" && prevCol !== "done") {
+            registrarConclusaoNoLog(id, user, queryClient);
+          } else if (nextCol && nextCol !== "done" && prevCol === "done") {
+            desmarcarConclusao(id, queryClient);
+          }
+
+          await queryClient.cancelQueries({ queryKey: ["cards"] });
+          await queryClient.cancelQueries({ queryKey: ["card", id] });
+
+          const teamMembers = queryClient.getQueryData<TeamMember[]>(["team_members"]) ?? [];
           const rawRespIds =
             fields.ids_responsaveis !== undefined
               ? fields.ids_responsaveis
@@ -668,6 +685,7 @@ export function criarModuloCartoes() {
 
     useReorderCards: () => {
       const queryClient = useQueryClient();
+      const { user } = useAuth();
       const mutation = useMutation({
         mutationFn: async (reordered: ReorderInput[]) => {
           for (const c of reordered) {
@@ -684,10 +702,20 @@ export function criarModuloCartoes() {
         },
 
         onMutate: async (reordered) => {
-          await queryClient.cancelQueries({ queryKey: ["cards"] });
           const previous = queryClient.getQueryData<CardWithAssignee[]>([
             "cards",
           ]);
+          for (const c of reordered) {
+            const currentCard = previous?.find((orig) => orig.id === c.id);
+            const prevCol = currentCard?.coluna ?? currentCard?.column;
+            const nextCol = c.coluna ?? c.column;
+            if (nextCol === "done" && prevCol !== "done") {
+              registrarConclusaoNoLog(c.id, user, queryClient);
+            } else if (nextCol && nextCol !== "done" && prevCol === "done") {
+              desmarcarConclusao(c.id, queryClient);
+            }
+          }
+          await queryClient.cancelQueries({ queryKey: ["cards"] });
           if (previous) {
             const reorderMap = new Map(reordered.map((r) => [r.id, r]));
             queryClient.setQueryData<CardWithAssignee[]>(

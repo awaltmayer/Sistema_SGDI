@@ -12,7 +12,7 @@ import {
   CommandGroup,
 } from '@/componentes/ui/comando';
 import type { BadgeColor } from '@/componentes/base/distintivo';
-import type { Prioridade } from '@/dados/dados-iniciais';
+import type { Prioridade } from '@/tipos/quadro';
 import { cn } from '@/lib/utilitarios';
 
 export const configuracaoPrioridades: Record<

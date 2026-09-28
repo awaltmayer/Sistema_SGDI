@@ -40,6 +40,20 @@
   color: var(--color-foreground);
 }
 
+.sgdi-cronometro-btn-trigger.concluido {
+  background-color: rgba(16, 185, 129, 0.08);
+  color: rgb(4, 120, 87);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.dark .sgdi-cronometro-btn-trigger.concluido {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: rgb(110, 231, 183);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
 .sgdi-cronometro-card-full {
   border-radius: 0.5rem;
   border-width: 1px;

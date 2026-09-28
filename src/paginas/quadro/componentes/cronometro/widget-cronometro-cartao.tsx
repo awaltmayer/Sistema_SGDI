@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   IconPlayerPlay,
   IconPlayerPause,
-  IconPlayerStop,
   IconHistory,
   IconClock,
+  IconCheck,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Button } from "@/componentes/base/botao";
@@ -17,7 +18,7 @@ import {
   formatSecondsToTime,
   formatSecondsToShort,
 } from "./dialogo-registro-tempo";
-import type { RastreadorTempoTarefa } from "@/dados/dados-iniciais";
+import type { RastreadorTempoTarefa, IdColuna } from "@/tipos/quadro";
 import { cn } from "@/lib/utilitarios";
 import "./widget-cronometro-cartao.css";
 
@@ -26,6 +27,10 @@ export interface PropsWidgetCronometroCartao {
   cardTitle: string;
   timeTracker?: RastreadorTempoTarefa;
   compact?: boolean;
+  coluna?: IdColuna;
+  column?: IdColuna;
+  estaConcluido?: boolean;
+  isCompleted?: boolean;
   responsaveis?: any[];
   idsResponsaveis?: string[];
   idResponsavel?: string | null;
@@ -46,6 +51,10 @@ export function WidgetCronometroCartao({
   cardTitle,
   timeTracker,
   compact = false,
+  coluna,
+  column,
+  estaConcluido: propEstaConcluido,
+  isCompleted: propIsCompleted,
   responsaveis,
   idsResponsaveis,
   idResponsavel,
@@ -58,8 +67,10 @@ export function WidgetCronometroCartao({
   assigneeId,
   assignee,
 }: PropsWidgetCronometroCartao) {
+  const queryClient = useQueryClient();
   const titulo = tituloCartao ?? cardTitle;
-  const rastreador = rastreadorTempo ?? timeTracker;
+  const cachedCard = queryClient.getQueryData<any>(["card", String(cardId)]);
+  const rastreador = cachedCard?.rastreador_tempo ?? cachedCard?.time_tracker ?? rastreadorTempo ?? timeTracker;
   const modoCompacto = compacto !== undefined ? compacto : compact;
 
   const {
@@ -131,7 +142,19 @@ export function WidgetCronometroCartao({
     return false;
   }, [usuarioAtual, membroAtual, listaIdsResponsaveis, membros]);
 
-  const estaExecutando = Boolean(rastreador?.em_execucao ?? rastreador?.is_running);
+  // Identificação se o cartão está na fila de concluído
+  const estaConcluida = useMemo(() => {
+    if (coluna === "done" || column === "done" || propEstaConcluido || propIsCompleted) {
+      return true;
+    }
+    const cachedCard = queryClient.getQueryData<any>(["card", String(cardId)]);
+    if (cachedCard && (cachedCard.coluna === "done" || cachedCard.column === "done")) {
+      return true;
+    }
+    return false;
+  }, [coluna, column, propEstaConcluido, propIsCompleted, cardId, queryClient]);
+
+  const estaExecutando = !estaConcluida && Boolean(rastreador?.em_execucao ?? rastreador?.is_running);
   const iniciadoEm = rastreador?.iniciado_em ?? rastreador?.started_at;
   const segundosBase =
     rastreador?.tempo_total_segundos ?? rastreador?.total_spent_seconds ?? 0;
@@ -164,6 +187,10 @@ export function WidgetCronometroCartao({
 
   const iniciarOuRetomar = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (estaConcluida) {
+      toast.info("Esta tarefa já foi concluída.");
+      return;
+    }
     if (!podeIniciarCronometro) {
       if (listaIdsResponsaveis.length === 0) {
         toast.error("Esta tarefa ainda não tem um responsável atribuído.");
@@ -186,11 +213,6 @@ export function WidgetCronometroCartao({
     setDialogoPausaAberto(true);
   };
 
-  const clicarParar = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    stopTimer(cardId);
-  };
-
   const abrirLog = (e: React.MouseEvent) => {
     e.stopPropagation();
     setDialogoLogAberto(true);
@@ -205,28 +227,40 @@ export function WidgetCronometroCartao({
         >
           <button
             type="button"
+            disabled={estaConcluida}
             title={
-              estaExecutando
+              estaConcluida
+                ? "Tarefa já concluída"
+                : estaExecutando
                 ? "Pausar tarefa"
                 : !podeIniciarCronometro
                 ? "Apenas os responsáveis pela tarefa podem iniciar o cronômetro"
                 : "Iniciar/Retomar tarefa"
             }
-            aria-label={estaExecutando ? "Pausar tarefa" : "Iniciar tarefa"}
-            onClick={estaExecutando ? clicarPausar : iniciarOuRetomar}
+            aria-label={estaConcluida ? "Tarefa já concluída" : estaExecutando ? "Pausar tarefa" : "Iniciar tarefa"}
+            onClick={estaConcluida ? undefined : estaExecutando ? clicarPausar : iniciarOuRetomar}
             className={cn(
               'sgdi-cronometro-btn-trigger',
-              estaExecutando ? 'ativo' : segundosAtuais > 0 ? 'inativo' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-              !estaExecutando && !podeIniciarCronometro && 'opacity-60 cursor-not-allowed hover:bg-transparent'
+              estaConcluida && 'concluido',
+              !estaConcluida && estaExecutando && 'ativo',
+              !estaConcluida && !estaExecutando && segundosAtuais > 0 && 'inativo',
+              !estaConcluida && !estaExecutando && segundosAtuais === 0 && 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              !estaConcluida && !estaExecutando && !podeIniciarCronometro && 'opacity-60 cursor-not-allowed hover:bg-transparent'
             )}
           >
-            {estaExecutando ? (
+            {estaConcluida ? (
+              <IconCheck className="size-3 text-emerald-600 dark:text-emerald-400" />
+            ) : estaExecutando ? (
               <IconPlayerPause className="size-3 text-emerald-600 dark:text-emerald-400" />
             ) : (
               <IconPlayerPlay className="size-3" />
             )}
             <span>
-              {segundosAtuais > 0
+              {estaConcluida
+                ? segundosAtuais > 0
+                  ? formatarSegundosParaCurto(segundosAtuais)
+                  : "Concluída"
+                : segundosAtuais > 0
                 ? formatarSegundosParaCurto(segundosAtuais)
                 : "Iniciar"}
             </span>
@@ -262,7 +296,7 @@ export function WidgetCronometroCartao({
     );
   }
 
-  // Modo completo
+  // Modo completo (detalhes da tarefa)
   return (
     <>
       <div
@@ -276,12 +310,17 @@ export function WidgetCronometroCartao({
               Contador de Tempo
             </span>
           </div>
-          {estaExecutando && (
+          {estaConcluida ? (
+            <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <IconCheck className="size-3" />
+              Concluída
+            </span>
+          ) : estaExecutando ? (
             <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
               <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
               Ativo
             </span>
-          )}
+          ) : null}
         </div>
 
         {/* Display do tempo */}
@@ -296,49 +335,47 @@ export function WidgetCronometroCartao({
 
         {/* Botões de Ação */}
         <div className="flex items-center gap-2">
-          {estaExecutando ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 gap-1.5"
-                onClick={clicarPausar}
-              >
-                <IconPlayerPause className="size-4" />
-                Pausar (Justificar)
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="gap-1.5"
-                onClick={clicarParar}
-              >
-                <IconPlayerStop className="size-4" />
-                Finalizar
-              </Button>
-            </>
+          {estaConcluida ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className="flex-1 gap-1.5 opacity-70 cursor-not-allowed bg-muted text-muted-foreground border-border"
+              title="A tarefa já foi concluída"
+            >
+              <IconCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+              Tarefa Concluída
+            </Button>
+          ) : estaExecutando ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 gap-1.5"
+              onClick={clicarPausar}
+            >
+              <IconPlayerPause className="size-4" />
+              Pausar (Justificar)
+            </Button>
           ) : (
-            <>
-              <Button
-                variant="default"
-                size="sm"
-                className={cn(
-                  "flex-1 gap-1.5 text-white transition-colors",
-                  !podeIniciarCronometro
-                    ? "bg-slate-400 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-600 cursor-not-allowed"
-                    : "bg-emerald-600 hover:bg-emerald-700"
-                )}
-                onClick={iniciarOuRetomar}
-                title={
-                  !podeIniciarCronometro
-                    ? "Apenas os responsáveis pela tarefa podem iniciar o cronômetro"
-                    : undefined
-                }
-              >
-                <IconPlayerPlay className="size-4" />
-                {segundosAtuais > 0 ? "Retomar Trabalho" : "Iniciar Tarefa"}
-              </Button>
-            </>
+            <Button
+              variant="default"
+              size="sm"
+              className={cn(
+                "flex-1 gap-1.5 text-white transition-colors",
+                !podeIniciarCronometro
+                  ? "bg-slate-400 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-600 cursor-not-allowed"
+                  : "bg-emerald-600 hover:bg-emerald-700"
+              )}
+              onClick={iniciarOuRetomar}
+              title={
+                !podeIniciarCronometro
+                  ? "Apenas os responsáveis pela tarefa podem iniciar o cronômetro"
+                  : undefined
+              }
+            >
+              <IconPlayerPlay className="size-4" />
+              {segundosAtuais > 0 ? "Retomar Trabalho" : "Iniciar Tarefa"}
+            </Button>
           )}
 
           <Button

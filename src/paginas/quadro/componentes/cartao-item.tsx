@@ -19,7 +19,7 @@ import { SeletorDataVencimento, calcularStatusPrazo } from './seletor-data-venci
 
 import { CardTimerWidget } from './cronometro/widget-cronometro-cartao';
 import { CardQuickMenu } from './menu-rapido-cartao';
-import type { Prioridade } from '@/dados/dados-iniciais';
+import type { Prioridade } from '@/tipos/quadro';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utilitarios';
 import './cartao-item.css';
@@ -270,6 +270,7 @@ export function CartaoItem({
           <CardTimerWidget
             cardId={itemCartao.id}
             cardTitle={titCartao}
+            coluna={itemCartao.coluna ?? itemCartao.column}
             timeTracker={rastreadorCartao}
             responsaveis={responsaveisCartao}
             idsResponsaveis={idsResponsaveisCartao}
@@ -390,6 +391,7 @@ export function CartaoItem({
               <CardTimerWidget
                 cardId={itemCartao.id}
                 cardTitle={titCartao}
+                coluna={itemCartao.coluna ?? itemCartao.column}
                 timeTracker={rastreadorCartao}
                 responsaveis={responsaveisCartao}
                 idsResponsaveis={idsResponsaveisCartao}

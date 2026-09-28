@@ -3,7 +3,7 @@ import { IconPlus } from '@tabler/icons-react';
 import { Input } from '@/componentes/ui/campo-texto';
 import { Button } from '@/componentes/base/botao';
 import { useDataProvider } from '@/lib/provedor-dados';
-import type { IdColuna } from '@/dados/dados-iniciais';
+import type { IdColuna } from '@/tipos/quadro';
 import { cn } from '@/lib/utilitarios';
 import './entrada-novo-cartao.css';
 

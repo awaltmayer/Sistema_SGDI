@@ -3,7 +3,7 @@ import { ChecklistBlock } from "./bloco-lista-verificacao";
 import { AddChecklistPopover } from "./seletor-adicionar-lista";
 import { Button } from "@/componentes/base/botao";
 import { Badge } from "@/componentes/base/distintivo";
-import type { ListaVerificacao } from "@/dados/dados-iniciais";
+import type { ListaVerificacao } from "@/tipos/quadro";
 import "./container-listas-verificacao.css";
 
 export interface PropsContainerListasVerificacao {

@@ -49,7 +49,7 @@ O **SGDI** (Sistema de Gestão de Demandas de TI) foi projetado para elevar a pr
 - **Múltiplos Responsáveis**: Atribuição de um ou mais membros por tarefa, com exibição de avatares empilhados.
 - **Gestão de Prazos e Vencimentos**: Seletor de data de entrega com alertas visuais inteligentes (*No Prazo*, *Vence Hoje*, *Atrasado*). Apenas o solicitante ou responsáveis possuem permissão para renegociar prazos.
 - **Checklists e Critérios de Aceite**: Criação de listas de verificação com barra de progresso percentual e cálculo em tempo real de itens concluídos.
-- **Cronômetro e Apontamento de Horas**: Rastreamento de tempo gasto na execução da demanda com suporte a início, pausa justificada (com registro de motivo) e histórico acumulado.
+- **Cronômetro e Apontamento de Horas**: Rastreamento de tempo gasto na execução da demanda com suporte a início, pausa com justificativa obrigatória e histórico acumulado. Ao arrastar ou mover o cartão para a coluna **Concluído**, o cronômetro é finalizado automaticamente e um registro de auditoria é gravado no log com data/hora exata (`dd/MM/yyyy às HH:mm:ss`) e o usuário que concluiu a demanda.
 
 ### 2. Consultas Avançadas & Navegação
 - **Busca Global**: Localização instantânea por ID numérico (ex: `12` ou `#12`), termos do título ou conteúdo da descrição.
@@ -80,8 +80,8 @@ Sistema_SGDI/
 │   ├── componentes/            # Componentes reutilizáveis
 │   │   ├── base/               # Botões, Badges, Distintivos
 │   │   └── ui/                 # Componentes headless (Radix UI) e primitivos
-│   ├── dados/                  # Definições de tipos, enums e dados de fallback
-│   │   └── dados-iniciais.ts
+│   ├── tipos/                  # Definições de tipos, enums e configurações do quadro
+│   │   └── quadro.ts
 │   ├── integracoes/            # Conexões externas
 │   │   └── supabase/           # Cliente Supabase tipado
 │   ├── lib/                    # Camada de lógica e contexto

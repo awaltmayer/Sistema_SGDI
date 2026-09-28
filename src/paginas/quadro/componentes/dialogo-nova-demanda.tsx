@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/componentes/ui/menu-selecao';
 import { useDataProvider } from '@/lib/provedor-dados';
-import { colunas, type IdColuna, type Prioridade } from '@/dados/dados-iniciais';
+import { colunas, type IdColuna, type Prioridade } from '@/tipos/quadro';
 import { toast } from 'sonner';
 import { IconPlus, IconLoader2, IconSparkles } from '@tabler/icons-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/componentes/ui/avatar';

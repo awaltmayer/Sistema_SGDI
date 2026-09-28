@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Arquivos de Apresentação Acadêmica
+README_APRESENTACAO.md

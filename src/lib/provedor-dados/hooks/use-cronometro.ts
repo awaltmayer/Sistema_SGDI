@@ -5,37 +5,15 @@ import {
   configuracaoComplexidade,
   type RastreadorTempoTarefa,
   type RegistroPausaTempo,
-} from "@/dados/dados-iniciais";
+} from "@/tipos/quadro";
 import type { Complexity } from "../tipos";
 import { loadSupabaseMetadata, saveSupabaseMetadata } from "../storage-local";
 import { useAuth } from "@/lib/autenticacao/provedor-autenticacao";
 
-function updateTrackerQueryCache(
-  queryClient: any,
-  cardId: string,
-  updatedTracker: RastreadorTempoTarefa
-) {
-  const cIdStr = String(cardId);
-  queryClient.setQueryData(["card", cIdStr], (oldCard: any) => {
-    if (!oldCard) return oldCard;
-    return {
-      ...oldCard,
-      rastreador_tempo: updatedTracker,
-      time_tracker: updatedTracker,
-    };
-  });
-  queryClient.setQueryData(["cards"], (oldCards: any[]) => {
-    if (!Array.isArray(oldCards)) return oldCards;
-    return oldCards.map((c) => {
-      if (String(c.id) !== cIdStr) return c;
-      return {
-        ...c,
-        rastreador_tempo: updatedTracker,
-        time_tracker: updatedTracker,
-      };
-    });
-  });
-}
+import {
+  updateTrackerQueryCache,
+  registrarConclusaoNoLog,
+} from "../auxiliares";
 
 export function criarModuloCronometro() {
   return {
@@ -307,6 +285,17 @@ export function criarModuloCronometro() {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
           queryClient.invalidateQueries({ queryKey: ["card", cId] });
           toast.success("Cronômetro finalizado e tempo registrado");
+        },
+        isPending: false,
+      };
+    },
+
+    useMarkTaskCompleted: () => {
+      const queryClient = useQueryClient();
+      const { user } = useAuth();
+      return {
+        mutate: (cardId: string) => {
+          registrarConclusaoNoLog(cardId, user, queryClient);
         },
         isPending: false,
       };

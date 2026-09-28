@@ -24,7 +24,7 @@ import {
 } from "@/componentes/ui/dialogo-alerta";
 import { ChecklistItemRow } from "./item-lista-verificacao-linha";
 import { useDataProvider } from "@/lib/provedor-dados";
-import type { ListaVerificacao } from "@/dados/dados-iniciais";
+import type { ListaVerificacao } from "@/tipos/quadro";
 import "./bloco-lista-verificacao.css";
 
 export interface PropsBlocoListaVerificacao {

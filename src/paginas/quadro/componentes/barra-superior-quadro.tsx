@@ -24,7 +24,7 @@ import { useDataProvider } from '@/lib/provedor-dados';
 import { useAuth } from '@/lib/autenticacao/provedor-autenticacao';
 import { cn } from '@/lib/utilitarios';
 import { DialogoNovaDemanda } from './dialogo-nova-demanda';
-import type { Tema } from '@/dados/dados-iniciais';
+import type { Tema } from '@/tipos/quadro';
 import './barra-superior-quadro.css';
 
 const itensNavegacao = [

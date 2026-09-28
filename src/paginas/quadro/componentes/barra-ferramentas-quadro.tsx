@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import {
   IconArrowsSort,
   IconSearch,
   IconX,
   IconDownload,
+  IconFileSpreadsheet,
+  IconFileTypePdf,
   IconLayoutKanban,
   IconList,
   IconCircleDashed,
@@ -16,6 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/componentes/ui/menu-selecao';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/componentes/ui/painel-flutuante';
 import { Input } from '@/componentes/ui/campo-texto';
 import { Button } from '@/componentes/base/botao';
 import { SeletorSolicitante } from './seletor-solicitante';
@@ -130,6 +138,8 @@ export function BarraFerramentasQuadro({
     mudarSolicitanteFiltro?.('all');
     mudarResponsavelFiltro?.('all');
   };
+
+  const [popoverExportarAberto, setPopoverExportarAberto] = useState(false);
 
   const exportarCSV = () => {
     const lista = cartoesVisiveis ?? [];
@@ -249,6 +259,427 @@ export function BarraFerramentasQuadro({
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast.success(`${lista.length} tarefa(s) exportada(s) para CSV com sucesso!`);
+  };
+
+  const exportarPDF = () => {
+    const lista = cartoesVisiveis ?? [];
+    if (lista.length === 0) {
+      toast.info('Não há tarefas visíveis para exportar com os filtros atuais.');
+      return;
+    }
+
+    const dataGeracao = format(new Date(), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR });
+
+    const statusNome =
+      statFiltro === 'todo'
+        ? 'A Fazer'
+        : statFiltro === 'in-progress'
+          ? 'Em Andamento'
+          : statFiltro === 'done'
+            ? 'Concluído'
+            : 'Todos os Status';
+
+    const prioNome =
+      prioFiltro === 'high'
+        ? 'Alta'
+        : prioFiltro === 'medium'
+          ? 'Média'
+          : prioFiltro === 'low'
+            ? 'Baixa'
+            : 'Todas as Prioridades';
+
+    let solicitanteNome = 'Todos os Solicitantes';
+    if (solicitanteFiltro && solicitanteFiltro !== 'all') {
+      const m = membros.find(
+        (u: any) =>
+          String(u.id) === String(solicitanteFiltro) ||
+          (u.id_usuario && String(u.id_usuario) === String(solicitanteFiltro))
+      );
+      solicitanteNome = m?.nome_completo || (m as any)?.full_name || 'Usuário Selecionado';
+    }
+
+    let responsavelNome = 'Todos os Responsáveis';
+    if (responsavelFiltro === 'unassigned') {
+      responsavelNome = 'Não Atribuído';
+    } else if (responsavelFiltro && responsavelFiltro !== 'all') {
+      const m = membros.find(
+        (u: any) =>
+          String(u.id) === String(responsavelFiltro) ||
+          (u.id_usuario && String(u.id_usuario) === String(responsavelFiltro))
+      );
+      responsavelNome = m?.nome_completo || (m as any)?.full_name || 'Membro Selecionado';
+    }
+
+    const buscaTexto = termoBusca?.trim() ? `"${termoBusca.trim()}"` : 'Nenhum filtro por texto';
+
+    const totalTodo = lista.filter((c) => (c.coluna ?? c.column) === 'todo').length;
+    const totalInProgress = lista.filter((c) => (c.coluna ?? c.column) === 'in-progress').length;
+    const totalDone = lista.filter((c) => (c.coluna ?? c.column) === 'done').length;
+
+    const linhasHtml = lista
+      .map((c) => {
+        const col = c.coluna ?? c.column;
+        const colBadge =
+          col === 'todo'
+            ? '<span class="badge badge-todo">A Fazer</span>'
+            : col === 'in-progress'
+              ? '<span class="badge badge-prog">Em Andamento</span>'
+              : '<span class="badge badge-done">Concluído</span>';
+
+        const prio = c.prioridade ?? c.priority;
+        const prioBadge =
+          prio === 'high'
+            ? '<span class="prio-tag prio-high">🔴 Alta</span>'
+            : prio === 'medium'
+              ? '<span class="prio-tag prio-med">🟡 Média</span>'
+              : '<span class="prio-tag prio-low">🟢 Baixa</span>';
+
+        const idCriador = c.id_usuario ?? c.user_id;
+        const membroCriador = idCriador
+          ? membros.find(
+            (m: any) =>
+              String(m.id) === String(idCriador) ||
+              (m.id_usuario && String(m.id_usuario) === String(idCriador))
+          )
+          : null;
+        const nomeSolic =
+          membroCriador?.nome_completo ||
+          (membroCriador as any)?.full_name ||
+          (idCriador ? 'Usuário' : 'Sistema');
+
+        const nomesResp =
+          (c.responsaveis ?? c.assignees ?? [])
+            .map((r: any) => r.nome_completo || r.full_name || r.name)
+            .filter(Boolean)
+            .join(', ') ||
+          (c.responsavel?.nome_completo || c.assignee?.full_name || 'Não atribuído');
+
+        let dataVencFormatada = 'Sem prazo';
+        const rawVenc = c.data_vencimento ?? c.due_date;
+        if (rawVenc) {
+          try {
+            dataVencFormatada = format(new Date(rawVenc), 'dd/MM/yyyy', { locale: ptBR });
+          } catch {
+            dataVencFormatada = String(rawVenc);
+          }
+        }
+
+        const listas = c.listas_verificacao ?? c.checklists ?? [];
+        const todosItens = listas.flatMap((l: any) => l.itens ?? l.items ?? []);
+        const itensConcluidos = todosItens.filter((i: any) => i.esta_concluido ?? i.is_completed).length;
+        const progressoChecklists =
+          todosItens.length > 0 ? `${itensConcluidos}/${todosItens.length}` : '—';
+
+        const seg =
+          c.rastreador_tempo?.tempo_total_segundos ??
+          c.time_tracker?.total_spent_seconds ??
+          0;
+        const h = Math.floor(seg / 3600);
+        const m = Math.floor((seg % 3600) / 60);
+        const s = seg % 60;
+        const tempoGasto =
+          seg > 0
+            ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+            : '00:00:00';
+
+        const tituloEscapado = (c.titulo ?? c.title ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        const descEscapada = (c.descricao ?? c.description ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+
+        return `
+          <tr>
+            <td style="font-weight:700; color:#475569; text-align:center;">#${c.id}</td>
+            <td>
+              <div style="font-weight:600; color:#0f172a; margin-bottom:2px;">${tituloEscapado}</div>
+              ${descEscapada ? `<div style="font-size:8.5px; color:#64748b; max-height:24px; overflow:hidden;">${descEscapada}</div>` : ''}
+            </td>
+            <td>${colBadge}</td>
+            <td>${prioBadge}</td>
+            <td style="color:#1e293b;">${nomeSolic}</td>
+            <td style="color:#334155;">${nomesResp}</td>
+            <td style="white-space:nowrap; color:#475569;">${dataVencFormatada}</td>
+            <td style="text-align:center; color:#475569;">${progressoChecklists}</td>
+            <td style="font-family:monospace; text-align:center; color:#0f172a; font-weight:600;">${tempoGasto}</td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    const htmlCompleto = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>SGDI - Relatório Gerencial de Demandas (${format(new Date(), 'yyyy-MM-dd')})</title>
+        <style>
+          @page {
+            size: A4 landscape;
+            margin: 10mm 12mm;
+          }
+          * { box-sizing: border-box; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            color: #0f172a;
+            background: #ffffff;
+            font-size: 10px;
+            line-height: 1.35;
+          }
+          .relatorio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+          }
+          .brand-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+            margin: 0 0 2px 0;
+          }
+          .brand-sub {
+            font-size: 10px;
+            color: #64748b;
+            margin: 0;
+          }
+          .meta-info {
+            text-align: right;
+            font-size: 9.5px;
+            color: #475569;
+          }
+          .meta-info strong {
+            color: #0f172a;
+          }
+          .filtros-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 9.5px;
+          }
+          .filtro-item {
+            display: flex;
+            gap: 4px;
+          }
+          .filtro-rotulo {
+            font-weight: 600;
+            color: #64748b;
+          }
+          .filtro-valor {
+            font-weight: 700;
+            color: #0f172a;
+          }
+          .resumo-metricas {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+          }
+          .metrica-chip {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 9.5px;
+            font-weight: 600;
+          }
+          .chip-total { background: #0f172a; color: #ffffff; }
+          .chip-todo { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+          .chip-prog { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+          .chip-done { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+          
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+          }
+          th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 6px 8px;
+            text-align: left;
+          }
+          td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+            font-size: 9.5px;
+          }
+          tr:nth-child(even) td {
+            background-color: #f8fafc;
+          }
+          .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            font-size: 8.5px;
+            font-weight: 700;
+            white-space: nowrap;
+          }
+          .badge-todo { background: #f1f5f9; color: #475569; }
+          .badge-prog { background: #dbeafe; color: #1e40af; }
+          .badge-done { background: #d1fae5; color: #065f46; }
+          
+          .prio-tag { font-size: 9px; font-weight: 600; white-space: nowrap; }
+          .prio-high { color: #dc2626; }
+          .prio-med { color: #d97706; }
+          .prio-low { color: #16a34a; }
+
+          .relatorio-footer {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 6px;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5px;
+            color: #94a3b8;
+          }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="relatorio-header">
+          <div class="brand">
+            <h1 class="brand-title">SGDI • Sistema de Gestão de Demandas de TI</h1>
+            <p class="brand-sub">Relatório de Governança, Rastreamento e Auditoria de Tarefas</p>
+          </div>
+          <div class="meta-info">
+            <div>Data de Emissão: <strong>${dataGeracao}</strong></div>
+            <div>Total Exportado: <strong>${lista.length} de ${cartoesVisiveis?.length ?? lista.length} demanda(s)</strong></div>
+          </div>
+        </div>
+
+        <div class="filtros-box">
+          <div class="filtro-item">
+            <span class="filtro-rotulo">Filtro de Status:</span>
+            <span class="filtro-valor">${statusNome}</span>
+          </div>
+          <div class="filtro-item">
+            <span class="filtro-rotulo">Filtro de Prioridade:</span>
+            <span class="filtro-valor">${prioNome}</span>
+          </div>
+          <div class="filtro-item">
+            <span class="filtro-rotulo">Solicitante:</span>
+            <span class="filtro-valor">${solicitanteNome}</span>
+          </div>
+          <div class="filtro-item">
+            <span class="filtro-rotulo">Responsável:</span>
+            <span class="filtro-valor">${responsavelNome}</span>
+          </div>
+          <div class="filtro-item">
+            <span class="filtro-rotulo">Busca Textual:</span>
+            <span class="filtro-valor">${buscaTexto}</span>
+          </div>
+        </div>
+
+        <div class="resumo-metricas">
+          <div class="metrica-chip chip-total">Total: ${lista.length}</div>
+          <div class="metrica-chip chip-todo">📋 A Fazer: ${totalTodo}</div>
+          <div class="metrica-chip chip-prog">⚡ Em Andamento: ${totalInProgress}</div>
+          <div class="metrica-chip chip-done">✅ Concluído: ${totalDone}</div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px; text-align:center;">ID</th>
+              <th>Título e Descrição</th>
+              <th style="width:90px;">Status</th>
+              <th style="width:75px;">Prioridade</th>
+              <th style="width:120px;">Solicitante</th>
+              <th style="width:140px;">Responsáveis</th>
+              <th style="width:80px;">Prazo</th>
+              <th style="width:70px; text-align:center;">Checklist</th>
+              <th style="width:80px; text-align:center;">Tempo Gasto</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${linhasHtml}
+          </tbody>
+        </table>
+
+        <div class="relatorio-footer">
+          <span>SGDI - Sistema de Gestão de Demandas de TI • Documento para fins gerenciais e auditoria de TI</span>
+          <span>Página 1 de 1 • Gerado automaticamente pelo sistema</span>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Dispara via iframe isolado para não ser barrado por bloqueador de pop-ups
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(iframe);
+
+    const win = iframe.contentWindow;
+    const doc = win?.document;
+    if (doc && win) {
+      doc.open();
+      doc.write(htmlCompleto);
+      doc.close();
+
+      let executado = false;
+      const limparIframe = () => {
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
+      };
+
+      const dispararImpressao = () => {
+        if (executado) return;
+        executado = true;
+        try {
+          win.focus();
+          win.print();
+        } catch {
+          /* fallback silencioso */
+        }
+        limparIframe();
+      };
+
+      win.onafterprint = () => {
+        limparIframe();
+      };
+
+      // Dispara a impressão apenas uma única vez após a montagem do documento
+      setTimeout(dispararImpressao, 250);
+      toast.success('Relatório PDF formatado pronto para impressão ou download!');
+    } else {
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.open();
+        w.document.write(htmlCompleto);
+        w.document.close();
+        setTimeout(() => {
+          w.focus();
+          w.print();
+        }, 250);
+      }
+    }
   };
 
   return (
@@ -432,15 +863,70 @@ export function BarraFerramentasQuadro({
             </div>
           )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={exportarCSV}
-            className="h-8 gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-normal text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer shadow-xs transition-colors"
-          >
-            <IconDownload className="size-3.5 text-muted-foreground shrink-0" />
-            <span>Exportar CSV</span>
-          </Button>
+          <Popover open={popoverExportarAberto} onOpenChange={setPopoverExportarAberto}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-normal text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer shadow-xs transition-colors"
+                title="Exportar demandas nos formatos CSV ou PDF"
+              >
+                <IconDownload className="size-3.5 text-muted-foreground shrink-0" />
+                <span>Exportar</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              side="bottom"
+              sideOffset={6}
+              className="w-72 p-3 bg-popover border border-border shadow-lg rounded-lg text-popover-foreground space-y-2.5 z-50"
+            >
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <IconDownload className="size-3.5 text-primary" />
+                  Opções de Exportação
+                </h4>
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  {cartoesVisiveis?.length ?? 0} demanda(s) visíveis:
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPopoverExportarAberto(false);
+                    exportarCSV();
+                  }}
+                  className="flex items-center gap-2.5 p-2 rounded-md border border-border/70 hover:bg-accent hover:border-primary/40 text-left transition-colors cursor-pointer group"
+                >
+                  <div className="p-1.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/20">
+                    <IconFileSpreadsheet className="size-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium text-foreground">Planilha CSV (.csv)</div>
+
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPopoverExportarAberto(false);
+                    exportarPDF();
+                  }}
+                  className="flex items-center gap-2.5 p-2 rounded-md border border-border/70 hover:bg-accent hover:border-primary/40 text-left transition-colors cursor-pointer group"
+                >
+                  <div className="p-1.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-500/20">
+                    <IconFileTypePdf className="size-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium text-foreground">Documento PDF (.pdf)</div>
+                  </div>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </div>

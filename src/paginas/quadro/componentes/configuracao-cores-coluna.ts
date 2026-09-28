@@ -15,15 +15,15 @@ export type ColumnColorOption = OpcaoCorColuna;
 export const CORES_COLUNA: OpcaoCorColuna[] = [
   {
     id: "default",
-    name: "Padrão (Cinza)",
-    swatchBg: "linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)",
-    bgClass: "bg-slate-200 dark:bg-slate-800",
+    name: "Padrão (Cinza Apple)",
+    swatchBg: "linear-gradient(135deg, #e2e8f0 0%, #A2AAAD 100%)",
+    bgClass: "bg-slate-200 dark:bg-[#A2AAAD]",
     borderClass: "border-transparent",
-    headerClass: "text-slate-900 dark:text-slate-100",
-    badgeClass: "bg-slate-300 text-slate-800 dark:bg-slate-700 dark:text-slate-200",
-    btnClass: "text-slate-700 hover:text-slate-950 hover:bg-slate-300 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700",
-    iconClass: "text-slate-800 dark:text-slate-200",
-    addBtnClass: "text-slate-800 hover:bg-slate-300 dark:text-slate-200 dark:hover:bg-slate-700",
+    headerClass: "text-slate-900 dark:text-slate-950",
+    badgeClass: "bg-slate-300 text-slate-800 dark:bg-black/15 dark:text-slate-950",
+    btnClass: "text-slate-700 hover:text-slate-950 hover:bg-slate-300 dark:text-slate-800 dark:hover:text-black dark:hover:bg-black/10",
+    iconClass: "text-slate-800 dark:text-slate-950",
+    addBtnClass: "text-slate-800 hover:bg-slate-300 dark:text-slate-900 dark:hover:bg-black/10",
   },
   {
     id: "blue",

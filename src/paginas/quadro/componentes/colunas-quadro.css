@@ -81,3 +81,66 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
+/* ==========================================================================
+   Cor das Filas (Colunas) no Modo Escuro: Cinza Apple (#A2AAAD / RGB: 162, 170, 173)
+   ========================================================================== */
+.dark .sgdi-coluna-card {
+  background-color: #A2AAAD !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-titulo {
+  color: #0f172a !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-header-esquerda svg {
+  color: #1e293b !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-header .badge {
+  background-color: rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-collapse-btn {
+  color: #334155 !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-collapse-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-menu-btn {
+  color: #1e293b !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-menu-btn:hover,
+.dark .sgdi-coluna-card .sgdi-coluna-menu-btn[data-state="open"] {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-paginacao {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #1e293b !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-coluna-paginacao button {
+  color: #1e293b !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-entrada-btn-adicionar {
+  color: #1e293b !important;
+}
+
+.dark .sgdi-coluna-card .sgdi-entrada-btn-adicionar:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+}
+
+

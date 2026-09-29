@@ -173,6 +173,7 @@ export type Database = {
           funcao: string
           status: string
           tema: string
+          cores_colunas?: Record<string, string> | Json | null
           url_avatar: string | null
           convidado_em: string | null
           criado_em: string
@@ -186,6 +187,7 @@ export type Database = {
           funcao?: string
           status?: string
           tema?: string
+          cores_colunas?: Record<string, string> | Json | null
           url_avatar?: string | null
           convidado_em?: string | null
           criado_em?: string
@@ -199,6 +201,7 @@ export type Database = {
           funcao?: string
           status?: string
           tema?: string
+          cores_colunas?: Record<string, string> | Json | null
           url_avatar?: string | null
           convidado_em?: string | null
           criado_em?: string

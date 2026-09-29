@@ -38,6 +38,8 @@ import { getColumnColorStyle } from './configuracao-cores-coluna';
 import type { SortBy } from './barra-ferramentas-quadro';
 import { sortCards } from './ordenar-cartoes';
 import { cn } from '@/lib/utilitarios';
+import { useAuth } from '@/lib/autenticacao/provedor-autenticacao';
+import { supabase } from '@/integracoes/supabase/cliente';
 import './colunas-quadro.css';
 
 export interface PropsColunasQuadro {
@@ -106,15 +108,89 @@ export function ColunasQuadro({
   const { mutate: stopTaskTimer } = useStopTaskTimer();
   const { mutate: markTaskCompleted } = useMarkTaskCompleted();
 
+  const { user } = useAuth();
   const [cartaoAtivo, setCartaoAtivo] = useState<CardWithAssignee | null>(null);
   const [cartoesLocais, setCartoesLocais] = useState<CardWithAssignee[] | null>(null);
   const [idsColapsados, setIdsColapsados] = useState<Set<string>>(new Set());
   const [coresColunas, setCoresColunas] = useState<Record<string, string>>(() => carregarCoresColunasSalvas());
 
+  // Sincroniza cores salvas no banco de dados para o usuário autenticado
+  useEffect(() => {
+    if (!user) return;
+
+    // 1. Tenta carregar do metadata de autenticação do usuário (Supabase Auth)
+    const metaCores = (user.user_metadata as Record<string, unknown> | undefined)?.cores_colunas;
+    if (metaCores && typeof metaCores === 'object') {
+      setCoresColunas((prev) => {
+        const mesclado = { ...prev, ...(metaCores as Record<string, string>) };
+        salvarCoresColunas(mesclado);
+        return mesclado;
+      });
+    }
+
+    // 2. Consulta tabela public.usuarios vinculada ao usuário (se a coluna existir)
+    supabase
+      .from('usuarios')
+      .select('cores_colunas')
+      .or(`id_usuario.eq.${user.id},email.eq.${user.email}`)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!error && data?.cores_colunas && typeof data.cores_colunas === 'object') {
+          const coresTabela = data.cores_colunas as Record<string, string>;
+          setCoresColunas((prev) => {
+            const mesclado = { ...prev, ...coresTabela };
+            salvarCoresColunas(mesclado);
+            return mesclado;
+          });
+        }
+      })
+      .catch(() => {
+        /* fallback silencioso caso a coluna ainda não exista em public.usuarios */
+      });
+  }, [user]);
+
+  // Sincroniza cores entre abas e janelas através do cache local
+  useEffect(() => {
+    const aoAtualizarStorage = (e: StorageEvent) => {
+      if (e.key === LOCAL_STORAGE_CHAVE_CORES_COLUNAS && e.newValue) {
+        try {
+          setCoresColunas(JSON.parse(e.newValue));
+        } catch {
+          /* fallback */
+        }
+      }
+    };
+    window.addEventListener('storage', aoAtualizarStorage);
+    return () => window.removeEventListener('storage', aoAtualizarStorage);
+  }, []);
+
   const lidarComMudancaCorColuna = (colunaId: string, corId: string) => {
     setCoresColunas((prev) => {
       const atualizado = { ...prev, [colunaId]: corId };
       salvarCoresColunas(atualizado);
+
+      // Persiste no banco de dados para o usuário conectado
+      if (user) {
+        // 1. Salva no Supabase Auth user_metadata (persistência direta na conta do usuário)
+        supabase.auth.updateUser({
+          data: { cores_colunas: atualizado },
+        }).catch((err) => {
+          console.warn('Aviso ao sincronizar cores no metadata do usuário:', err);
+        });
+
+        // 2. Salva na tabela public.usuarios se disponível
+        supabase
+          .from('usuarios')
+          .update({ cores_colunas: atualizado } as any)
+          .or(`id_usuario.eq.${user.id},email.eq.${user.email}`)
+          .then(({ error }) => {
+            if (error) {
+              console.warn('Aviso ao salvar cores_colunas na tabela usuarios:', error.message);
+            }
+          })
+          .catch(() => {});
+      }
+
       return atualizado;
     });
   };
@@ -324,7 +400,7 @@ export function ColunasQuadro({
         onDragOver={lidarComSobreposicaoArrasto}
         onDragEnd={lidarComFimArrasto}
       >
-        <div className="flex flex-1 gap-4 overflow-x-auto bg-background p-6">
+        <div className="sgdi-colunas-wrapper flex flex-1 gap-4 overflow-auto bg-background p-6">
           {columnDefs.map((col) => {
             const cartoesColuna = cartoesPorColuna[col.id] ?? [];
             const todosColapsados =
@@ -434,7 +510,30 @@ function ColunaQuadro({
 
   return (
     <div className="sgdi-coluna-container">
-      <Card className={cn("sgdi-coluna-card transition-all duration-200", estiloCor.bgClass, estiloCor.borderClass)}>
+      <Card
+        data-column-id={columnId}
+        data-coluna-cor={colorId ?? 'default'}
+        data-column-color={colorId ?? 'default'}
+        style={
+          estiloCor.id !== 'default' && estiloCor.hex
+            ? ({
+                '--col-bg': estiloCor.hex,
+                '--col-border': estiloCor.borderHex ?? (estiloCor.isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.18)'),
+                '--col-text': estiloCor.isLight ? '#0f172a' : '#ffffff',
+                '--col-subtext': estiloCor.isLight ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.85)',
+                '--col-badge-bg': estiloCor.isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.22)',
+                '--col-badge-text': estiloCor.isLight ? '#0f172a' : '#ffffff',
+                '--col-hover-bg': estiloCor.isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.18)',
+              } as React.CSSProperties)
+            : undefined
+        }
+        className={cn(
+          "sgdi-coluna-card transition-all duration-200",
+          `sgdi-coluna-cor-${colorId ?? 'default'}`,
+          estiloCor.bgClass,
+          estiloCor.borderClass
+        )}
+      >
         <div className="sgdi-coluna-header">
           <div className="sgdi-coluna-header-esquerda">
             <ColumnIcon name={iconName} className={cn("size-4", estiloCor.iconClass)} />

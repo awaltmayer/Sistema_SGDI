@@ -70,15 +70,16 @@ export function MenuRapidoColuna({
               </div>
 
               {/* Grid de círculos coloridos */}
-              <div className="sgdi-paleta-grid">
+              <div className="sgdi-paleta-grid-colunas">
                 {COLUMN_COLORS.map((col) => {
                   const estaSelecionado =
-                    currentColor === col.id || (!currentColor && col.id === "default");
+                    currentColor === col.id || (!currentColor && col.id === "default") || (currentColor === "default" && col.id === "default");
 
                   return (
                     <button
                       key={col.id}
                       type="button"
+                      data-cor-id={col.id}
                       title={col.name}
                       aria-label={`Cor ${col.name}`}
                       onClick={(e) => {
@@ -91,13 +92,22 @@ export function MenuRapidoColuna({
                           ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
                           : "border border-border/80 shadow-xs"
                       )}
-                      style={{
-                        background: col.swatchBg,
-                      }}
+                      style={
+                        col.id === 'default'
+                          ? undefined
+                          : { backgroundColor: col.hex || col.swatchBg }
+                      }
                     >
                       {estaSelecionado && (
                         <IconCheck
-                          className="size-4 stroke-[3] text-slate-900 dark:text-white"
+                          className={cn(
+                            "size-4 stroke-[3]",
+                            col.id === "default"
+                              ? "text-slate-900 dark:text-white"
+                              : col.isLight
+                              ? "text-slate-950"
+                              : "text-white"
+                          )}
                         />
                       )}
                     </button>

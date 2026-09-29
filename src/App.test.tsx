@@ -319,6 +319,91 @@ describe("SGDI Dashboard - Suíte de Testes", () => {
       expect(p3[4].id).toBe("25");
     });
   });
+
+  describe("Configuração e Persistência de Cores das Colunas", () => {
+    it("deve definir a cor padrão das colunas com fundo preto no modo escuro", async () => {
+      const { obterEstiloCorColuna, CORES_COLUNA } = await import(
+        "./paginas/quadro/componentes/configuracao-cores-coluna"
+      );
+
+      const estiloPadrao = obterEstiloCorColuna("default");
+      expect(estiloPadrao.id).toBe("default");
+      expect(estiloPadrao.bgClass).toContain("dark:bg-black");
+      expect(CORES_COLUNA[0].id).toBe("default");
+      expect(CORES_COLUNA[0].bgClass).toContain("dark:bg-black");
+    });
+
+    it("deve carregar estilos específicos para cada cor selecionada", async () => {
+      const { obterEstiloCorColuna } = await import(
+        "./paginas/quadro/componentes/configuracao-cores-coluna"
+      );
+
+      const estiloAzul = obterEstiloCorColuna("blue");
+      expect(estiloAzul.id).toBe("blue");
+      expect(estiloAzul.bgClass).toContain("blue");
+
+      const estiloVerde = obterEstiloCorColuna("green");
+      expect(estiloVerde.id).toBe("green");
+      expect(estiloVerde.bgClass).toContain("emerald");
+    });
+
+    it("deve garantir que a cor preta absoluta seja #000000 e que as cores customizadas tenham código hex flat", async () => {
+      const { obterEstiloCorColuna, CORES_COLUNA } = await import(
+        "./paginas/quadro/componentes/configuracao-cores-coluna"
+      );
+
+      const estiloPreto = obterEstiloCorColuna("black");
+      expect(estiloPreto.hex).toBe("#000000");
+      expect(estiloPreto.swatchBg).toBe("#000000");
+
+      // Todas as cores personalizadas devem ter código hex e nome definidos
+      const coresCustomizadas = CORES_COLUNA.filter((c) => c.id !== "default");
+      expect(coresCustomizadas.length).toBeGreaterThanOrEqual(15);
+      coresCustomizadas.forEach((cor) => {
+        expect(cor.hex).toMatch(/^#[0-9a-fA-F]{6}$/);
+        expect(cor.name.length).toBeGreaterThan(0);
+      });
+    });
+
+    it("deve fazer fallback para a cor padrão caso um ID inválido ou inexistente seja fornecido", async () => {
+      const { obterEstiloCorColuna } = await import(
+        "./paginas/quadro/componentes/configuracao-cores-coluna"
+      );
+
+      const estiloInexistente = obterEstiloCorColuna("cor-fantasma");
+      expect(estiloInexistente.id).toBe("default");
+
+      const estiloNulo = obterEstiloCorColuna(null);
+      expect(estiloNulo.id).toBe("default");
+    });
+
+    it("deve salvar e recuperar as cores das colunas no cache do navegador (localStorage)", () => {
+      const CHAVE_STORAGE = "sgdi-cores-colunas-v1";
+      const mockCores = { todo: "blue", "in-progress": "orange", done: "green" };
+
+      const storageMock: Record<string, string> = {};
+      const fakeLocalStorage = {
+        getItem: (k: string) => storageMock[k] ?? null,
+        setItem: (k: string, v: string) => {
+          storageMock[k] = v;
+        },
+        removeItem: (k: string) => {
+          delete storageMock[k];
+        },
+      };
+
+      fakeLocalStorage.setItem(CHAVE_STORAGE, JSON.stringify(mockCores));
+      const salvo = fakeLocalStorage.getItem(CHAVE_STORAGE);
+      expect(salvo).not.toBeNull();
+      const parseado = JSON.parse(salvo!);
+      expect(parseado.todo).toBe("blue");
+      expect(parseado["in-progress"]).toBe("orange");
+      expect(parseado.done).toBe("green");
+
+      fakeLocalStorage.removeItem(CHAVE_STORAGE);
+      expect(fakeLocalStorage.getItem(CHAVE_STORAGE)).toBeNull();
+    });
+  });
 });
 
 

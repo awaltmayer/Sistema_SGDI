@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   IconLayoutKanban,
+  IconChartPie,
   IconSettings2,
   IconLogout,
   IconPlus,
@@ -29,6 +30,7 @@ import './barra-superior-quadro.css';
 
 const itensNavegacao = [
   { icon: IconLayoutKanban, label: 'Quadro', path: '/board' },
+  { icon: IconChartPie, label: 'Dashboard', path: '/dashboard' },
 ];
 export const navItems = itensNavegacao;
 
@@ -66,7 +68,9 @@ export function BarraSuperiorQuadro() {
         <nav className="sgdi-barra-superior-nav">
           {itensNavegacao.map((item) => {
             const href = item.path;
-            const estaAtivo = localizacao.pathname === href;
+            const estaAtivo =
+              localizacao.pathname === href ||
+              (href === '/board' && localizacao.pathname.startsWith('/board/'));
             return (
               <Link key={item.path} to={href}>
                 <Button

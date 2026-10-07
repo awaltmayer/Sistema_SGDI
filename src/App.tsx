@@ -15,6 +15,7 @@ const DetalhesCartaoPagina = lazy(() =>
   }))
 );
 const PaginaConfiguracoes = lazy(() => import('@/paginas/configuracoes'));
+const PaginaDashboard = lazy(() => import('@/paginas/dashboard'));
 const PaginaNaoEncontrada = lazy(() => import('@/paginas/nao-encontrado'));
 
 const clienteConsulta = new QueryClient();
@@ -74,6 +75,7 @@ const App = () => (
                 path="/board/:cardId"
                 element={<DetalhesCartaoPagina caminhoBase="/board" basePath="/board" />}
               />
+              <Route path="/dashboard" element={<PaginaDashboard />} />
               <Route path="/settings" element={<PaginaConfiguracoes />} />
             </Route>
 

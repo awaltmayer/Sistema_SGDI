@@ -28,136 +28,156 @@ export interface SupabaseCardMeta {
 }
 
 export const DEFAULT_DEMO_METADATA: Record<string, SupabaseCardMeta> = {
-  "19": {
-    complexity: "high",
-    time_tracker: {
-      em_execucao: false,
-      tempo_total_segundos: 6320,
-      pausas: [
-        {
-          id: "pause-k8s-1",
-          pausado_em: "2026-09-28T08:15:00.000Z",
-          retomado_em: "2026-09-28T08:50:00.000Z",
-          duracao_segundos: 2100,
-          motivo: "Aguardando janela de manutenção autorizada pelo NOC",
-          usuario_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-          usuario_nome: "ENIO NETO",
-          usuario_email: "1138165@atitus.edu.br",
-          tipo: "pausa",
-        },
-        {
-          id: "pause-k8s-2",
-          pausado_em: "2026-09-28T09:30:00.000Z",
-          retomado_em: "2026-09-28T09:50:00.000Z",
-          duracao_segundos: 1200,
-          motivo: "Alinhamento técnico em call com a equipe de DevOps",
-          usuario_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-          usuario_nome: "ENIO NETO",
-          usuario_email: "1138165@atitus.edu.br",
-          tipo: "pausa",
-        },
-      ],
-    },
+  "42": {
+    "complexity": "high",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 172800,
+      "concluido_em": "2026-10-03T23:26:30.151Z",
+      "concluido_por_nome": "ENIO NETO",
+      "pausas": []
+    }
   },
-  "20": {
-    complexity: "high",
-    time_tracker: {
-      em_execucao: false,
-      tempo_total_segundos: 8110,
-      pausas: [
-        {
-          id: "pause-auth-1",
-          pausado_em: "2026-09-28T12:00:00.000Z",
-          retomado_em: "2026-09-28T13:00:00.000Z",
-          duracao_segundos: 3600,
-          motivo: "Intervalo de almoço da equipe de desenvolvimento",
-          usuario_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-          usuario_nome: "ENIO NETO",
-          usuario_email: "1138165@atitus.edu.br",
-          tipo: "pausa",
-        },
-        {
-          id: "pause-auth-2",
-          pausado_em: "2026-09-28T14:15:00.000Z",
-          retomado_em: "2026-09-28T15:00:00.000Z",
-          duracao_segundos: 2700,
-          motivo: "Aguardando liberação de credenciais no console da Google Cloud",
-          usuario_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-          usuario_nome: "ENIO NETO",
-          usuario_email: "1138165@atitus.edu.br",
-          tipo: "pausa",
-        },
-      ],
-    },
+  "43": {
+    "complexity": "medium",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 86400,
+      "concluido_em": "2026-10-05T23:26:30.151Z",
+      "concluido_por_nome": "LUIZ APPELT WELLER",
+      "pausas": []
+    }
   },
-  "21": {
-    complexity: "high",
-    time_tracker: {
-      em_execucao: false,
-      tempo_total_segundos: 3150,
-      concluido_em: "2026-09-28T09:40:00.000Z",
-      concluido_por_nome: "ENIO NETO",
-      concluido_por_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-      concluido_por_email: "1138165@atitus.edu.br",
-      pausas: [
-        {
-          id: "pause-ssl-1",
-          pausado_em: "2026-09-28T08:50:00.000Z",
-          retomado_em: "2026-09-28T09:05:00.000Z",
-          duracao_segundos: 900,
-          motivo: "Aguardando propagação dos registros DNS TXT para validação ACME",
-          usuario_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-          usuario_nome: "ENIO NETO",
-          usuario_email: "1138165@atitus.edu.br",
-          tipo: "pausa",
-        },
-        {
-          id: "conclusao-ssl",
-          pausado_em: "2026-09-28T09:40:00.000Z",
-          duracao_segundos: 0,
-          motivo: "Demanda concluída (movida para a coluna Concluído)",
-          usuario_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-          usuario_nome: "ENIO NETO",
-          usuario_email: "1138165@atitus.edu.br",
-          tipo: "conclusao",
-        },
-      ],
-    },
+  "44": {
+    "complexity": "high",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 43200,
+      "concluido_em": "2026-10-01T23:26:30.151Z",
+      "concluido_por_nome": "Ricardo Drews",
+      "pausas": []
+    }
   },
-  "22": {
-    complexity: "medium",
-    time_tracker: {
-      em_execucao: false,
-      tempo_total_segundos: 11400,
-      concluido_em: "2026-09-27T17:30:00.000Z",
-      concluido_por_nome: "ENIO NETO",
-      concluido_por_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-      concluido_por_email: "1138165@atitus.edu.br",
-      pausas: [
-        {
-          id: "pause-cicd-1",
-          pausado_em: "2026-09-27T14:00:00.000Z",
-          retomado_em: "2026-09-27T14:40:00.000Z",
-          duracao_segundos: 2400,
-          motivo: "Configuração dos secrets e tokens de acesso no repositório GitHub",
-          usuario_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-          usuario_nome: "ENIO NETO",
-          usuario_email: "1138165@atitus.edu.br",
-          tipo: "pausa",
-        },
-        {
-          id: "conclusao-cicd",
-          pausado_em: "2026-09-27T17:30:00.000Z",
-          duracao_segundos: 0,
-          motivo: "Demanda concluída (movida para a coluna Concluído)",
-          usuario_id: "db2cb34a-708b-4a37-b760-800b4ec3e642",
-          usuario_nome: "ENIO NETO",
-          usuario_email: "1138165@atitus.edu.br",
-          tipo: "conclusao",
-        },
-      ],
-    },
+  "45": {
+    "complexity": "low",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 14400,
+      "concluido_em": "2026-10-04T23:26:30.151Z",
+      "concluido_por_nome": "Augusto Altmayer",
+      "pausas": []
+    }
   },
+  "46": {
+    "complexity": "high",
+    "time_tracker": {
+      "em_execucao": true,
+      "tempo_total_segundos": 28800,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "47": {
+    "complexity": "high",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 3600,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "48": {
+    "complexity": "medium",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 21600,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "49": {
+    "complexity": "medium",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 0,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "50": {
+    "complexity": "high",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 50400,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "51": {
+    "complexity": "medium",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 0,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "52": {
+    "complexity": "high",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 0,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "53": {
+    "complexity": "medium",
+    "time_tracker": {
+      "em_execucao": true,
+      "tempo_total_segundos": 18000,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "54": {
+    "complexity": "low",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 0,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "55": {
+    "complexity": "low",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 0,
+      "concluido_em": null,
+      "concluido_por_nome": "Equipe de TI",
+      "pausas": []
+    }
+  },
+  "56": {
+    "complexity": "low",
+    "time_tracker": {
+      "em_execucao": false,
+      "tempo_total_segundos": 7200,
+      "concluido_em": "2026-09-26T23:26:30.152Z",
+      "concluido_por_nome": "Sistema",
+      "pausas": []
+    }
+  }
 };
 
 export function loadSupabaseMetadata(): Record<string, SupabaseCardMeta> {

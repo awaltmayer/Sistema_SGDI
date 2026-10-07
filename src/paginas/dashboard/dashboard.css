@@ -1,0 +1,191 @@
+/* ==========================================================================
+   Estilos da Página de Dashboard SGDI - Layout Minimalista, Flat e Sem Bordas
+   ========================================================================== */
+
+.sgdi-dashboard-container {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  overflow: hidden;
+}
+
+.sgdi-dashboard-corpo {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.sgdi-dashboard-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1rem 3rem 1rem;
+  max-width: 1400px;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .sgdi-dashboard-main {
+    padding: 1.5rem 1.75rem 3rem 1.75rem;
+  }
+}
+
+.sgdi-dashboard-cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .sgdi-dashboard-cabecalho {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.sgdi-dashboard-titulo {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-foreground);
+}
+
+.sgdi-dashboard-subtitulo {
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground);
+}
+
+.sgdi-dashboard-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .sgdi-dashboard-kpis-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.875rem;
+  }
+}
+
+.sgdi-dashboard-kpi-card {
+  padding: 0.875rem 1rem;
+  border-radius: 6px;
+  background-color: var(--color-card);
+  border: none !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease;
+}
+
+.sgdi-dashboard-kpi-card:hover {
+  background-color: var(--color-muted);
+}
+
+/* ── Garantia de Bordas Levemente Arredondadas (Sem Elementos Redondos/Pílulas) ── */
+.sgdi-dashboard-container .rounded-full {
+  border-radius: 4px !important;
+}
+
+.sgdi-dashboard-container .rounded-3xl,
+.sgdi-dashboard-container .rounded-2xl,
+.sgdi-dashboard-container .rounded-xl,
+.sgdi-dashboard-container .rounded-lg {
+  border-radius: 6px !important;
+}
+
+.sgdi-dashboard-container [data-radix-avatar-root],
+.sgdi-dashboard-container [data-radix-avatar-fallback],
+.sgdi-dashboard-container [data-radix-avatar-image] {
+  border-radius: 4px !important;
+}
+
+.sgdi-dashboard-container [role="progressbar"],
+.sgdi-dashboard-container progress {
+  border-radius: 3px !important;
+}
+
+/* ── Cores Lisas, Flat, 100% Sólidas e Sem Opacidade ── */
+.sgdi-dashboard-container .bg-blue-500,
+.sgdi-dashboard-container .bg-blue-600 {
+  background-color: #2563eb !important;
+}
+
+.sgdi-dashboard-container .bg-emerald-500,
+.sgdi-dashboard-container .bg-emerald-600 {
+  background-color: #16a34a !important;
+}
+
+.sgdi-dashboard-container .bg-red-500,
+.sgdi-dashboard-container .bg-red-600 {
+  background-color: #dc2626 !important;
+}
+
+.sgdi-dashboard-container .bg-amber-500,
+.sgdi-dashboard-container .bg-amber-600 {
+  background-color: #d97706 !important;
+}
+
+.sgdi-dashboard-container .bg-slate-400,
+.sgdi-dashboard-container .bg-slate-500,
+.sgdi-dashboard-container .bg-slate-600 {
+  background-color: #64748b !important;
+}
+
+/* ── Remoção de Bordas no Dashboard (Design Flat Limpo) ── */
+.sgdi-dashboard-container .border,
+.sgdi-dashboard-container .border-t,
+.sgdi-dashboard-container .border-b,
+.sgdi-dashboard-container .border-l,
+.sgdi-dashboard-container .border-r,
+.sgdi-dashboard-container .border-dashed,
+.sgdi-dashboard-container [class*="border-border"],
+.sgdi-dashboard-container [class*="border-l-4"] {
+  border: none !important;
+}
+
+.sgdi-dashboard-container [data-slot="card"] {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.sgdi-dashboard-container table,
+.sgdi-dashboard-container tr,
+.sgdi-dashboard-container td,
+.sgdi-dashboard-container th {
+  border: none !important;
+}
+
+/* ── Divisões Claras entre Módulos Selecionados ── */
+.sgdi-dashboard-modulo-divisor {
+  height: 1px;
+  width: 100%;
+  background-color: var(--color-border);
+  opacity: 0.6;
+  margin: 1.75rem 0 1.25rem 0;
+}
+
+.sgdi-dashboard-modulo-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+  padding-bottom: 0.25rem;
+}
+
+.sgdi-dashboard-modulo-titulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted-foreground);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+

@@ -4,6 +4,7 @@ import { supabase } from "@/integracoes/supabase/cliente";
 import { useAuth } from "@/lib/autenticacao/provedor-autenticacao";
 import { toast } from "sonner";
 import type { Comment, CreateCommentInput } from "../tipos";
+import { registrarLogAuditoria } from "@/lib/auditoria/servico-auditoria";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -168,6 +169,32 @@ export function criarModuloComentarios() {
             queryKey: ["comment-counts"],
           });
           toast.success("Comentário adicionado com sucesso!");
+
+          try {
+            registrarLogAuditoria({
+              acao: "CRIACAO",
+              entidade: "Comentário",
+              entidade_id: cId ? String(cId) : null,
+              detalhes: `Comentário adicionado na demanda #${cId}`,
+              metadados: {
+                id_cartao: cId,
+                conteudo_resumido: (variables.conteudo ?? variables.body ?? "").slice(0, 120),
+              },
+              usuario: user
+                ? {
+                    id: user.id,
+                    email: user.email,
+                    nome:
+                      (user.user_metadata as any)?.full_name ||
+                      (user.user_metadata as any)?.name ||
+                      user.email?.split("@")[0] ||
+                      "Usuário",
+                  }
+                : undefined,
+            });
+          } catch {
+            /* não-bloqueante */
+          }
         },
         onError: (err: any) => {
           console.error("Erro ao adicionar comentário:", err);
@@ -197,10 +224,22 @@ export function criarModuloComentarios() {
           if (error) throw error;
           return commentId;
         },
-        onSuccess: () => {
+        onSuccess: (commentId) => {
           queryClient.invalidateQueries({ queryKey: ["comments"] });
           queryClient.invalidateQueries({ queryKey: ["comment-counts"] });
           toast.success("Comentário excluído com sucesso!");
+
+          try {
+            registrarLogAuditoria({
+              acao: "EXCLUSAO",
+              entidade: "Comentário",
+              entidade_id: String(commentId),
+              detalhes: `Comentário #${commentId} excluído`,
+              metadados: { id_comentario: commentId },
+            });
+          } catch {
+            /* não-bloqueante */
+          }
         },
         onError: (err: any) => {
           console.error("Erro ao excluir comentário:", err);

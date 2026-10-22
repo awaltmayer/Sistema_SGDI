@@ -14,6 +14,7 @@ import {
   updateTrackerQueryCache,
   registrarConclusaoNoLog,
 } from "../auxiliares";
+import { registrarLogAuditoria } from "@/lib/auditoria/servico-auditoria";
 
 export function criarModuloCronometro() {
   return {
@@ -60,6 +61,18 @@ export function criarModuloCronometro() {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
           queryClient.invalidateQueries({ queryKey: ["card", cId] });
           toast.success("Cronômetro iniciado");
+
+          try {
+            registrarLogAuditoria({
+              acao: "CRONOMETRO",
+              entidade: "Cronômetro",
+              entidade_id: cId,
+              detalhes: `Cronômetro iniciado para a demanda #${cId}`,
+              metadados: { card_id: cId, operacao: "iniciar" },
+            });
+          } catch {
+            /* não-bloqueante */
+          }
         },
         isPending: false,
       };
@@ -155,6 +168,18 @@ export function criarModuloCronometro() {
           queryClient.invalidateQueries({ queryKey: ["cards"] });
           queryClient.invalidateQueries({ queryKey: ["card", cId] });
           toast.info("Cronômetro pausado");
+
+          try {
+            registrarLogAuditoria({
+              acao: "CRONOMETRO",
+              entidade: "Cronômetro",
+              entidade_id: cId,
+              detalhes: `Cronômetro pausado para a demanda #${cId}`,
+              metadados: { card_id: cId, operacao: "pausar", motivo: motivo || reason },
+            });
+          } catch {
+            /* não-bloqueante */
+          }
         },
         isPending: false,
       };

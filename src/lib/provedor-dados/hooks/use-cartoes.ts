@@ -15,6 +15,14 @@ import type {
 } from "../tipos";
 import { loadSupabaseChecklists, loadSupabaseMetadata, saveSupabaseChecklists, saveSupabaseMetadata } from "../storage-local";
 import { registrarConclusaoNoLog, desmarcarConclusao } from "../auxiliares";
+import { registrarLogAuditoria } from "@/lib/auditoria/servico-auditoria";
+
+function formatarNomeColuna(coluna?: string): string {
+  if (coluna === "todo") return "A Fazer";
+  if (coluna === "in-progress") return "Em Progresso";
+  if (coluna === "done") return "Concluído";
+  return coluna || "";
+}
 
 function pararCronometroSeAtivo(cardId: string, user?: any, queryClient?: any) {
   return registrarConclusaoNoLog(cardId, user, queryClient);
@@ -354,6 +362,35 @@ export function criarModuloCartoes() {
             saveSupabaseMetadata(metaMap);
           }
 
+          try {
+            registrarLogAuditoria({
+              acao: "CRIACAO",
+              entidade: "Demanda",
+              entidade_id: data?.id,
+              entidade_titulo: payload.titulo,
+              detalhes: `Demanda criada com prioridade ${payload.prioridade} na coluna ${formatarNomeColuna(payload.coluna)}`,
+              metadados: {
+                titulo: payload.titulo,
+                prioridade: payload.prioridade,
+                coluna: payload.coluna,
+                responsaveis: rawRespIds,
+              },
+              usuario: user
+                ? {
+                    id: user.id,
+                    email: user.email,
+                    nome:
+                      (user.user_metadata as any)?.full_name ||
+                      (user.user_metadata as any)?.name ||
+                      user.email?.split("@")[0] ||
+                      "Usuário",
+                  }
+                : undefined,
+            });
+          } catch {
+            /* log de auditoria não-bloqueante */
+          }
+
           return data;
         },
         onSuccess: () => {
@@ -580,6 +617,38 @@ export function criarModuloCartoes() {
             queryClient.setQueryData<CardWithAssignee>(["card", id], updatedSingle);
           }
 
+          try {
+            const currentTitle =
+              fields.titulo ??
+              fields.title ??
+              previousSingle?.titulo ??
+              previous?.find((c) => c.id === id)?.titulo;
+            registrarLogAuditoria({
+              acao: "ATUALIZACAO",
+              entidade: "Demanda",
+              entidade_id: id,
+              entidade_titulo: currentTitle,
+              detalhes: `Demanda atualizada`,
+              metadados: {
+                id,
+                campos_alterados: Object.keys(fields),
+              },
+              usuario: user
+                ? {
+                    id: user.id,
+                    email: user.email,
+                    nome:
+                      (user.user_metadata as any)?.full_name ||
+                      (user.user_metadata as any)?.name ||
+                      user.email?.split("@")[0] ||
+                      "Usuário",
+                  }
+                : undefined,
+            });
+          } catch {
+            /* log de auditoria não-bloqueante */
+          }
+
           return { previous, previousSingle };
         },
         onError: (err: any, { id }, context) => {
@@ -639,6 +708,32 @@ export function criarModuloCartoes() {
             }
           } catch {
             /* erro silencioso ao limpar cache local do cartão excluído */
+          }
+
+          try {
+            const previousCards = queryClient.getQueryData<CardWithAssignee[]>(["cards"]);
+            const cardParaExcluir = previousCards?.find((c) => String(c.id) === String(id));
+            registrarLogAuditoria({
+              acao: "EXCLUSAO",
+              entidade: "Demanda",
+              entidade_id: id,
+              entidade_titulo: cardParaExcluir?.titulo,
+              detalhes: `Demanda '${cardParaExcluir?.titulo || id}' excluída`,
+              metadados: { id, titulo: cardParaExcluir?.titulo },
+              usuario: user
+                ? {
+                    id: user.id,
+                    email: user.email,
+                    nome:
+                      (user.user_metadata as any)?.full_name ||
+                      (user.user_metadata as any)?.name ||
+                      user.email?.split("@")[0] ||
+                      "Usuário",
+                  }
+                : undefined,
+            });
+          } catch {
+            /* log de auditoria não-bloqueante */
           }
         },
         onMutate: async (id) => {
@@ -709,6 +804,37 @@ export function criarModuloCartoes() {
             const currentCard = previous?.find((orig) => orig.id === c.id);
             const prevCol = currentCard?.coluna ?? currentCard?.column;
             const nextCol = c.coluna ?? c.column;
+            if (nextCol && prevCol && nextCol !== prevCol) {
+              try {
+                registrarLogAuditoria({
+                  acao: nextCol === "done" ? "STATUS" : "MOVIMENTACAO",
+                  entidade: "Demanda",
+                  entidade_id: c.id,
+                  entidade_titulo: currentCard?.titulo,
+                  detalhes:
+                    nextCol === "done"
+                      ? "Demanda concluída na coluna Concluído"
+                      : `Demanda movida de '${formatarNomeColuna(prevCol)}' para '${formatarNomeColuna(nextCol)}'`,
+                  metadados: {
+                    coluna_origem: prevCol,
+                    coluna_destino: nextCol,
+                  },
+                  usuario: user
+                    ? {
+                        id: user.id,
+                        email: user.email,
+                        nome:
+                          (user.user_metadata as any)?.full_name ||
+                          (user.user_metadata as any)?.name ||
+                          user.email?.split("@")[0] ||
+                          "Usuário",
+                      }
+                    : undefined,
+                });
+              } catch {
+                /* não-bloqueante */
+              }
+            }
             if (nextCol === "done" && prevCol !== "done") {
               registrarConclusaoNoLog(c.id, user, queryClient);
             } else if (nextCol && nextCol !== "done" && prevCol === "done") {

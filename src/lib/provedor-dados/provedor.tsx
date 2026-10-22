@@ -16,6 +16,7 @@ import { criarModuloComentarios } from "./hooks/use-comentarios";
 import { criarModuloUsuarios } from "./hooks/use-usuarios";
 import { criarModuloPerfil } from "./hooks/use-perfil";
 import { criarModuloPainel } from "./hooks/use-painel";
+import { criarModuloAuditoria } from "./hooks/use-auditoria";
 
 export const ContextoProvedorDados = createContext<ProvedorDadosApp | null>(null);
 
@@ -128,6 +129,13 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
           queryClient.invalidateQueries({ queryKey: ["users"] });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "logs_auditoria" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+        }
+      )
       .subscribe();
 
     return () => {
@@ -143,6 +151,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
   const moduloUsuarios = criarModuloUsuarios();
   const moduloPerfil = criarModuloPerfil();
   const moduloPainel = criarModuloPainel();
+  const moduloAuditoria = criarModuloAuditoria();
 
   const provider: ProvedorDadosApp = {
     ...moduloCartoes,
@@ -152,6 +161,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     ...moduloUsuarios,
     ...moduloPerfil,
     ...moduloPainel,
+    ...moduloAuditoria,
   };
 
   return (

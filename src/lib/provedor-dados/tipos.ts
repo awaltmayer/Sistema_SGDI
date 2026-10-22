@@ -11,6 +11,7 @@ import type {
   ListaVerificacao,
   ItemListaVerificacao,
 } from "@/tipos/quadro";
+import type { LogAuditoria, EntradaRegistrarLog, FiltrosLogs } from "@/tipos/auditoria";
 
 // ── Aliases de Entidades ──────────────────────────────────────────────
 export type Card = CartaoTarefa;
@@ -315,6 +316,10 @@ export interface ProvedorDadosApp {
   };
   useUpdateTheme(): { mutate: (theme: Theme) => void; isPending: boolean };
   useDeleteBoardData(): { mutate: () => void; isPending: boolean };
+
+  // Auditoria e Logs
+  useAuditLogs(filtros?: FiltrosLogs): { data: LogAuditoria[]; isLoading: boolean; refetch: () => void };
+  useLogAuditoria(): { mutate: (entrada: EntradaRegistrarLog) => void; isPending: boolean };
 
   // Painel
   useDashboardKpis(): { data: KpisPainel; isLoading: boolean };

@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   IconLayoutKanban,
   IconChartPie,
+  IconFileText,
   IconSettings2,
   IconLogout,
   IconPlus,
@@ -31,6 +32,7 @@ import './barra-superior-quadro.css';
 const itensNavegacao = [
   { icon: IconLayoutKanban, label: 'Quadro', path: '/board' },
   { icon: IconChartPie, label: 'Dashboard', path: '/dashboard' },
+  { icon: IconFileText, label: 'Logs', path: '/logs' },
 ];
 export const navItems = itensNavegacao;
 

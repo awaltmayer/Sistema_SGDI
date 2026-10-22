@@ -208,6 +208,48 @@ export type Database = {
         }
         Relationships: []
       }
+      logs_auditoria: {
+        Row: {
+          id: number | string
+          id_usuario: string | null
+          usuario_nome: string
+          usuario_email: string | null
+          acao: string
+          entidade: string
+          entidade_id: string | null
+          entidade_titulo: string | null
+          detalhes: string
+          metadados: Record<string, unknown> | Json | null
+          criado_em: string
+        }
+        Insert: {
+          id?: number | string
+          id_usuario?: string | null
+          usuario_nome: string
+          usuario_email?: string | null
+          acao: string
+          entidade: string
+          entidade_id?: string | null
+          entidade_titulo?: string | null
+          detalhes: string
+          metadados?: Record<string, unknown> | Json | null
+          criado_em?: string
+        }
+        Update: {
+          id?: number | string
+          id_usuario?: string | null
+          usuario_nome?: string
+          usuario_email?: string | null
+          acao?: string
+          entidade?: string
+          entidade_id?: string | null
+          entidade_titulo?: string | null
+          detalhes?: string
+          metadados?: Record<string, unknown> | Json | null
+          criado_em?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,0 +1,275 @@
+/* ==========================================================================
+   Estilos da Página de Logs de Auditoria SGDI - Design Clean e Minimalista
+   ========================================================================== */
+
+.sgdi-logs-container {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.sgdi-logs-main {
+  flex: 1;
+  padding: 1.25rem 1rem 3rem 1rem;
+  max-width: 1400px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .sgdi-logs-main {
+    padding: 1.5rem 1.75rem 3rem 1.75rem;
+  }
+}
+
+.sgdi-logs-cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .sgdi-logs-cabecalho {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.sgdi-logs-titulo {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-foreground);
+}
+
+.sgdi-logs-subtitulo {
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground);
+}
+
+.sgdi-logs-acoes-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Grid de Métricas / KPIs ─────────────────────────────────────────── */
+.sgdi-logs-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .sgdi-logs-kpis-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.875rem;
+  }
+}
+
+.sgdi-logs-kpi-card {
+  padding: 0.875rem 1rem;
+  border-radius: 6px;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.15s ease;
+}
+
+.sgdi-logs-kpi-card:hover {
+  background-color: var(--color-muted);
+}
+
+.sgdi-logs-kpi-valor {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-foreground);
+}
+
+.sgdi-logs-kpi-rotulo {
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+  margin-top: 0.125rem;
+  font-weight: 500;
+}
+
+.sgdi-logs-kpi-icone {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+}
+
+/* ── Barra de Filtros ────────────────────────────────────────────────── */
+.sgdi-logs-filtros-card {
+  padding: 0.875rem 1rem;
+  border-radius: 6px;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 860px) {
+  .sgdi-logs-filtros-card {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.sgdi-logs-busca-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.sgdi-logs-busca-icone {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-muted-foreground);
+  pointer-events: none;
+}
+
+.sgdi-logs-busca-input {
+  padding-left: 2.25rem;
+  height: 2.25rem;
+  font-size: 0.8125rem;
+  border-radius: 6px;
+}
+
+.sgdi-logs-filtros-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Tabela de Logs ─────────────────────────────────────────────────── */
+.sgdi-logs-tabela-card {
+  border-radius: 6px;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.sgdi-logs-tabela-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.sgdi-logs-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.8125rem;
+}
+
+.sgdi-logs-tabela th {
+  padding: 0.75rem 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted-foreground);
+  background-color: color-mix(in srgb, var(--color-card) 60%, var(--color-background));
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.sgdi-logs-tabela td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.sgdi-logs-tabela tr:last-child td {
+  border-bottom: none;
+}
+
+.sgdi-logs-tabela tr:hover td {
+  background-color: color-mix(in srgb, var(--color-muted) 40%, transparent);
+}
+
+/* ── Badges de Ação (Clean, Flat, Sem Gradientes Pesados) ─────────────── */
+.sgdi-badge-acao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.sgdi-badge-criacao {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.sgdi-badge-atualizacao {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.sgdi-badge-movimentacao {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
+.sgdi-badge-status {
+  background-color: rgba(14, 165, 233, 0.15);
+  color: #0ea5e9;
+}
+
+.sgdi-badge-cronometro {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.sgdi-badge-exclusao {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.sgdi-badge-configuracao {
+  background-color: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+}
+
+.sgdi-badge-acesso {
+  background-color: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
+}
+
+/* ── Linha Vazia / Estado Vazio ──────────────────────────────────────── */
+.sgdi-logs-vazio {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-muted-foreground);
+}
+
+.sgdi-logs-vazio-icone {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0.75rem;
+  color: var(--color-muted-foreground);
+  opacity: 0.6;
+}

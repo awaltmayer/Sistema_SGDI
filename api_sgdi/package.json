@@ -1,0 +1,42 @@
+{
+  "name": "api-sgdi",
+  "version": "1.0.0",
+  "description": "API REST segura e documentada para integração do Sistema SGDI com aplicações externas",
+  "type": "module",
+  "main": "src/servidor.ts",
+  "scripts": {
+    "dev": "tsx watch src/servidor.ts",
+    "start": "tsx src/servidor.ts",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "api",
+    "sgdi",
+    "rest",
+    "integracao",
+    "demandas",
+    "kanban"
+  ],
+  "author": "Equipe SGDI",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.0",
+    "@types/supertest": "^6.0.2",
+    "@types/swagger-ui-express": "^4.1.7",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4"
+  }
+}

@@ -1,7 +1,11 @@
 import {
+  addDays,
   differenceInCalendarDays,
+  format,
   startOfToday,
+  startOfWeek,
   subDays,
+  subWeeks,
   isToday,
   startOfMonth,
 } from 'date-fns';
@@ -23,6 +27,9 @@ export const CORES_DASHBOARD = {
   foraDoSla: '#94a3b8', // Cinza slate para demandas sem responsável (fora do SLA)
   foraDoSlaBg: 'rgba(148, 163, 184, 0.15)',
 };
+
+// Meta de aderência ao SLA (%) usada como referência nos indicadores e gráficos
+export const META_SLA = 85;
 
 // ── Interfaces ────────────────────────────────────────────────────────
 
@@ -192,6 +199,16 @@ export function formatarSegundosEmHoras(totalSegundos: number): string {
   }
 
   return `${Math.max(1, minutos)} min`;
+}
+
+/**
+ * Formata número no padrão pt-BR com casas decimais fixas (ex: 78,3)
+ */
+export function formatarNumero(valor: number, casas: number = 0): string {
+  return valor.toLocaleString('pt-BR', {
+    minimumFractionDigits: casas,
+    maximumFractionDigits: casas,
+  });
 }
 
 // ── Filtros Consolidados ───────────────────────────────────────────────
@@ -684,6 +701,149 @@ export function calcularDemandasPorResponsavel(
   };
 }
 
+// ── Datas Auxiliares ───────────────────────────────────────────────────
+
+function dataValida(valor: string | null | undefined): Date | null {
+  if (!valor) return null;
+  const data = new Date(valor);
+  return isNaN(data.getTime()) ? null : data;
+}
+
+function obterDataCriacao(cartao: CartaoComResponsavel): Date | null {
+  return dataValida(cartao.criado_em || (cartao as unknown as { created_at?: string }).created_at);
+}
+
+/**
+ * Converte a data de vencimento ("yyyy-MM-dd" ou ISO) para meia-noite local.
+ */
+function obterDataVencimento(cartao: CartaoComResponsavel): Date | null {
+  const dueDate = cartao.data_vencimento || (cartao as unknown as { due_date?: string }).due_date;
+  if (!dueDate) return null;
+  const [ano, mes, dia] = String(dueDate).split('T')[0].split('-').map(Number);
+  if (!ano || !mes || !dia) return null;
+  return new Date(ano, mes - 1, dia);
+}
+
+/**
+ * Data em que a demanda foi concluída, segundo o cronômetro
+ * (concluido_em → log de conclusão nas pausas → última ação).
+ */
+export function obterDataConclusao(cartao: CartaoComResponsavel): Date | null {
+  const tracker =
+    cartao.rastreador_tempo ??
+    (cartao as unknown as { time_tracker?: CartaoComResponsavel['rastreador_tempo'] }).time_tracker;
+
+  const concluido = dataValida(
+    tracker?.concluido_em || (tracker as unknown as { completed_at?: string })?.completed_at
+  );
+  if (concluido) return concluido;
+
+  const pausas =
+    tracker?.pausas ||
+    (tracker as unknown as { pauses?: Array<{ tipo?: string; type?: string; pausado_em?: string; paused_at?: string }> })?.pauses ||
+    [];
+  const logConclusao = pausas.find((p) => p.tipo === 'conclusao' || p.type === 'conclusao');
+  const dataLog = dataValida(logConclusao?.pausado_em || logConclusao?.paused_at);
+  if (dataLog) return dataLog;
+
+  return dataValida(tracker?.ultima_acao_em);
+}
+
+// ── Tendências Semanais ────────────────────────────────────────────────
+
+export interface PontoTendenciaSemanal {
+  inicio: Date;
+  label: string;
+  criadas: number;
+  concluidas: number;
+  backlog: number; // Abertas ao fim da semana
+  taxaSla: number | null; // % das concluídas na semana (com responsável) entregues no prazo
+}
+
+/**
+ * Agrupa as demandas nas últimas `quantidadeSemanas` semanas (segunda a domingo).
+ * Canceladas ficam fora de todas as séries.
+ */
+export function calcularTendenciaSemanal(
+  cartoes: CartaoComResponsavel[],
+  quantidadeSemanas: number = 8,
+  hoje: Date = new Date()
+): PontoTendenciaSemanal[] {
+  const validos = cartoes.filter((c) => !isDemandaCancelada(c));
+  const inicioSemanaAtual = startOfWeek(hoje, { weekStartsOn: 1 });
+
+  return Array.from({ length: quantidadeSemanas }, (_, i) => {
+    const inicio = subWeeks(inicioSemanaAtual, quantidadeSemanas - 1 - i);
+    const fim = addDays(inicio, 7);
+
+    let criadas = 0;
+    let concluidas = 0;
+    let backlog = 0;
+    let slaTotal = 0;
+    let slaNoPrazo = 0;
+
+    for (const c of validos) {
+      const criadoEm = obterDataCriacao(c);
+      const concluida = isDemandaConcluida(c);
+      const concluidaEm = concluida ? obterDataConclusao(c) : null;
+
+      if (criadoEm && criadoEm >= inicio && criadoEm < fim) criadas++;
+
+      if (concluidaEm && concluidaEm >= inicio && concluidaEm < fim) {
+        concluidas++;
+        const vencimento = obterDataVencimento(c);
+        if (vencimento && temResponsavelAtribuido(c)) {
+          slaTotal++;
+          if (differenceInCalendarDays(concluidaEm, vencimento) <= 0) slaNoPrazo++;
+        }
+      }
+
+      const abertaNoFim = !concluida || (concluidaEm !== null && concluidaEm >= fim);
+      if (criadoEm && criadoEm < fim && abertaNoFim) backlog++;
+    }
+
+    return {
+      inicio,
+      label: format(inicio, 'dd/MM'),
+      criadas,
+      concluidas,
+      backlog,
+      taxaSla: slaTotal > 0 ? Number(((slaNoPrazo / slaTotal) * 100).toFixed(1)) : null,
+    };
+  });
+}
+
+export interface FaixaIdadeAbertas {
+  label: string;
+  quantidade: number;
+}
+
+/**
+ * Distribui as demandas abertas pela idade (dias desde a criação).
+ */
+export function calcularIdadeAbertas(
+  cartoes: CartaoComResponsavel[],
+  hoje: Date = new Date()
+): FaixaIdadeAbertas[] {
+  const faixas: FaixaIdadeAbertas[] = [
+    { label: '0–3 d', quantidade: 0 },
+    { label: '4–7 d', quantidade: 0 },
+    { label: '8–14 d', quantidade: 0 },
+    { label: '15+ d', quantidade: 0 },
+  ];
+
+  for (const c of cartoes) {
+    if (isDemandaCancelada(c) || isDemandaConcluida(c)) continue;
+    const criadoEm = obterDataCriacao(c);
+    if (!criadoEm) continue;
+    const idade = differenceInCalendarDays(hoje, criadoEm);
+    const indice = idade <= 3 ? 0 : idade <= 7 ? 1 : idade <= 14 ? 2 : 3;
+    faixas[indice].quantidade++;
+  }
+
+  return faixas;
+}
+
 // ── Tempo Médio de Resolução (Canceladas FORA) ─────────────────────────
 
 export function calcularTempoMedioResolucao(
@@ -723,26 +883,7 @@ export function calcularTempoMedioResolucao(
     // 2) Dias brutos do calendário
     const criadoEmStr = c.criado_em || (c as unknown as { created_at?: string }).created_at;
     const criadoEm = criadoEmStr ? new Date(criadoEmStr) : new Date();
-
-    const trackerConcluido = tracker?.concluido_em || (tracker as unknown as { completed_at?: string })?.completed_at;
-    let dataFim = trackerConcluido ? new Date(trackerConcluido) : null;
-
-    if (!dataFim || isNaN(dataFim.getTime())) {
-      const pausas = tracker?.pausas || (tracker as unknown as { pauses?: Array<{ tipo?: string; type?: string; pausado_em?: string; paused_at?: string }> }).pauses || [];
-      const logConclusao = pausas.find((p) => p.tipo === 'conclusao' || p.type === 'conclusao');
-      const logData = logConclusao?.pausado_em || logConclusao?.paused_at;
-      if (logData) {
-        dataFim = new Date(logData);
-      }
-    }
-
-    if (!dataFim || isNaN(dataFim.getTime())) {
-      if (tracker?.ultima_acao_em) {
-        dataFim = new Date(tracker.ultima_acao_em);
-      } else {
-        dataFim = new Date();
-      }
-    }
+    const dataFim = obterDataConclusao(c) ?? new Date();
 
     const diffMs = Math.max(0, dataFim.getTime() - criadoEm.getTime());
     const diasFracionados = diffMs / (1000 * 60 * 60 * 24);

@@ -22,7 +22,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 1.25rem 1rem 3rem 1rem;
-  max-width: 1400px;
+  max-width: none;
   width: 100%;
 }
 
@@ -189,3 +189,214 @@
   gap: 0.5rem;
 }
 
+
+/* ==========================================================================
+   Layout responsivo das seções (Visão geral + Tendências)
+   ========================================================================== */
+
+/* Linha de cartões: quebra para uma coluna quando não há largura suficiente */
+.sgdi-dash-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.sgdi-dash-painel {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+/* Ocupa o espaço que sobra ao lado de um .sgdi-dash-painel */
+.sgdi-dash-painel-largo {
+  flex: 999 1 460px;
+  min-width: 0;
+}
+
+.sgdi-dash-kpi {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
+.sgdi-dash-painel-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 1.75rem;
+}
+
+.sgdi-dash-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.sgdi-dash-amostra {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.sgdi-dash-ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Barras horizontais */
+.sgdi-dash-barra {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+}
+
+.sgdi-dash-barra > div {
+  height: 100%;
+}
+
+.sgdi-dash-barra > div:first-child {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.sgdi-dash-barra > div:last-child {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.sgdi-dash-trilho {
+  height: 14px;
+  border-radius: 4px;
+  background-color: var(--color-muted);
+  overflow: hidden;
+}
+
+.sgdi-dash-trilho > div {
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Linha "rótulo | barra | valor" */
+.sgdi-dash-linha-barra {
+  display: grid;
+  grid-template-columns: var(--sgdi-col-rotulo, 140px) minmax(0, 1fr) var(--sgdi-col-valor, 32px);
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.sgdi-dash-linha-barra > :last-child {
+  text-align: right;
+}
+
+/* Meta do SLA no indicador */
+.sgdi-dash-meta {
+  position: relative;
+  height: 4px;
+  margin-top: 0.25rem;
+  border-radius: 2px;
+  background-color: var(--color-muted);
+}
+
+.sgdi-dash-meta > div {
+  height: 4px;
+  border-radius: 2px;
+}
+
+.sgdi-dash-meta > span {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 12px;
+  background-color: var(--color-foreground);
+}
+
+/* Colunas semanais (criadas × concluídas) */
+.sgdi-dash-colunas {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 180px;
+  box-shadow: inset 0 -1px 0 var(--color-border);
+}
+
+.sgdi-dash-coluna {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+}
+
+.sgdi-dash-coluna > div {
+  width: 40%;
+  max-width: 28px;
+  border-radius: 4px 4px 0 0;
+}
+
+.sgdi-dash-rotulos {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 11px;
+  color: var(--color-muted-foreground);
+}
+
+.sgdi-dash-rotulos > span {
+  flex: 1;
+  text-align: center;
+}
+
+/* Lista de críticas */
+.sgdi-dash-critica {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.25rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+}
+
+.sgdi-dash-critica:hover {
+  background-color: var(--color-muted);
+}
+
+.sgdi-dash-critica-resp {
+  flex-shrink: 0;
+  width: 10rem;
+}
+
+.sgdi-dash-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+}
+
+.sgdi-dash-secao-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.sgdi-dash-secao-titulo > div {
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-border);
+}
+
+@media (max-width: 640px) {
+  .sgdi-dash-linha-barra {
+    --sgdi-col-rotulo: 96px;
+  }
+
+  .sgdi-dash-critica-resp {
+    display: none;
+  }
+}

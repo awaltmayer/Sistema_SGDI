@@ -9,6 +9,8 @@ import {
   aplicarFiltrosDashboard,
   isDemandaCancelada,
   formatarSegundosEmHoras,
+  calcularTendenciaSemanal,
+  calcularIdadeAbertas,
   CORES_DASHBOARD,
 } from './calculos-dashboard';
 import type { CartaoComResponsavel, MembroEquipe } from '@/lib/provedor-dados';
@@ -270,6 +272,68 @@ describe('Cálculos do Dashboard SGDI', () => {
 
       expect(criticas.length).toBe(2); // c3 e c2
       expect(criticas[0].semResponsavelForaDoSla).toBe(false);
+    });
+  });
+
+  describe('calcularTendenciaSemanal', () => {
+    // Quarta-feira, para que as semanas (segunda a domingo) fiquem previsíveis
+    const referencia = new Date(2026, 9, 28, 12);
+    const rastreador = (concluidoEm: Date) => ({
+      em_execucao: false,
+      tempo_total_segundos: 3600,
+      pausas: [],
+      concluido_em: concluidoEm.toISOString(),
+    });
+
+    const cartoesTendencia: CartaoComResponsavel[] = [
+      // Criada na semana anterior, concluída nesta semana dentro do prazo
+      {
+        id: 't1', titulo: 'T1', descricao: '', coluna: 'done', prioridade: 'high', posicao: 0,
+        criado_em: new Date(2026, 9, 20, 9).toISOString(),
+        data_vencimento: '2026-10-30',
+        id_responsavel: 'm-1',
+        rastreador_tempo: rastreador(new Date(2026, 9, 27, 10)),
+      },
+      // Criada nesta semana, concluída após o vencimento
+      {
+        id: 't2', titulo: 'T2', descricao: '', coluna: 'done', prioridade: 'low', posicao: 1,
+        criado_em: new Date(2026, 9, 26, 9).toISOString(),
+        data_vencimento: '2026-10-26',
+        id_responsavel: 'm-1',
+        rastreador_tempo: rastreador(new Date(2026, 9, 28, 10)),
+      },
+      // Aberta, criada na semana anterior
+      {
+        id: 't3', titulo: 'T3', descricao: '', coluna: 'todo', prioridade: 'medium', posicao: 2,
+        criado_em: new Date(2026, 9, 21, 9).toISOString(),
+        data_vencimento: null,
+        id_responsavel: null,
+      },
+      // Cancelada: fora de todas as séries
+      {
+        id: 't4', titulo: '[Cancelada] T4', descricao: '', coluna: 'todo', prioridade: 'medium', posicao: 3,
+        criado_em: new Date(2026, 9, 26, 9).toISOString(),
+        data_vencimento: null,
+        id_responsavel: null,
+      },
+    ];
+
+    it('deve contar criadas, concluídas, backlog e SLA por semana', () => {
+      const semanas = calcularTendenciaSemanal(cartoesTendencia, 2, referencia);
+
+      expect(semanas.map((s) => s.label)).toEqual(['19/10', '26/10']);
+      expect(semanas[0]).toMatchObject({ criadas: 2, concluidas: 0, backlog: 2, taxaSla: null });
+      expect(semanas[1]).toMatchObject({ criadas: 1, concluidas: 2, backlog: 1, taxaSla: 50 });
+    });
+  });
+
+  describe('calcularIdadeAbertas', () => {
+    it('deve distribuir apenas as abertas pelas faixas de idade', () => {
+      const faixas = calcularIdadeAbertas(cartoesExemplo, hoje);
+      const totalFaixas = faixas.reduce((acc, f) => acc + f.quantidade, 0);
+
+      expect(faixas.map((f) => f.label)).toEqual(['0–3 d', '4–7 d', '8–14 d', '15+ d']);
+      expect(totalFaixas).toBe(calcularMetricasDemandas(cartoesExemplo).totalAbertas);
     });
   });
 

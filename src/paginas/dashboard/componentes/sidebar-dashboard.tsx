@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import {
   IconChartPie,
-  IconClock,
-  IconUsers,
-  IconShieldExclamation,
-  IconTarget,
+  IconChartLine,
   IconCheck,
   IconX,
   IconChevronLeft,
@@ -16,7 +13,6 @@ import type {
   TipoPeriodoFiltro,
   TipoPrioridadeFiltro,
   TipoStatusFiltro,
-  MetricasDemandas,
 } from '../calculos-dashboard';
 import type { MembroEquipe } from '@/lib/provedor-dados';
 import {
@@ -28,14 +24,11 @@ import {
 } from '@/componentes/ui/menu-selecao';
 import { Button } from '@/componentes/base/botao';
 import { cn } from '@/lib/utilitarios';
-
-export interface ModulosVisiveisDashboard {
-  visaoGeral: boolean;
-  sla: boolean;
-  tempoMedio: boolean;
-  responsaveis: boolean;
-  criticas: boolean;
-}
+import {
+  GRUPOS_MODULOS,
+  MODULOS_PADRAO,
+  type ModulosVisiveisDashboard,
+} from '../modulos-dashboard';
 
 interface PropsSidebarDashboard {
   modulos: ModulosVisiveisDashboard;
@@ -43,8 +36,6 @@ interface PropsSidebarDashboard {
   filtros: FiltrosDashboard;
   aoMudarFiltros: (novos: FiltrosDashboard) => void;
   membros: MembroEquipe[];
-  metricas: MetricasDemandas;
-  totalGeral: number;
 }
 
 export function SidebarDashboard({
@@ -53,8 +44,6 @@ export function SidebarDashboard({
   filtros,
   aoMudarFiltros,
   membros,
-  metricas,
-  totalGeral,
 }: PropsSidebarDashboard) {
   const [colapsado, setColapsado] = useState(false);
 
@@ -70,13 +59,7 @@ export function SidebarDashboard({
   };
 
   const selecionarTodos = () => {
-    aoMudarModulos({
-      visaoGeral: true,
-      sla: true,
-      tempoMedio: true,
-      responsaveis: true,
-      criticas: true,
-    });
+    aoMudarModulos(MODULOS_PADRAO);
   };
 
   const temFiltroAtivo =
@@ -109,10 +92,8 @@ export function SidebarDashboard({
         </Button>
 
         <div className="flex flex-col gap-2.5 items-center text-xs text-muted-foreground">
-          <IconChartPie className="size-3.5 text-primary" />
-          <IconTarget className="size-3.5 text-emerald-500" />
-          <IconClock className="size-3.5 text-blue-500" />
-          <IconUsers className="size-3.5 text-amber-500" />
+          <IconChartPie className="size-3.5" />
+          <IconChartLine className="size-3.5" />
         </div>
 
         <div />
@@ -167,96 +148,43 @@ export function SidebarDashboard({
           </div>
 
           {modulosAberto && (
-            <div className="p-2 space-y-1">
-              {/* Visão Geral */}
-              <button
-                type="button"
-                onClick={() => alternarModulo('visaoGeral')}
-                className={cn(
-                  'w-full flex items-center justify-between px-2 py-1.5 rounded-sm transition-all text-left cursor-pointer border-0 text-xs',
-                  modulos.visaoGeral
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'bg-background text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <div className="flex items-center gap-1.5">
-                  <IconChartPie className="size-3.5" />
-                  <span>Demandas</span>
+            <div className="p-2 space-y-3">
+              {GRUPOS_MODULOS.map((grupo) => (
+                <div key={grupo.titulo} className="space-y-1">
+                  <div className="px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {grupo.titulo}
+                  </div>
+                  {grupo.itens.map(({ chave, label }) => {
+                    const ativo = modulos[chave];
+                    return (
+                      <button
+                        key={chave}
+                        type="button"
+                        aria-pressed={ativo}
+                        onClick={() => alternarModulo(chave)}
+                        className={cn(
+                          'w-full flex items-center justify-between px-2 py-1.5 rounded-sm transition-all text-left cursor-pointer border-0 text-xs',
+                          ativo
+                            ? 'bg-background text-foreground font-medium'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <span>{label}</span>
+                        <span
+                          className="size-3.5 flex items-center justify-center shrink-0"
+                          style={{
+                            borderRadius: 3,
+                            backgroundColor: ativo ? 'var(--color-foreground)' : 'var(--color-muted)',
+                            color: 'var(--color-background)',
+                          }}
+                        >
+                          {ativo && <IconCheck size={10} stroke={3} />}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-                {modulos.visaoGeral && <IconCheck className="size-3" />}
-              </button>
-
-              {/* SLA */}
-              <button
-                type="button"
-                onClick={() => alternarModulo('sla')}
-                className={cn(
-                  'w-full flex items-center justify-between px-2 py-1.5 rounded-sm transition-all text-left cursor-pointer border-0 text-xs',
-                  modulos.sla
-                    ? 'bg-emerald-600 text-white font-medium'
-                    : 'bg-background text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <div className="flex items-center gap-1.5">
-                  <IconTarget className="size-3.5" />
-                  <span>SLA</span>
-                </div>
-                {modulos.sla && <IconCheck className="size-3" />}
-              </button>
-
-              {/* Tempo de Resolução */}
-              <button
-                type="button"
-                onClick={() => alternarModulo('tempoMedio')}
-                className={cn(
-                  'w-full flex items-center justify-between px-2 py-1.5 rounded-sm transition-all text-left cursor-pointer border-0 text-xs',
-                  modulos.tempoMedio
-                    ? 'bg-blue-600 text-white font-medium'
-                    : 'bg-background text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <div className="flex items-center gap-1.5">
-                  <IconClock className="size-3.5" />
-                  <span>Tempo Médio</span>
-                </div>
-                {modulos.tempoMedio && <IconCheck className="size-3" />}
-              </button>
-
-              {/* Por Responsável */}
-              <button
-                type="button"
-                onClick={() => alternarModulo('responsaveis')}
-                className={cn(
-                  'w-full flex items-center justify-between px-2 py-1.5 rounded-sm transition-all text-left cursor-pointer border-0 text-xs',
-                  modulos.responsaveis
-                    ? 'bg-slate-700 text-white font-medium'
-                    : 'bg-background text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <div className="flex items-center gap-1.5">
-                  <IconUsers className="size-3.5" />
-                  <span>Por Responsável</span>
-                </div>
-                {modulos.responsaveis && <IconCheck className="size-3" />}
-              </button>
-
-              {/* Demandas Críticas */}
-              <button
-                type="button"
-                onClick={() => alternarModulo('criticas')}
-                className={cn(
-                  'w-full flex items-center justify-between px-2 py-1.5 rounded-sm transition-all text-left cursor-pointer border-0 text-xs',
-                  modulos.criticas
-                    ? 'bg-red-600 text-white font-medium'
-                    : 'bg-background text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <div className="flex items-center gap-1.5">
-                  <IconShieldExclamation className="size-3.5" />
-                  <span>Críticas (≤ 3d)</span>
-                </div>
-                {modulos.criticas && <IconCheck className="size-3" />}
-              </button>
+              ))}
             </div>
           )}
         </div>

@@ -1,15 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  IconChartPie,
-  IconCheck,
-  IconClock,
-  IconAlertTriangle,
-  IconRefresh,
-  IconLayersSubtract,
-  IconSearch,
-  IconUsers,
-  IconTarget,
-} from '@tabler/icons-react';
+import { IconChartPie, IconRefresh, IconSearch } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { BarraSuperiorQuadro } from '@/paginas/quadro/componentes/barra-superior-quadro';
 import { useDataProvider } from '@/lib/provedor-dados';
@@ -22,22 +12,36 @@ import {
   calcularDemandasPorResponsavel,
   calcularTempoMedioResolucao,
   calcularTempoMedioPorPrioridade,
+  calcularTendenciaSemanal,
+  calcularIdadeAbertas,
 } from './calculos-dashboard';
-import { SidebarDashboard, type ModulosVisiveisDashboard } from './componentes/sidebar-dashboard';
-import { GraficoPizzaDemandas } from './componentes/grafico-pizza-demandas';
-import { GraficoSlaUrgencia } from './componentes/grafico-sla-urgencia';
-import { TabelaDemandasCriticas } from './componentes/tabela-demandas-criticas';
-import { PainelPorResponsavel } from './componentes/painel-por-responsavel';
-import { GraficoBarrasResponsaveis } from './componentes/grafico-barras-responsaveis';
+import { MODULOS_PADRAO, type ModulosVisiveisDashboard } from './modulos-dashboard';
+import { SidebarDashboard } from './componentes/sidebar-dashboard';
+import { KpisDashboard } from './componentes/kpis-dashboard';
+import { SecaoSituacao } from './componentes/secao-situacao';
+import { CardSla } from './componentes/card-sla';
+import { CargaResponsaveis } from './componentes/carga-responsaveis';
+import { TempoMedioPrioridade } from './componentes/tempo-medio-prioridade';
+import { ListaCriticas } from './componentes/lista-criticas';
+import {
+  GraficoFluxoSemanal,
+  GraficoBacklog,
+  GraficoSlaSemanal,
+  GraficoIdadeAbertas,
+} from './componentes/graficos-tendencia';
 import { SeletorUsuariosDemandas } from './componentes/seletor-usuarios-demandas';
-import { CardTempoMedio } from './componentes/card-tempo-medio';
-import { GraficoTempoMedio } from './componentes/grafico-tempo-medio';
 import { BotaoExportarDashboard } from './componentes/botao-exportar-dashboard';
 import { Button } from '@/componentes/base/botao';
 import { Input } from '@/componentes/ui/campo-texto';
 import './dashboard.css';
 
 const CHAVE_STORAGE_USUARIOS_SELECIONADOS = 'sgdi-dashboard-usuarios-selecionados-v2';
+const CHAVE_STORAGE_MODULOS = 'sgdi-dashboard-modulos-v1';
+const SEMANAS_TENDENCIA = 8;
+
+// Cartões que dividem uma linha (ver .sgdi-dash-* em dashboard.css): o largo ocupa o que sobra
+const CLASSE_PAINEL_LARGO = 'sgdi-dash-painel-largo';
+const CLASSE_PAINEL = 'sgdi-dash-painel';
 
 export default function PaginaDashboard() {
   const queryClient = useQueryClient();
@@ -49,14 +53,25 @@ export default function PaginaDashboard() {
 
   const [atualizando, setAtualizando] = useState(false);
 
-  // Módulos visíveis selecionados na barra lateral esquerda (O que quero ver)
-  const [modulos, setModulos] = useState<ModulosVisiveisDashboard>({
-    visaoGeral: true,
-    sla: true,
-    tempoMedio: true,
-    responsaveis: true,
-    criticas: true,
+  // Seções visíveis selecionadas na barra lateral esquerda (O que quero ver)
+  const [modulos, setModulos] = useState<ModulosVisiveisDashboard>(() => {
+    try {
+      const salvo = localStorage.getItem(CHAVE_STORAGE_MODULOS);
+      if (salvo) return { ...MODULOS_PADRAO, ...JSON.parse(salvo) };
+    } catch {
+      /* ignore */
+    }
+    return MODULOS_PADRAO;
   });
+
+  const lidarComMudarModulos = (novos: ModulosVisiveisDashboard) => {
+    setModulos(novos);
+    try {
+      localStorage.setItem(CHAVE_STORAGE_MODULOS, JSON.stringify(novos));
+    } catch {
+      /* ignore */
+    }
+  };
 
   // Filtros centralizados
   const [filtros, setFiltros] = useState<FiltrosDashboard>({
@@ -67,7 +82,7 @@ export default function PaginaDashboard() {
     busca: '',
   });
 
-  // Usuários selecionados para visualização na seção "Demandas por Usuário"
+  // Usuários selecionados para visualização na seção "Por responsável"
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[] | null>(() => {
     try {
       const salvo = localStorage.getItem(CHAVE_STORAGE_USUARIOS_SELECIONADOS);
@@ -93,6 +108,11 @@ export default function PaginaDashboard() {
   // Aplicação reativa dos filtros
   const cartoesFiltrados = useMemo(() => {
     return aplicarFiltrosDashboard(cartoes, filtros, membros);
+  }, [cartoes, filtros, membros]);
+
+  // As tendências já têm sua própria janela de semanas, então ignoram o filtro de período
+  const cartoesTendencia = useMemo(() => {
+    return aplicarFiltrosDashboard(cartoes, { ...filtros, periodo: 'todos' }, membros);
   }, [cartoes, filtros, membros]);
 
   // Métricas calculadas
@@ -134,7 +154,9 @@ export default function PaginaDashboard() {
   // Filtragem estrita dos responsáveis selecionados pelo usuário
   const responsaveisFiltrados = useMemo(() => {
     if (usuariosAtivos.length === 0) return [];
-    return cargaResponsaveis.responsaveis.filter((r) => usuariosAtivos.includes(r.id));
+    return cargaResponsaveis.responsaveis.filter(
+      (r) => usuariosAtivos.includes(r.id) && r.totalAbertas > 0
+    );
   }, [cargaResponsaveis.responsaveis, usuariosAtivos]);
 
   const totalNaoAtribuidasFiltradas = useMemo(() => {
@@ -143,11 +165,6 @@ export default function PaginaDashboard() {
       : 0;
   }, [cargaResponsaveis.totalNaoAtribuidas, usuariosAtivos]);
 
-  const totalAbertasFiltradas = useMemo(() => {
-    const totalMembros = responsaveisFiltrados.reduce((acc, r) => acc + r.totalAbertas, 0);
-    return totalMembros + totalNaoAtribuidasFiltradas;
-  }, [responsaveisFiltrados, totalNaoAtribuidasFiltradas]);
-
   const metricasTempo = useMemo(
     () => calcularTempoMedioResolucao(cartoesFiltrados),
     [cartoesFiltrados]
@@ -155,6 +172,16 @@ export default function PaginaDashboard() {
 
   const tempoPorPrioridade = useMemo(
     () => calcularTempoMedioPorPrioridade(cartoesFiltrados),
+    [cartoesFiltrados]
+  );
+
+  const tendenciaSemanal = useMemo(
+    () => calcularTendenciaSemanal(cartoesTendencia, SEMANAS_TENDENCIA),
+    [cartoesTendencia]
+  );
+
+  const idadeAbertas = useMemo(
+    () => calcularIdadeAbertas(cartoesFiltrados),
     [cartoesFiltrados]
   );
 
@@ -171,38 +198,32 @@ export default function PaginaDashboard() {
   };
 
   const carregandoGeral = carregandoCartoes || carregandoMembros;
+  const temTendencia =
+    modulos.fluxoSemanal || modulos.backlog || modulos.slaSemanal || modulos.idadeAbertas;
+  const nenhumModulo = !Object.values(modulos).some(Boolean);
 
   return (
     <div className="sgdi-dashboard-container">
       {/* Barra superior de navegação com as abas "Quadro" e "Dashboard" */}
       <BarraSuperiorQuadro />
 
-      {/* Corpo com Aba Lateral Esquerda e Área Principal Limpa */}
+      {/* Corpo com Aba Lateral Esquerda e Área Principal */}
       <div className="sgdi-dashboard-corpo">
-        {/* Aba Lateral Esquerda: Seletor de Módulos (O que quero ver) e Filtros Concentrados */}
         <SidebarDashboard
           modulos={modulos}
-          aoMudarModulos={setModulos}
+          aoMudarModulos={lidarComMudarModulos}
           filtros={filtros}
           aoMudarFiltros={setFiltros}
           membros={membros}
-          metricas={metricas}
-          totalGeral={cartoes.length}
         />
 
-        {/* Área Principal de Exibição */}
         <main className="sgdi-dashboard-main">
-          {/* Cabeçalho Minimalista com Busca Rápida e Atualização */}
+          {/* Cabeçalho com Busca Rápida, Atualização e Exportação */}
           <div className="sgdi-dashboard-cabecalho">
-            <div className="flex items-center gap-2">
-              <h1 className="sgdi-dashboard-titulo flex items-center gap-2">
-                <IconChartPie className="size-5 text-primary" />
-                Dashboard
-              </h1>
-              <span className="font-mono text-xs px-2 py-0.5 rounded-sm bg-muted text-foreground font-bold border-0">
-                {cartoesFiltrados.length}
-              </span>
-            </div>
+            <h1 className="sgdi-dashboard-titulo flex items-center gap-2">
+              <IconChartPie className="size-5" />
+              Dashboard
+            </h1>
 
             <div className="flex items-center gap-2">
               <div className="relative w-44 sm:w-56">
@@ -218,6 +239,7 @@ export default function PaginaDashboard() {
                     type="button"
                     onClick={() => setFiltros({ ...filtros, busca: '' })}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                    aria-label="Limpar busca"
                   >
                     ✕
                   </button>
@@ -231,9 +253,9 @@ export default function PaginaDashboard() {
                 disabled={atualizando || carregandoGeral}
                 className="h-7 px-2.5 text-xs gap-1.5 rounded-sm border-0 bg-card hover:bg-muted"
                 title="Recarregar dados"
+                aria-label="Atualizar"
               >
                 <IconRefresh className={`size-3.5 ${atualizando ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Atualizar</span>
               </Button>
 
               <BotaoExportarDashboard
@@ -245,193 +267,79 @@ export default function PaginaDashboard() {
             </div>
           </div>
 
-          {/* 4 KPIs Flat, Lisos e Sem Bordas no Topo */}
-          <div className="sgdi-dashboard-kpis-grid">
-            {/* Total */}
-            <div className="sgdi-dashboard-kpi-card border-0">
-              <div className="flex items-center justify-between text-muted-foreground mb-1">
-                <span className="text-xs font-medium">Total</span>
-                <IconLayersSubtract className="size-3.5 text-primary" />
-              </div>
-              <div className="text-xl font-bold font-mono text-foreground">
-                {metricas.total}
-              </div>
-            </div>
+          <div className="flex flex-col gap-3">
+            {/* ── Visão geral ── */}
+            {modulos.indicadores && <KpisDashboard metricas={metricas} metricasSla={metricasSla} />}
 
-            {/* Abertas */}
-            <div className="sgdi-dashboard-kpi-card border-0">
-              <div className="flex items-center justify-between text-muted-foreground mb-1">
-                <span className="text-xs font-medium">Abertas</span>
-                <IconClock className="size-3.5 text-blue-600 dark:text-blue-400" />
+            {(modulos.situacao || modulos.sla) && (
+              <div className="sgdi-dash-linha">
+                {modulos.situacao && <SecaoSituacao metricas={metricas} className={CLASSE_PAINEL_LARGO} />}
+                {modulos.sla && <CardSla metricasSla={metricasSla} className={CLASSE_PAINEL} />}
               </div>
-              <div className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400">
-                {metricas.totalAbertas}{' '}
-                <span className="text-[11px] font-normal text-muted-foreground font-sans">
-                  ({metricas.percentualAbertas}%)
-                </span>
-              </div>
-            </div>
-
-            {/* Concluídas */}
-            <div className="sgdi-dashboard-kpi-card border-0">
-              <div className="flex items-center justify-between text-muted-foreground mb-1">
-                <span className="text-xs font-medium">Concluídas</span>
-                <IconCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                {metricas.concluidas}{' '}
-                <span className="text-[11px] font-normal text-muted-foreground font-sans">
-                  ({metricas.percentualConcluidas}%)
-                </span>
-              </div>
-            </div>
-
-            {/* Atrasadas (SEMPRE EM VERMELHO SÓLIDO) */}
-            <div className="sgdi-dashboard-kpi-card border-0 bg-red-500/10">
-              <div className="flex items-center justify-between text-red-600 dark:text-red-400 mb-1">
-                <span className="text-xs font-bold">Atrasadas</span>
-                <IconAlertTriangle className="size-3.5 text-red-600" />
-              </div>
-              <div className="text-xl font-bold font-mono text-red-600 dark:text-red-400">
-                {metricas.atrasadas}{' '}
-                <span className="text-[11px] font-bold text-red-600/90 font-sans">
-                  ({metricas.percentualAtrasadas}%)
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Módulos Condicionalmente Renderizados com Divisões Claras */}
-          <div className="space-y-6">
-            {/* 1. Módulo: Visão Geral & SLA */}
-            {(modulos.visaoGeral || modulos.sla) && (
-              <section className="space-y-3">
-                <div className="sgdi-dashboard-modulo-cabecalho">
-                  <div className="sgdi-dashboard-modulo-titulo">
-                    <IconChartPie className="size-3.5 text-primary" />
-                    <span>Visão Geral & SLA</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                  {modulos.visaoGeral && (
-                    <div className={modulos.sla ? 'lg:col-span-7' : 'lg:col-span-12'}>
-                      <GraficoPizzaDemandas metricas={metricas} />
-                    </div>
-                  )}
-                  {modulos.sla && (
-                    <div className={modulos.visaoGeral ? 'lg:col-span-5' : 'lg:col-span-12'}>
-                      <GraficoSlaUrgencia metricasSla={metricasSla} />
-                    </div>
-                  )}
-                </div>
-              </section>
             )}
 
-            {/* Separador visual claro se houver próximo módulo */}
-            {(modulos.visaoGeral || modulos.sla) && (modulos.tempoMedio || modulos.responsaveis || modulos.criticas) && (
-              <div className="sgdi-dashboard-modulo-divisor" />
-            )}
-
-            {/* 2. Módulo: Tempo Médio de Resolução */}
-            {modulos.tempoMedio && (
-              <section className="space-y-3">
-                <div className="sgdi-dashboard-modulo-cabecalho">
-                  <div className="sgdi-dashboard-modulo-titulo">
-                    <IconClock className="size-3.5 text-blue-600" />
-                    <span>Tempo Médio de Resolução</span>
-                  </div>
-                </div>
-
-                <CardTempoMedio metricasTempo={metricasTempo} />
-                <GraficoTempoMedio
-                  metricasTempo={metricasTempo}
-                  tempoPorPrioridade={tempoPorPrioridade}
-                />
-              </section>
-            )}
-
-            {/* Separador visual claro se houver próximo módulo */}
-            {modulos.tempoMedio && (modulos.responsaveis || modulos.criticas) && (
-              <div className="sgdi-dashboard-modulo-divisor" />
-            )}
-
-            {/* 3. Módulo: Demandas por Usuário (Com Seletor Vertical Pesquisável no Cabeçalho) */}
-            {modulos.responsaveis && (
-              <section className="space-y-3">
-                <div className="sgdi-dashboard-modulo-cabecalho flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div className="sgdi-dashboard-modulo-titulo">
-                    <IconUsers className="size-3.5 text-amber-600" />
-                    <span>Demandas por Usuário</span>
-                  </div>
-
-                  {/* Seletor Vertical Pesquisável idêntico ao SeletorSolicitante do Quadro */}
-                  <SeletorUsuariosDemandas
-                    todosItens={cargaResponsaveis.responsaveis}
-                    totalNaoAtribuidas={cargaResponsaveis.totalNaoAtribuidas}
-                    selecionados={usuariosAtivos}
-                    aoMudarSelecao={lidarComMudarUsuariosSelecionados}
+            {(modulos.responsaveis || modulos.tempoMedio) && (
+              <div className="sgdi-dash-linha">
+                {modulos.responsaveis && (
+                  <CargaResponsaveis
+                    className={CLASSE_PAINEL_LARGO}
+                    responsaveis={responsaveisFiltrados}
+                    totalNaoAtribuidas={totalNaoAtribuidasFiltradas}
+                    seletor={
+                      <SeletorUsuariosDemandas
+                        todosItens={cargaResponsaveis.responsaveis}
+                        totalNaoAtribuidas={cargaResponsaveis.totalNaoAtribuidas}
+                        selecionados={usuariosAtivos}
+                        aoMudarSelecao={lidarComMudarUsuariosSelecionados}
+                      />
+                    }
                   />
-                </div>
-
-                {usuariosAtivos.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-md border-0 space-y-2">
-                    <div className="size-8 rounded-sm bg-primary text-primary-foreground mx-auto flex items-center justify-center font-bold">
-                      <IconUsers className="size-4" />
-                    </div>
-                    <h4 className="text-xs font-semibold text-foreground">
-                      Nenhum usuário selecionado
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-                      Clique no seletor acima para pesquisar e escolher os membros que deseja visualizar.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <GraficoBarrasResponsaveis
-                      responsaveis={responsaveisFiltrados}
-                      totalDemandasAbertas={totalAbertasFiltradas}
-                      totalNaoAtribuidas={totalNaoAtribuidasFiltradas}
-                    />
-                    <PainelPorResponsavel
-                      responsaveis={responsaveisFiltrados}
-                      totalDemandasAbertas={totalAbertasFiltradas}
-                      totalNaoAtribuidas={totalNaoAtribuidasFiltradas}
-                    />
-                  </>
                 )}
-              </section>
+                {modulos.tempoMedio && (
+                  <TempoMedioPrioridade
+                    className={CLASSE_PAINEL}
+                    metricasTempo={metricasTempo}
+                    tempoPorPrioridade={tempoPorPrioridade}
+                  />
+                )}
+              </div>
             )}
 
-            {/* Separador visual claro se houver próximo módulo */}
-            {modulos.responsaveis && modulos.criticas && (
-              <div className="sgdi-dashboard-modulo-divisor" />
+            {modulos.criticas && <ListaCriticas demandasCriticas={demandasCriticas} />}
+
+            {/* ── Tendências ── */}
+            {temTendencia && (
+              <div className="sgdi-dash-secao-titulo">
+                <h2 className="sgdi-dashboard-modulo-titulo">Tendências · {SEMANAS_TENDENCIA} semanas</h2>
+                <div />
+              </div>
             )}
 
-            {/* 4. Módulo: Demandas Críticas */}
-            {modulos.criticas && (
-              <section className="space-y-3">
-                <div className="sgdi-dashboard-modulo-cabecalho">
-                  <div className="sgdi-dashboard-modulo-titulo">
-                    <IconAlertTriangle className="size-3.5 text-red-600" />
-                    <span>Demandas Críticas (≤ 3 dias)</span>
-                  </div>
-                </div>
-
-                <TabelaDemandasCriticas demandasCriticas={demandasCriticas} />
-              </section>
+            {(modulos.fluxoSemanal || modulos.backlog) && (
+              <div className="sgdi-dash-linha">
+                {modulos.fluxoSemanal && (
+                  <GraficoFluxoSemanal semanas={tendenciaSemanal} className={CLASSE_PAINEL} />
+                )}
+                {modulos.backlog && <GraficoBacklog semanas={tendenciaSemanal} className={CLASSE_PAINEL} />}
+              </div>
             )}
 
-            {/* Mensagem se nenhum módulo estiver marcado */}
-            {!modulos.visaoGeral &&
-              !modulos.sla &&
-              !modulos.tempoMedio &&
-              !modulos.responsaveis &&
-              !modulos.criticas && (
-                <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-md border-0">
-                  Nenhum módulo selecionado para visualização. Use a barra lateral esquerda para marcar o que deseja ver.
-                </div>
-              )}
+            {(modulos.slaSemanal || modulos.idadeAbertas) && (
+              <div className="sgdi-dash-linha">
+                {modulos.slaSemanal && (
+                  <GraficoSlaSemanal semanas={tendenciaSemanal} className={CLASSE_PAINEL} />
+                )}
+                {modulos.idadeAbertas && (
+                  <GraficoIdadeAbertas faixas={idadeAbertas} className={CLASSE_PAINEL} />
+                )}
+              </div>
+            )}
+
+            {nenhumModulo && (
+              <div className="p-6 text-center text-xs text-muted-foreground bg-card rounded-md">
+                Nenhuma seção selecionada.
+              </div>
+            )}
           </div>
         </main>
       </div>

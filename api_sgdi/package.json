@@ -9,7 +9,10 @@
     "start": "tsx src/servidor.ts",
     "build": "tsc",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "api:dev": "npm run dev",
+    "api:start": "npm run start",
+    "api:test": "npm test",
+    "api:build": "npm run build"
   },
   "keywords": [
     "api",

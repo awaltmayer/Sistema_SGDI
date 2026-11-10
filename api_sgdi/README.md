@@ -15,7 +15,7 @@ API REST oficial projetada para permitir que **aplicações e sistemas externos 
 | **Sempre responde em JSON** | ✅ Conforme | Todas as rotas, inclusive erros 400, 401, 404 e 500, respondem com cabeçalho `application/json; charset=utf-8` |
 | **Chave fora do código (variável de ambiente)** | ✅ Conforme | Configurada via arquivo `.env` com a variável `API_KEY` (com modelo em `.env.example`) |
 | **Código certo: 200, 201, 400, 404...** | ✅ Conforme | Códigos de status HTTP rigorosamente semânticos |
-| **Toda rota documentada e testada** | ✅ Conforme | Documentação interativa via **Swagger UI** (`/api/docs`), especificação OpenAPI 3.0 e suíte com **13 testes automatizados** via Vitest |
+| **Toda rota documentada e testada** | ✅ Conforme | Documentação interativa via **Swagger UI** (`/api/docs`), especificação OpenAPI 3.0 (`/api/docs/openapi.json`) e suíte completa com **16 testes automatizados** via Vitest |
 
 ---
 
@@ -109,11 +109,12 @@ A chave pode ser enviada por aplicações externas de duas formas:
 
 Todas as rotas iniciam obrigatoriamente com o prefixo `/api/`.
 
-### 1. Diagnóstico e Documentação (Públicos)
+### 1. Diagnóstico, Metadados e Documentação (Públicos)
 | Método | Rota | Descrição | Status Sucesso |
 |---|---|---|---|
+| `GET` | `/` ou `/api` | Metadados do serviço e links da API em JSON | `200 OK` |
 | `GET` | `/api/status` | Retorna o estado operacional e uptime da API | `200 OK` |
-| `GET` | `/api/docs` | Interface gráfica interativa Swagger UI | `200 OK` |
+| `GET` | `/api/docs` | Interface gráfica de documentação Swagger UI | `200 OK` |
 | `GET` | `/api/docs/openapi.json` | Especificação completa no padrão OpenAPI 3.0 em JSON | `200 OK` |
 
 ### 2. Gestão de Demandas / Tarefas (Protegidos)

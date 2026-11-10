@@ -285,6 +285,43 @@ export const especificacaoOpenApi = {
           '404': { description: 'Demanda não encontrada' },
         },
       },
+      patch: {
+        summary: 'Atualizar parcialmente uma demanda',
+        description: 'Permite atualizar um ou mais campos de uma demanda existente (ex: mover status/coluna).',
+        security: [{ ApiKeyAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID da demanda' },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AtualizarDemandaDTO' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Demanda atualizada com sucesso',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    sucesso: { type: 'boolean', example: true },
+                    mensagem: { type: 'string' },
+                    dados: { $ref: '#/components/schemas/Demanda' },
+                    codigo_status: { type: 'integer', example: 200 },
+                  },
+                },
+              },
+            },
+          },
+          '400': { description: 'Dados inválidos' },
+          '401': { description: 'Não autorizado' },
+          '404': { description: 'Demanda não encontrada' },
+        },
+      },
       delete: {
         summary: 'Excluir uma demanda do SGDI',
         description: 'Remove definitivamente uma demanda do sistema.',

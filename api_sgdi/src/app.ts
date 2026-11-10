@@ -22,9 +22,17 @@ export function criarApp() {
   // Middleware para garantir Content-Type JSON padrão
   app.use('/api', formatadorJson);
 
-  // Redirecionamento amigável da raiz para a documentação interativa
+  // Raiz do servidor: retorna metadados da API em JSON (padrão REST limpo)
   app.get('/', (req, res) => {
-    res.redirect('/api/docs');
+    res.status(200).json({
+      sucesso: true,
+      servico: 'API REST SGDI',
+      versao: '1.0.0',
+      status: 'operacional',
+      documentacao: '/api/docs',
+      especificacao: '/api/docs/openapi.json',
+      healthcheck: '/api/status',
+    });
   });
 
   // Todas as rotas da API começam com /api

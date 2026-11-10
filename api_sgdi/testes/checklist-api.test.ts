@@ -179,4 +179,56 @@ describe('✅ Checklist da API SGDI', () => {
     expect(resHtml.text).toContain('swagger-ui');
     expect(resHtml.text).toContain('SwaggerUIBundle');
   });
+
+  // 8. Raiz do servidor e da API respondem com JSON padrão REST
+  it('8. Raiz / e /api devem responder metadados em JSON (sem depender de painéis web)', async () => {
+    const resRaiz = await request(app).get('/');
+    expect(resRaiz.status).toBe(200);
+    expect(resRaiz.headers['content-type']).toMatch(/application\/json/);
+    expect(resRaiz.body.sucesso).toBe(true);
+    expect(resRaiz.body.documentacao).toBe('/api/docs');
+
+    const resApiRaiz = await request(app).get('/api');
+    expect(resApiRaiz.status).toBe(200);
+    expect(resApiRaiz.headers['content-type']).toMatch(/application\/json/);
+    expect(resApiRaiz.body.sucesso).toBe(true);
+  });
+
+  // 9. Suporte a PATCH para atualizações parciais
+  it('9. Deve suportar atualizações parciais via PATCH', async () => {
+    // Cria uma demanda
+    const resCriar = await request(app)
+      .post('/api/demandas')
+      .set('X-API-Key', CHAVE_VALIDA)
+      .send({
+        titulo: 'Demanda para teste PATCH',
+        coluna: 'todo',
+        prioridade: 'low',
+      });
+    expect(resCriar.status).toBe(201);
+    const id = resCriar.body.dados.id;
+
+    // Atualiza apenas a coluna via PATCH
+    const resPatch = await request(app)
+      .patch(`/api/demandas/${id}`)
+      .set('X-API-Key', CHAVE_VALIDA)
+      .send({ coluna: 'in-progress' });
+    expect(resPatch.status).toBe(200);
+    expect(resPatch.body.dados.coluna).toBe('in-progress');
+    expect(resPatch.body.dados.titulo).toBe('Demanda para teste PATCH');
+  });
+
+  // 10. Tratamento de JSON inválido
+  it('10. Envio de JSON sintaticamente inválido deve retornar 400 Bad Request em JSON', async () => {
+    const res = await request(app)
+      .post('/api/demandas')
+      .set('X-API-Key', CHAVE_VALIDA)
+      .set('Content-Type', 'application/json')
+      .send('{"titulo": "Incompleto", '); // JSON quebrado
+
+    expect(res.status).toBe(400);
+    expect(res.headers['content-type']).toMatch(/application\/json/);
+    expect(res.body.sucesso).toBe(false);
+    expect(res.body.erro).toBe('JSON Inválido');
+  });
 });

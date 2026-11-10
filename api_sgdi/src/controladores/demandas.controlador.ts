@@ -1,11 +1,22 @@
 import type { Request, Response } from 'express';
 import { demandasServico, type FiltrosDemandas } from '../servicos/demandas.servico.js';
-import type { CriarDemandaDTO, AtualizarDemandaDTO, CriarComentarioDTO } from '../tipos/index.js';
+import type { CriarDemandaDTO, AtualizarDemandaDTO } from '../tipos/index.js';
+
+const COLUNAS_VALIDAS = ['todo', 'in-progress', 'done'] as const;
+const PRIORIDADES_VALIDAS = ['low', 'medium', 'high'] as const;
+
+function isColunaValida(coluna: unknown): boolean {
+  return typeof coluna === 'string' && (COLUNAS_VALIDAS as readonly string[]).includes(coluna);
+}
+
+function isPrioridadeValida(prioridade: unknown): boolean {
+  return typeof prioridade === 'string' && (PRIORIDADES_VALIDAS as readonly string[]).includes(prioridade);
+}
 
 export const demandasControlador = {
   /**
    * GET /api/demandas
-   * Lista demandas com filtros opcionais
+   * Lista demandas com filtros opcionais e paginação
    */
   async listar(req: Request, res: Response): Promise<void> {
     try {
@@ -15,11 +26,12 @@ export const demandasControlador = {
         solicitante_id: req.query.solicitante_id as string | undefined,
         responsavel_id: req.query.responsavel_id as string | undefined,
         busca: req.query.busca as string | undefined,
-        limite: req.query.limite ? Number(req.query.limite) : 50,
-        pagina: req.query.pagina ? Number(req.query.pagina) : 1,
+        limite: req.query.limite ? Math.max(1, Math.min(100, Number(req.query.limite))) : 50,
+        pagina: req.query.pagina ? Math.max(1, Number(req.query.pagina)) : 1,
       };
 
       const { itens, total } = await demandasServico.listarDemandas(filtros);
+      const limite = filtros.limite || 50;
 
       res.status(200).json({
         sucesso: true,
@@ -27,8 +39,8 @@ export const demandasControlador = {
         meta: {
           total,
           pagina: filtros.pagina,
-          limite: filtros.limite,
-          total_paginas: Math.ceil(total / (filtros.limite || 50)) || 1,
+          limite,
+          total_paginas: Math.ceil(total / limite) || 1,
         },
       });
     } catch (err: any) {
@@ -76,13 +88,12 @@ export const demandasControlador = {
 
   /**
    * POST /api/demandas
-   * Cria uma nova demanda (retorna 201 Created)
+   * Cria uma nova demanda (201 Created)
    */
   async criar(req: Request, res: Response): Promise<void> {
     try {
       const { titulo, descricao, coluna, prioridade, data_vencimento, posicao, id_usuario, ids_responsaveis } = req.body;
 
-      // Validação obrigatória: título
       if (!titulo || typeof titulo !== 'string' || titulo.trim().length === 0) {
         res.status(400).json({
           sucesso: false,
@@ -93,8 +104,7 @@ export const demandasControlador = {
         return;
       }
 
-      // Validação opcional: coluna (status)
-      if (coluna && !['todo', 'in-progress', 'done'].includes(coluna)) {
+      if (coluna && !isColunaValida(coluna)) {
         res.status(400).json({
           sucesso: false,
           erro: 'Dados inválidos',
@@ -104,8 +114,7 @@ export const demandasControlador = {
         return;
       }
 
-      // Validação opcional: prioridade
-      if (prioridade && !['low', 'medium', 'high'].includes(prioridade)) {
+      if (prioridade && !isPrioridadeValida(prioridade)) {
         res.status(400).json({
           sucesso: false,
           erro: 'Dados inválidos',
@@ -146,7 +155,7 @@ export const demandasControlador = {
 
   /**
    * PUT /api/demandas/:id ou PATCH /api/demandas/:id
-   * Atualiza uma demanda existente (retorna 200 OK)
+   * Atualiza uma demanda existente (200 OK)
    */
   async atualizar(req: Request, res: Response): Promise<void> {
     try {
@@ -163,7 +172,7 @@ export const demandasControlador = {
         return;
       }
 
-      if (coluna !== undefined && !['todo', 'in-progress', 'done'].includes(coluna)) {
+      if (coluna !== undefined && !isColunaValida(coluna)) {
         res.status(400).json({
           sucesso: false,
           erro: 'Dados inválidos',
@@ -173,7 +182,7 @@ export const demandasControlador = {
         return;
       }
 
-      if (prioridade !== undefined && !['low', 'medium', 'high'].includes(prioridade)) {
+      if (prioridade !== undefined && !isPrioridadeValida(prioridade)) {
         res.status(400).json({
           sucesso: false,
           erro: 'Dados inválidos',
@@ -185,13 +194,13 @@ export const demandasControlador = {
 
       const dadosAtualizacao: AtualizarDemandaDTO = {};
       if (titulo !== undefined) dadosAtualizacao.titulo = titulo.trim();
-      if (descricao !== undefined) dadosAtualizacao.descricao = descricao;
+      if (descricao !== undefined) dadosAtualizacao.descricao = typeof descricao === 'string' ? descricao.trim() : '';
       if (coluna !== undefined) dadosAtualizacao.coluna = coluna;
       if (prioridade !== undefined) dadosAtualizacao.prioridade = prioridade;
       if (data_vencimento !== undefined) dadosAtualizacao.data_vencimento = data_vencimento;
       if (posicao !== undefined) dadosAtualizacao.posicao = Number(posicao);
       if (id_usuario !== undefined) dadosAtualizacao.id_usuario = id_usuario;
-      if (ids_responsaveis !== undefined) dadosAtualizacao.ids_responsaveis = ids_responsaveis;
+      if (ids_responsaveis !== undefined) dadosAtualizacao.ids_responsaveis = Array.isArray(ids_responsaveis) ? ids_responsaveis : [];
 
       const demandaAtualizada = await demandasServico.atualizarDemanda(id, dadosAtualizacao);
 
@@ -223,7 +232,7 @@ export const demandasControlador = {
 
   /**
    * DELETE /api/demandas/:id
-   * Exclui uma demanda existente (retorna 200 OK)
+   * Exclui uma demanda existente (200 OK)
    */
   async excluir(req: Request, res: Response): Promise<void> {
     try {
@@ -296,7 +305,7 @@ export const demandasControlador = {
 
   /**
    * POST /api/demandas/:id/comentarios
-   * Adiciona um comentário em uma demanda (retorna 201 Created)
+   * Adiciona um comentário em uma demanda (201 Created)
    */
   async adicionarComentario(req: Request, res: Response): Promise<void> {
     try {

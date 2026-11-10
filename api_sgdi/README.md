@@ -38,6 +38,7 @@ api_sgdi/
 ├── .env                  # Variáveis de ambiente locais (não versionadas)
 ├── .env.example          # Exemplo de configuração das variáveis
 ├── .gitignore            # Arquivos ignorados pelo controle de versão
+├── GUIA_DE_TESTES.md     # Guia prático com todos os comandos cURL prontos para teste
 ├── README.md             # Esta documentação completa
 ├── package.json          # Dependências e scripts do projeto
 ├── tsconfig.json         # Configurações do compilador TypeScript
@@ -195,6 +196,8 @@ npm test
 ---
 
 ## 📡 Exemplos Práticos de Integração (cURL)
+
+> 💡 **Guia Completo de Testes:** Para uma relação completa de todos os comandos organizados por caso de uso, incluindo testes de erros, filtros avançados e edição campo a campo, consulte o arquivo [`GUIA_DE_TESTES.md`](./GUIA_DE_TESTES.md).
 
 ### 1. Consultar status da API (Healthcheck - Pública)
 ```bash

@@ -1,124 +1,98 @@
 # SGDI - Sistema de Gestão de Demandas de TI
 
-> Plataforma completa e moderna para gerenciamento, rastreamento e governança de demandas, tarefas e projetos de equipes de Tecnologia da Informação.
+> Plataforma completa e moderna para gerenciamento, rastreamento, análise de indicadores e governança de demandas, tarefas e projetos de equipes de Tecnologia da Informação.
 
 ---
 
 ## 📌 Visão Geral
 
-O **SGDI** (Sistema de Gestão de Demandas de TI) foi projetado para elevar a produtividade, a rastreabilidade operacional e a governança de times ágeis de tecnologia. 
+O **SGDI** (Sistema de Gestão de Demandas de TI) foi projetado para elevar a produtividade, a rastreabilidade operacional e a governança de times ágeis de tecnologia.
 
-Com interface fluida e suporte a **Dark Mode**, o sistema oferece:
-- **Fluxos Ágeis em Quadro Kanban** com arrastar-e-soltar, paginação interna, colapso/expansão de colunas e customização de cores (com preto absoluto padrão no modo escuro);
+Com interface responsiva e suporte a **Dark Mode**, o sistema oferece:
+- **Fluxos Ágeis em Quadro Kanban (`/board`)** com arrastar-e-soltar, paginação interna por coluna, colapso/expansão e customização de cores (com preto absoluto padrão no modo escuro);
 - **Visualização em Tabela Corporativa Paginada** (10 em 10 itens) para leitura gerencial densa e auditável;
-- **Apontamento de Horas com Cronômetro Inteligente**, suporte a estimativas por **Nível de Complexidade**, pausas com motivos estruturados, regra estrita de permissão por responsável e log automático de conclusão;
-- **Controle Estrito de Solicitantes e Múltiplos Responsáveis**, eliminando campos livres e garantindo integridade de vínculos;
-- **Exportação Dupla de Relatórios**: planilha em **CSV formatado** (compatível com Excel) e **Relatório Corporativo para Impressão / PDF** em layout A4 estilizado;
-- **Arquitetura Híbrida e Resiliente**, unindo banco relacional PostgreSQL com Row Level Security (Supabase) a uma camada *offline-first* para metadados de produtividade.
+- **Dashboard Analítico Modular (`/dashboard`)** com KPIs, cumprimento de SLA, carga por responsável, tempo médio por prioridade, lista de demandas críticas, gráficos de tendência (8 semanas) e exportação;
+- **Trilha de Logs de Auditoria (`/logs`)** com registro automático de operações, métricas, filtros, modal de detalhes técnicos e exportação em CSV e JSON;
+- **Apontamento de Horas com Cronômetro Inteligente**, estimativas por **Nível de Complexidade**, pausas com motivos estruturados, permissão restrita por responsável e registro automático de conclusão;
+- **Exportação de Relatórios**: planilha em **CSV** (compatível com Excel) e **Relatório Corporativo para Impressão / PDF**;
+- **API REST Integrada (`api_sgdi/`)** em Express + TypeScript com documentação interativa Swagger UI (`/api/docs`) e autenticação por API Key;
+- **Arquitetura Híbrida e Resiliente**, unindo PostgreSQL com Row Level Security e Realtime (Supabase) a uma camada local (*offline-first* / fallback em `localStorage`).
 
 ---
 
 ## 🚀 Tecnologias e Arquitetura
 
-### Front-end
-- **React 18** (com **TypeScript** em modo estrito)
-- **Vite** (Build tool e servidor de desenvolvimento ultrarrápido com HMR)
-- **React Router DOM v6** (Roteamento SPA com rotas protegidas e divisão de bundle via `lazy`/`Suspense`)
-- **CSS Padrão W3C & CSS Variables** (Design System nativo, sem compiladores externos, com Dark/Light Mode e tokens OKLCH)
-- **Radix UI** (Primitivos headless de acessibilidade: Diálogos, Menus Suspensos, Popovers, Comandos e Alertas)
-- **@dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`) (Arrastar e soltar suave no Kanban)
-- **@tanstack/react-query v5** (Cache assíncrono, invalidação inteligente e sincronização de dados)
-- **@tanstack/react-table** (Estruturação e manipulação eficiente de dados tabulares)
-- **Tabler Icons & Lucide React** (Conjuntos de ícones vetoriais modernos)
-- **Date-fns** (Tratamento e formatação internacionalizada de datas em `pt-BR`)
-- **Sonner** (Notificações toast modernas e não obstrutivas)
+### Front-end (`src/`)
+- **React 18** com **TypeScript**
+- **Vite** (servidor de desenvolvimento na porta `8080` e build otimizada)
+- **React Router DOM v6** (SPA com rotas protegidas e code-splitting via `lazy`/`Suspense`)
+- **CSS Nativo Padrão W3C & CSS Variables** (Design System modular com tokens em `src/index.css` e `src/estilos/sistema-design.css`, com suporte a temas Claro, Escuro e Sistema)
+- **Radix UI** (Diálogos, Alertas, Menus Suspensos, Popovers, Abas, Selects, Checkboxes, Progresso e Avatares)
+- **@dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`)
+- **@tanstack/react-query v5** e **@tanstack/react-table**
+- **Tabler Icons & Lucide React**
+- **Date-fns** (formatação internacionalizada em `pt-BR`)
+- **Sonner** (notificações toast)
 
-### Arquitetura de Estilização (100% CSS Nativo)
-- **Zero Dependência de Compilação Tailwind CSS**: O sistema opera integralmente sobre a especificação **W3C Standard CSS**, sem dependência de CLI ou plugins de compilação do Tailwind.
-- **Design System Modular**: Tokens globais de design (`:root` e `.dark` com variáveis OKLCH de alto contraste e acessibilidade), classes semânticas padronizadas (`.sgdi-*`) e arquivos `.css` modulares organizados por componente.
-- **Suporte Nativo a Temas**: Alternância instantânea entre modo Claro (Light), Escuro (Dark) e Automático (System).
-
-### Back-end & Persistência de Dados
+### Back-end, Persistência & Tempo Real
 - **Supabase (PostgreSQL)**
-  - Banco de dados relacional com IDs sequenciais legíveis (`#1`, `#2`...) para cartões, usuários, comentários e checklists.
-  - **Supabase Auth**: Autenticação segura por e-mail/senha e login social OAuth (Google).
-  - **Row Level Security (RLS)**: Políticas ativas de segurança por usuário autenticado.
-  - **Triggers e Funções SQL**: Sincronização automática entre `auth.users` e tabela unificada de `usuarios`.
-- **Arquitetura Híbrida / Offline-First (LocalStorage)**
-  - Camada de alta performance e resiliência local para metadados de produtividade:
-    - Estado do cronômetro ativo, sessões acumuladas e pausas categorizadas (`supabase-card-metadata-v1`);
-    - Preferências de cores personalizadas das colunas do quadro (`sgdi-cores-colunas-v1`);
-    - Fallback de integridade e ordenação local para checklists (`supabase-card-checklists-v1`).
+  - Tabelas relacionais com IDs sequenciais legíveis (`#1`, `#2`...) para `usuarios`, `cartoes`, `comentarios`, `checklists`, `itens_checklist` e `logs_auditoria`.
+  - **Supabase Auth**: autenticação por e-mail/senha e OAuth (Google em `/auth/callback`).
+  - **Row Level Security (RLS)** e **Supabase Realtime** (`postgres_changes` em `cartoes`, `comentarios`, `checklists`, `itens_checklist`, `usuarios` e `logs_auditoria`).
+- **Camada Local / Resiliente (`localStorage`)**
+  - Metadados de produtividade (cronômetro, pausas e complexidade) em `supabase-card-metadata-v1`;
+  - Preferências de cores das colunas (`sgdi-cores-colunas-v1`) e módulos do dashboard (`sgdi-dashboard-modulos-v1`);
+  - Fallback resiliente para checklists (`supabase-card-checklists-v1`) e logs de auditoria (`sgdi-logs-auditoria-v1`).
+- **API REST Externa (`api_sgdi/`)**
+  - **Node.js + Express + TypeScript** com **Swagger UI Express** (`/api/docs`), especificação OpenAPI 3.0 (`/api/docs/openapi.json`), autenticação via `X-API-Key` ou `Authorization: Bearer`, e integração com Supabase.
+  - Consulte a documentação detalhada em [api_sgdi/README.md](./api_sgdi/README.md).
 
 ### Testes Automatizados
-- **Vitest**: Suíte de testes unitários (23 testes automatizados) cobrindo regras de negócio, ordenação por urgência/prioridade, filtros combinados de solicitante e responsável restritos a dados reais, ciclo de vida e exclusão de cartões com limpeza em cascata, paginação em blocos de 10 e configuração/persistência de cores com fallback seguro.
+- **Front-end (Vitest)**: **49 testes unitários** distribuídos em 4 suítes:
+  - `src/App.test.tsx` (23 testes — regras de negócio, ordenação, filtros, paginação e cores)
+  - `src/paginas/dashboard/calculos-dashboard.test.ts` (15 testes — KPIs, SLA, carga, tendências e idade de abertas)
+  - `src/paginas/logs/logs.test.ts` (6 testes — registro, filtros e exportação de auditoria)
+  - `src/paginas/dashboard/exportador-dashboard.test.ts` (5 testes — exportação de dados do dashboard)
+- **API REST (`api_sgdi/testes/`)**: 3 suítes com **Vitest + Supertest** (`checklist-api.test.ts`, `demandas.test.ts` e `usuarios.test.ts`).
 
 ---
 
 ## 🎯 Funcionalidades do Sistema
 
-### 1. Governança de Demandas & Sprints
-- **Classificação por Urgência / Prioridade**: Níveis **Alta** (🔴 Urgente), **Média** (🟡) e **Baixa** (🟢), com ordenação dinâmica que posiciona automaticamente as demandas prioritárias no topo.
-- **Níveis de Complexidade & Estimativa de Tempo**: Cada demanda pode receber uma estimativa de complexidade com cálculo padrão de horas:
-  - **Baixa**: 2h estimadas
-  - **Média**: 4h estimadas
-  - **Alta**: 8h estimadas
-  - **Muito Alta**: 16h estimadas
-  - Permite avaliar visualmente o **Tempo Estimado vs. Tempo Real Gasto**.
-- **Controle Estrito de Solicitantes**: Substituição total de texto livre por vínculo relacional com usuários cadastrados na base. Exibe data/hora de criação no cartão (`Criado por [Nome] • dd/MM/yyyy às HH:mm`) e monitora a quantidade de demandas abertas por usuário.
-- **Múltiplos Responsáveis**: Atribuição flexível de um ou mais membros por tarefa, com exibição de avatares empilhados.
-- **Gestão de Prazos e Vencimentos**: Seletor de data de entrega com alertas visuais inteligentes (*No Prazo*, *Vence Hoje*, *Atrasado*). Apenas o solicitante ou responsáveis possuem permissão para renegociar prazos.
-- **Checklists e Critérios de Aceite**: Criação de listas de verificação com barra de progresso percentual e cálculo em tempo real de itens concluídos.
-- **Cronômetro e Apontamento de Horas Avançado**:
-  - **Permissão por Responsável**: Apenas os membros formalmente atribuídos como responsáveis pela demanda têm permissão para iniciar o cronômetro (com bloqueio visual e tooltip explicativo para os demais).
-  - **Widget Visual no Cartão**: Indicador compacto com efeito pulsante durante execução e badge visual de tarefa concluída.
-  - **Modal de Pausa com Motivos Categorizados**: Pausa rápida com seleção de motivos padronizados (*Intervalo de Almoço*, *Alinhamento Técnico em Call*, *Janela de Manutenção*, *Aguardando Liberação Externa/Credenciais*) ou justificativa personalizada.
-  - **Finalização Automática e Auditoria**: Ao mover o cartão para a coluna **Concluído**, o cronômetro é finalizado automaticamente e um registro de auditoria é gravado no log com data/hora exata (`dd/MM/yyyy às HH:mm:ss`) e o usuário que concluiu a demanda.
+### 1. Quadro Kanban, Tabela e Detalhes da Demanda (`/board` e `/board/:cardId`)
+- **Prioridades**: **Alta**, **Média** e **Baixa**, com ordenação dinâmica por urgência, vencimento, responsável, título, criação ou ordem manual.
+- **Complexidade & Estimativa de Horas**: **Baixa** (2h), **Média** (4h), **Alta** (8h) e **Muito Alta** (16h).
+- **Solicitantes e Múltiplos Responsáveis**: vínculo relacional com usuários cadastrados (`ids_responsaveis`) e avatares empilhados.
+- **Gestão de Prazos**: seletor de data de vencimento com indicadores visuais (*No Prazo*, *Vence Hoje*, *Atrasado*) e restrição de edição ao solicitante ou responsáveis.
+- **Checklists e Comentários**: até 5 listas de verificação por cartão com barra de progresso em tempo real e seção de comentários por demanda.
+- **Cronômetro e Apontamento de Horas**:
+  - Restrito aos responsáveis atribuídos à demanda;
+  - Modal de pausa com motivos estruturados ou justificativa personalizada;
+  - Finalização automática ao mover o cartão para **Concluído**.
+- **Modos de Visualização**:
+  - **Quadro Kanban** (3 colunas: `A fazer`, `Em andamento`, `Concluído`) com 16 cores personalizáveis, recolhimento/expansão e paginação interna de 10 em 10 cartões;
+  - **Tabela Paginada** com busca global (por `#ID`, título ou descrição), filtros combinados (Status, Prioridade, Solicitante, Responsável) e exportação em **CSV** ou **Impressão / PDF**.
 
----
+### 2. Dashboard Analítico (`/dashboard`)
+- **Módulos Configuráveis na Barra Lateral** (preferências persistidas por usuário):
+  - Indicadores (KPIs), Situação das demandas, Cumprimento de SLA, Carga por responsável (com seletor de usuários), Tempo médio de resolução por prioridade e Lista de demandas críticas;
+  - Seção de **Tendências (8 semanas)**: Fluxo semanal, Evolução do backlog, SLA semanal e Idade das demandas abertas.
+- **Filtros Centralizados** (período, responsável, prioridade, status e busca rápida) e **Exportação de Relatórios** do dashboard.
 
-### 2. Consultas Avançadas, Navegação & Modos de Visualização
+### 3. Logs de Auditoria (`/logs`)
+- Registra automaticamente operações de criação, atualização, exclusão, movimentação, alteração de status, ações do cronômetro, comentários e checklists.
+- Tela dedicada com cartões de métricas, filtros por busca/ação/entidade/período, modal com metadados técnicos em JSON e exportação em **CSV** e **JSON**.
 
-- **Busca Global**: Localização instantânea por ID numérico (ex: `12` ou `#12`), termos do título ou conteúdo da descrição.
-- **Filtros Combinados Inteligentes em Tempo Real**:
-  - Filtro por **Status** (`Todos`, `📋 A Fazer`, `⚡ Em Andamento`, `✅ Concluído`).
-  - Filtro por **Prioridade** (`Todas`, `🔴 Alta`, `🟡 Média`, `🟢 Baixa`).
-  - Filtro por **Solicitante**: Lista dinamicamente apenas os usuários que criaram cartões na base, exibindo contador de tarefas.
-  - Filtro por **Responsável**: Lista apenas membros com demandas ativas atribuídas, opção para tarefas *Não Atribuídas* e *Todos*.
-  - Botão de **Limpeza Rápida** de filtros ativos.
-- **Ordenação Dinâmica Flexível**: Ordenação manual, por Prioridade/Urgência, Data de Vencimento, Responsável, Título e Data de Criação.
+### 4. Configurações Pessoais (`/settings`)
+- **Aba Perfil**: edição de nome/dados de perfil e alteração de senha.
+- **Aba Geral**: alternância de tema (**Claro**, **Escuro** ou **Sistema**) e **Zona de Perigo**.
 
-#### Modos de Visualização Alternáveis
-- **Visualização em Quadro (Kanban)**:
-  - 3 colunas ágeis (`A Fazer`, `Em Andamento`, `Concluído`) com arrastar-e-soltar fluido.
-  - **Personalização de Cores das Colunas**: Paleta com **16 cores sólidas/flat** (azul, verde, roxo, âmbar, vermelho, rosa, índigo, teal, etc.), com **preto absoluto (`#000000`)** padrão de fábrica no Modo Escuro (Dark Mode) para máxima imersão. As configurações de cores são salvas no cache do navegador (`localStorage`) por usuário.
-  - **Recolhimento e Expansão de Colunas**: Botões para colapsar/expandir individualmente ou em lote (*"Recolher todas"* e *"Expandir todas"*), otimizando o espaço útil de tela.
-  - **Paginação Interna por Coluna**: Navegação de 10 em 10 cartões por status para máxima performance em colunas com alto volume de tarefas.
-- **Visualização em Tabela / Lista Paginada**:
-  - Tabela corporativa completa com identificador sequencial `#ID`, Demanda, Status com ícone, Prioridade colorida, Solicitante, Avatares dos Responsáveis e Prazo.
-  - Navegação paginada completa (Primeira, Anterior, Próxima, Última) e contador de registros (`1 a 10 de N demandas`).
-  - Acesso direto aos detalhes e edição do cartão.
-
----
-
-### 3. Exportação de Relatórios Corporativos
-
-A aplicação disponibiliza dois formatos nativos de exportação na barra de ferramentas:
-
-1. **Exportação para Planilha (CSV)**:
-   - Arquivo `.csv` gerado em tempo real com codificação `UTF-8 BOM` (compatibilidade imediata com Microsoft Excel sem erros de acentuação).
-   - Contém: ID, Título, Descrição, Coluna/Status, Prioridade, Solicitante, Responsáveis, Data de Vencimento, Data de Criação, Progresso dos Checklists e Tempo Total Gasto.
-2. **Relatório Corporativo para Impressão / PDF**:
-   - Layout formal e estilizado pronto para emissão via `window.print()` (ou salvar como PDF).
-   - Cabeçalho executivo institucional, timestamp de geração (`dd/MM/yyyy às HH:mm:ss`), resumo quantitativo de tarefas por status e tabela de demandas no padrão corporativo em orientação A4/Paisagem.
-
----
-
-### 4. Gestão de Equipe & Segurança
-
-- **Tabela Única de Usuários**: Estrutura unificada de perfis e membros, com controle de função (Administrador / Membro).
-- **Gestão de Convites**: Envio de convites por e-mail, alteração de privilégios e revogação de acessos.
-- **Configurações Pessoais**: Edição de perfil, alteração de senha e alternância de temas (Claro, Escuro ou Automático).
+### 5. API REST (`api_sgdi/`)
+- Endpoints públicos: `GET /api`, `GET /api/status`, `GET /api/docs`, `GET /api/docs/openapi.json`.
+- Endpoints protegidos por API Key:
+  - `GET/POST/PUT/PATCH/DELETE /api/demandas` e `/api/demandas/:id`
+  - `GET/POST /api/demandas/:id/comentarios`
+  - `GET/POST /api/usuarios` e `GET /api/usuarios/:id`
 
 ---
 
@@ -126,46 +100,45 @@ A aplicação disponibiliza dois formatos nativos de exportação na barra de fe
 
 ```text
 Sistema_SGDI/
-├── public/                     # Favicon e ativos públicos estáticos
+├── api_sgdi/                        # API REST externa (Express + TypeScript + Swagger)
+│   ├── src/                         # App, rotas, controladores, serviços, middlewares e OpenAPI
+│   ├── testes/                      # Suítes de teste com Vitest + Supertest
+│   └── README.md                    # Documentação completa da API REST
+├── public/                          # Ativos públicos estáticos
 ├── src/
-│   ├── componentes/            # Componentes reutilizáveis
-│   │   ├── base/               # Botões, Badges, Distintivos estilizados
-│   │   └── ui/                 # Componentes headless (Radix UI) e primitivos
-│   ├── tipos/                  # Tipos de domínio, enums e configurações do quadro
-│   │   └── quadro.ts           # Definições de Cartões, Colunas, Prioridades e Complexidade
-│   ├── integracoes/            # Conexões externas
-│   │   └── supabase/           # Cliente Supabase tipado e helpers de conexão
-│   ├── lib/                    # Camada de lógica e contexto
-│   │   ├── autenticacao/       # AuthProvider, hooks de sessão, login e recuperação
-│   │   ├── provedor-dados/     # Hooks do React Query (cartões, membros, comentários)
-│   │   │   ├── hooks/          # use-cartoes, use-cronometro, use-comentarios
-│   │   │   └── storage-local.ts# Camada de metadados locais (tempo, pausas e checklists)
-│   │   └── utilitarios.ts      # Utilitários de classes CSS (cn/clsx)
-│   ├── paginas/                # Páginas da aplicação (SPA)
-│   │   ├── autenticacao/       # Telas de Login, Cadastro e Retorno OAuth
-│   │   ├── configuracoes/      # Perfil, Senha e Gestão de Membros da Equipe
-│   │   ├── quadro/             # Gestão de Demandas
-│   │   │   ├── componentes/    # Quadro Kanban, Tabela de Demandas, Barra de Ferramentas,
-│   │   │   │   ├── cronometro/ # Widget de Cronômetro (compacto e detalhado)
-│   │   │   │   └── ...         # Modais, Checklists, Seletor de Cores e Detalhes
-│   │   └── nao-encontrado.tsx  # Tratamento de rota 404
-│   ├── App.test.tsx            # Suíte de 23 testes unitários com Vitest
-│   ├── App.tsx                 # Rotas da aplicação, Suspense e Provedor de Dados
-│   ├── estilos/                # Sistema de Design consolidado em CSS W3C nativo
-│   ├── index.css               # Design tokens, variáveis CSS globais e resets nativos
-│   └── main.tsx                # Bootstrap da aplicação React
+│   ├── componentes/
+│   │   ├── base/                    # Botões, Badges e autenticação social
+│   │   └── ui/                      # Primitivos Radix UI (diálogo, popover, abas, etc.)
+│   ├── estilos/                     # Sistema de Design em CSS nativo
+│   ├── integracoes/supabase/        # Cliente Supabase tipado e tipos do schema
+│   ├── lib/
+│   │   ├── auditoria/               # Serviço de logs de auditoria e exportação CSV/JSON
+│   │   ├── autenticacao/            # AuthProvider e hooks de sessão
+│   │   ├── provedor-dados/          # Provedor React Query + Realtime + hooks por domínio
+│   │   └── utilitarios.ts           # Utilitários de classes CSS
+│   ├── paginas/
+│   │   ├── autenticacao/            # Login, Cadastro e Retorno OAuth
+│   │   ├── configuracoes/           # Abas Perfil e Geral
+│   │   ├── dashboard/               # Painel analítico, cálculos, gráficos e exportação
+│   │   ├── logs/                    # Tela de Logs de Auditoria
+│   │   ├── quadro/                  # Kanban, Tabela, Detalhes, Cronômetro e Checklists
+│   │   └── nao-encontrado.tsx       # Página 404
+│   ├── tipos/                       # Tipos de domínio (quadro.ts, auditoria.ts)
+│   ├── App.tsx                      # Rotas SPA, Suspense e LayoutAutenticado
+│   ├── App.test.tsx                 # Suíte principal de testes unitários
+│   ├── index.css                    # Design tokens e resets globais
+│   └── main.tsx                     # Ponto de entrada React
 ├── supabase/
-│   └── migrations/             # Scripts SQL de schema, RLS e migrações
-├── package.json                # Dependências e scripts de execução
-├── tsconfig.json               # Configurações do TypeScript
-└── vite.config.ts              # Configurações do Vite e plugins
+│   └── migrations/                  # Scripts SQL de schema, índices e políticas RLS
+├── .env.example                     # Modelo de variáveis de ambiente do front-end
+├── package.json                     # Dependências e scripts (front-end e atalhos da API)
+├── tsconfig.json                    # Configurações do TypeScript
+└── vite.config.ts                   # Configurações do Vite
 ```
 
 ---
 
 ## 🗄️ Modelo de Dados (Supabase / PostgreSQL)
-
-O banco de dados relacional foi estruturado com chaves primárias sequenciais humanizadas (`BIGSERIAL / INT`) para legibilidade e índices otimizados para busca e filtragem:
 
 ```mermaid
 erDiagram
@@ -173,6 +146,7 @@ erDiagram
     CARTOES ||--o{ COMENTARIOS : "possui"
     CARTOES ||--o{ CHECKLISTS : "possui"
     CHECKLISTS ||--o{ ITENS_CHECKLIST : "contem"
+    USUARIOS ||--o{ LOGS_AUDITORIA : "executa"
 
     USUARIOS {
         bigint id PK
@@ -228,72 +202,97 @@ erDiagram
         text conteudo
         timestamp criado_em
     }
-```
 
-> [!NOTE]
-> **Persistência de Metadados de Produtividade**: As sessões de tempo ativo, o histórico acumulado de pausas categorizadas e a estimativa de complexidade das tarefas são gerenciados de forma resiliente na camada de aplicação via `localStorage` (`supabase-card-metadata-v1`), com sincronização instantânea no cache do React Query e desacoplamento do ciclo de vida das tabelas relacionais básicas.
+    LOGS_AUDITORIA {
+        bigint id PK
+        uuid id_usuario FK
+        string usuario_nome
+        string usuario_email
+        string acao
+        string entidade
+        string entidade_id
+        string entidade_titulo
+        text detalhes
+        jsonb metadados
+        timestamp criado_em
+    }
+```
 
 ---
 
 ## 🛠️ Instalação e Execução Local
 
 ### Pré-requisitos
-- **Node.js** (versão 18.x ou superior)
-- Gerenciador de pacotes **npm**, **pnpm** ou **yarn**
-- Uma instância ativa do **Supabase** (projeto Cloud ou local)
+- **Node.js** (v18+ recomendado; v22+ para `api_sgdi`)
+- **npm**
+- Uma instância ativa do **Supabase**
 
-### 1. Clonar o projeto e instalar as dependências
+### 1. Instalar as dependências
 ```bash
-git clone <URL_DO_REPOSITORIO>
-cd Sistema_SGDI
+# Front-end (raiz)
 npm install
+
+# API REST (opcional, caso deseje rodar a api_sgdi)
+npm --prefix api_sgdi install
 ```
 
 ### 2. Configurar as Variáveis de Ambiente
-Crie um arquivo `.env` na raiz do projeto com as chaves do seu projeto Supabase:
+Copie `.env.example` para `.env` na raiz do projeto e preencha com as credenciais do seu projeto Supabase:
 ```env
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-publica-anonima-aqui
+VITE_SUPABASE_URL="https://seu-projeto.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY="sua-chave-anonima-publica-ou-sb_publishable"
+VITE_SUPABASE_PROJECT_ID="seu-id-de-projeto"
 ```
 
-### 3. Aplicar as Migrações no Banco de Dados
-Execute os scripts presentes na pasta `supabase/migrations/` no SQL Editor do seu painel Supabase:
-1. `20260924_tabela_unica_usuarios.sql` (Estrutura principal: usuários, cartões, comentários, checklists e RLS)
-2. `20260929_cores_colunas_usuario.sql` (Adiciona coluna `cores_colunas` na tabela de usuários)
+### 3. Aplicar as Migrações no Supabase
+Execute os scripts da pasta `supabase/migrations/` no **SQL Editor** do Supabase na seguinte ordem:
+1. `20260924_tabela_unica_usuarios.sql` *(tabelas principais: `usuarios`, `cartoes`, `comentarios`, `checklists`, `itens_checklist` e RLS)*
+2. `20260929_cores_colunas_usuario.sql` *(coluna `cores_colunas` em `usuarios`)*
+3. `20261022_tabela_logs_auditoria.sql` *(tabela `logs_auditoria`, índices e RLS)*
+
+*(Habilite também o Realtime no Supabase para as tabelas acima para sincronização instantânea entre clientes.)*
 
 ### 4. Iniciar o Ambiente de Desenvolvimento
 ```bash
+# Front-end (http://localhost:8080)
 npm run dev
+
+# API REST externa (opcional)
+npm run api:dev
 ```
-Acesse a aplicação no navegador em `http://localhost:8080` (porta padrão configurada no Vite).
 
 ---
 
-## 🧪 Executando os Testes Automatizados
-
-A aplicação possui **23 testes unitários** implementados com **Vitest** cobrindo regras de negócio, ordenação por urgência, filtros avançados, cálculo de demandas por solicitante, paginação e persistência de cores:
+## 🧪 Testes Automatizados
 
 ```bash
-# Executa a suíte completa de testes unitários
-npm test
+# Executa todas as 4 suítes do front-end (49 testes)
+npx vitest run src/
 
-# Executa os testes em modo contínuo interativo (watch)
+# Modo contínuo interativo (watch)
 npm run test:watch
+
+# Testes da API REST (requer dependências instaladas em api_sgdi/)
+npm run api:test
 ```
 
 ---
 
-## 📦 Scripts Disponíveis
+## 📦 Scripts Disponíveis (`package.json` raiz)
 
 | Comando | Descrição |
 | :--- | :--- |
-| `npm run dev` | Inicia o servidor local de desenvolvimento com Hot Module Replacement (HMR) na porta 8080. |
-| `npm run build` | Compila o código TypeScript e gera o bundle de produção otimizado em `/dist`. |
+| `npm run dev` | Inicia o servidor de desenvolvimento Vite (HMR) na porta `8080`. |
+| `npm run build` | Gera o bundle de produção otimizado em `dist/`. |
 | `npm run build:dev` | Compila a aplicação em modo de desenvolvimento. |
-| `npm run preview` | Executa localmente o servidor para visualização da build de produção compilada. |
-| `npm test` | Executa a suíte completa de testes unitários com o Vitest (`vitest run`). |
-| `npm run test:watch` | Executa os testes unitários em modo interativo de monitoramento contínuo. |
-| `npm run lint` | Executa a verificação estática de código com o ESLint. |
+| `npm run preview` | Visualiza localmente a build de produção compilada. |
+| `npm test` | Executa o Vitest (`vitest run`). Para rodar apenas o front-end: `npx vitest run src/`. |
+| `npm run test:watch` | Executa o Vitest em modo interativo contínuo. |
+| `npm run lint` | Executa a análise estática com ESLint. |
+| `npm run api:dev` | Inicia a `api_sgdi` em modo de desenvolvimento (`tsx watch`). |
+| `npm run api:start` | Inicia a `api_sgdi` em modo padrão. |
+| `npm run api:build` | Compila o TypeScript da `api_sgdi`. |
+| `npm run api:test` | Executa a suíte de testes da `api_sgdi`. |
 
 ---
 
